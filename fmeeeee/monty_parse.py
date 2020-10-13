@@ -1,26 +1,12 @@
-import json
-import glob
-import itertools
-import logging
-import math
-import os
+"""
+code copy from Pymatgen that use the Monty library
+"""
+
 import re
-import warnings
-from pathlib import Path
-import xml.etree.cElementTree as ET
-from collections import defaultdict
-from io import StringIO
-import collections
-from typing import Optional, Tuple, List
 
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
-from monty.io import zopen, reverse_readfile
-from monty.json import MSONable
-from monty.json import jsanitize
+from monty.io import zopen
 from monty.re import regrep
-from monty.os.path import zpath
-from monty.dev import deprecated
 
 def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
                            postprocess=str,
