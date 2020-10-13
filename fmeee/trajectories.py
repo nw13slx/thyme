@@ -1,13 +1,61 @@
 import numpy as np
+import pickle
 
 from collections import Counter
 
 from fmeee.trajectory import Trajectory
+from fmeee.utils.atomic_symbols import species_to_order_label
 
 class Trajectories():
 
     def __init__(self):
         self.alldata = {}
+
+    def save(self, name: str, format: str = None):
+
+        supported_formats = ['pickle'] # npz
+
+        for detect in supported_formats:
+            if detect in name.lower():
+                format = detect
+                break
+
+        if format is None:
+            format = 'pickle'
+        format = format.lower()
+
+        if format == 'pickle':
+            if '.pickle' != name[-7:]:
+                name += '.pickle'
+            with open(name, 'wb') as f:
+                pickle.dump(self, f)
+
+        else:
+            raise NotImplementedError(f"Output format not supported:"
+                                      f" try from {supported_formats}")
+
+    @staticmethod
+    def from_file(name: str, format: str = None):
+
+        supported_formats = ['pickle'] # npz
+
+        for detect in supported_formats:
+            if detect in name.lower():
+                format = detect
+                break
+
+        if format is None:
+            format = 'pickle'
+        format = format.lower()
+
+        if format == 'pickle':
+            with open(name, 'rb') as f:
+                trjs = pickle.load(f)
+            return trjs
+        else:
+            raise NotImplementedError(f"Output format not supported:"
+                                      f" try from {supported_formats}")
+
 
     @staticmethod
     def from_dict(dictionary:dict):
@@ -81,6 +129,15 @@ class Trajectories():
         max_atoms = dictionary['symbols'].shape[1]
         symbols = dictionary['symbols']
 
+        if per_frame_attr is None:
+            per_frame_attr = []
+            for k in dictionary:
+                try:
+                    if dictionary[k].shape[0] == nframes:
+                        per_frame_attr += [k]
+                except Exception as e:
+                    logging.debug(f"skip {k} because of {e}")
+
         for i in range(nframes):
 
             # obtain label
@@ -89,6 +146,7 @@ class Trajectories():
 
             if label not in alldata:
                 alldata[label] = Trajectory()
+                alldata[label].name = label
                 alldata[label].python_list = True
 
             alldata[label].add_frame_from_dict(dictionary, nframes,
@@ -101,15 +159,3 @@ class Trajectories():
         return trjs
 
 
-def species_to_order_label(symbol):
-
-    count = dict(Counter(symbol))
-    if 'NA' in count:
-        del count['NA']
-    order = []
-    symbol_list = np.sort(list(count.keys()))
-    for k in symbol_list:
-        order += [[i for i, s in enumerate(symbol) if s==k]]
-    order = np.hstack(order)
-    label = "".join([f"{k}{count[k]}" for k in symbol_list])
-    return order, label

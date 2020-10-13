@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from copy import deepcopy
 
@@ -19,11 +20,21 @@ class Trajectory():
             setattr(self, k, None)
 
         self.nframes = 0
-        self.per_frame_attrs = deepcopy(Trajectory.per_frame_keys)
-        self.metadata_attrs = deepcopy(Trajectory.metadata_keys)
+        self.per_frame_attrs = []
+        self.metadata_attrs = []
 
         self.python_list = False
         self.empty = True
+        self.name = ""
+
+    def __repr__(self):
+        s = f"{self.name}: {self.nframes} frames with {self.natom} atoms\n"
+        for k in self.per_frame_attrs:
+            s+= f"{k} "
+        s += "\n"
+        for k in self.metadata_attrs:
+            s+= f"{k} "
+        return s
 
     @staticmethod
     def from_dict(dictionary):
@@ -47,7 +58,8 @@ class Trajectory():
 
             if attributes is not None:
                 for k in attributes:
-                    self.per_frame_attrs.append(k)
+                    if k not in self.per_frame_attrs:
+                        self.per_frame_attrs.append(k)
 
             for k in self.per_frame_attrs:
                 setattr(self, k, [])
@@ -74,29 +86,29 @@ class Trajectory():
         species=dictionary['symbols'][i]
 
         if idorder is not None:
-            species=species[idorder],
+            species=[species[i] for i in idorder]
 
         if self.empty:
             self.add_containers(natom=natom,
                                 species=species,
                                 attributes=attributes)
 
-        if i > 0:
-            for k in self.per_frame_attrs:
-                if k in dictionary:
-                    dim = len(dictionary[k].shape)
-                    if dim == 1:
-                        getattr(self, k).append(dictionary[k][i])
-                    elif dim >= 2:
-                        if dictionary[k].shape[1] > natom:
-                            if idorder is not None:
-                                getattr(self, k).append(dictionary[k][i][idorder])
-                            else:
-                                getattr(self, k).append(dictionary[k][i])
+        for k in self.per_frame_attrs:
+            if k in dictionary:
+                dim = len(dictionary[k].shape)
+                if dim == 1:
+                    getattr(self, k).append(dictionary[k][i])
+                elif dim >= 2:
+                    if dictionary[k].shape[1] > natom:
+                        if idorder is not None:
+                            getattr(self, k).append(dictionary[k][i][idorder])
                         else:
                             getattr(self, k).append(dictionary[k][i])
-                else:
-                    raise RuntimeError(f"{k} is needed")
+                    else:
+                        getattr(self, k).append(dictionary[k][i])
+            else:
+                raise RuntimeError(f"{k} is needed")
+        self.nframes += 1
 
     def add_frames_from_dict(self, dictionary:dict, nframes:int,
                              attributes:list=None, idorder=None):
@@ -131,7 +143,13 @@ class Trajectory():
 
         for k in self.per_frame_attrs:
             np_mat = np.array(getattr(self, k))
+            if np_mat.shape[0] != self.nframes:
+                raise RuntimeError(f"inconsistent content {np_mat.shape} {k}"
+                                   f" and counter {self.nframes}")
+            logging.debug(f"convert content {k} to numpy array"
+                          f" with shape {np_mat.shape} ")
             setattr(self, k, np_mat)
+
 
     def reshape(self):
 
