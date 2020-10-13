@@ -1,21 +1,13 @@
-import logging
-logging.basicConfig(filename=f'collect.log', filemode='w',
-                    level=logging.INFO, format="%(message)s")
-logging.getLogger().addHandler(logging.StreamHandler())
-
 import numpy as np
-
 from ase.atoms import Atoms
-from collections import Counter
-from glob import glob
-from os import walk, mkdir
-from os.path import dirname, join, basename, isdir, isfile
 
-from pymatgen.io.vasp.outputs import Outcar, Vasprun
-from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
+from fmeeeee.routines.folders import parse_folders
+from fmeee.vasp.parser import pack_folder, get_childfolders
 
-from fmeee.vasp.parser import pack_folder
-import fmeee.file_op import search_all_folders
+def main():
+
+    folders = get_childfolders("./")
+    parse_folders(folders, pack_folder, e_filter, "all_data.npz")
 
 def e_filter(xyz, f, e, c, species):
     atoms = Atoms(species, xyz, cell=c, pbc=True)
@@ -54,41 +46,6 @@ def e_filter(xyz, f, e, c, species):
     #     logging.info(f"skip frame for high/low e {e+411:8.2f}")
     #     return False
     # return True
-
-def main():
-
-    # mkfolder("npz")
-    folders = search_all_folders(['vasprun.xml', 'OUTCAR', 'vasp.out'])
-    folders = sorted(folders)
-    logging.info(f"all folders: {folders}")
-
-    count = 0
-    alldata = {}
-    for folder in folders:
-
-        if folder == "./":
-            casename = "current_folder"
-        if folder[:2] == "./":
-            casename = "_".join(folder[2:].split("/"))
-        else:
-            casename = "_".join(folder.split("/"))
-
-        logging.info(casename)
-
-        data = pack_folder(folder, e_filter)
-        if data['nframes'] >= 1:
-            logging.info(f"{folder}, {casename}, {data['nframes']}")
-            alldata[casename] = data
-            count += 1
-            if count%10 == 0:
-                np.savez("alldata.npz", **alldata)
-        else:
-            logging.info(f"! skip whole folder {casename}, {data['nframes']}")
-
-    np.savez("alldata.npz", **alldata)
-    logging.info("Complete")
-
-
 
 if __name__ == '__main__':
     main()
