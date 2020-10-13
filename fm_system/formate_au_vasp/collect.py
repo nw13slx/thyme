@@ -7,12 +7,12 @@ import numpy as np
 from ase.atoms import Atoms
 
 from fmeee.routines.folders import parse_folders
-from fmeee.vasp.parser import pack_folder, get_childfolders
+from fmeee.parsers.vasp import pack_folder, get_childfolders
 
 def main():
 
     folders = get_childfolders("./")
-    parse_folders(folders, pack_folder, e_filter, "all_data.npz")
+    parse_folders(folders, pack_folder, e_filter, "all_data")
 
 def e_filter(xyz, f, e, c, species):
     atoms = Atoms(species, xyz, cell=c, pbc=True)

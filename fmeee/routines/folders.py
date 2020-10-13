@@ -1,6 +1,8 @@
 import logging
 import numpy as np
 
+from glob import glob
+
 from os import walk, mkdir
 from os.path import isdir, isfile
 
@@ -24,7 +26,7 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
 
         data = pack_folder(folder, data_filter)
         if data['nframes'] >= 1:
-            logging.info(f"{folder}, {casename}, {data['nframes']}")
+            logging.info(f"save {folder} as {casename} : {data['nframes']} frames")
             alldata[casename] = data
             count += 1
             if count%10 == 0:
@@ -37,6 +39,15 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
     logging.info("Complete parsing")
 
     return alldata
+
+def find_folders_matching(filenames, path):
+
+    folders = []
+    for root, dirs, files in walk("./"):
+        for filename in filenames:
+            if len(glob(filename)) > 0:
+                folders += [root]
+    return set(folders)
 
 
 def find_folders(filenames, path):
