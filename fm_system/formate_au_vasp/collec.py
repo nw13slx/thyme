@@ -1,7 +1,12 @@
+import logging
+logging.basicConfig(filename=f'collect.log', filemode='w',
+                                          level=logging.INFO, format="%(message)s")
+logging.getLogger().addHandler(logging.StreamHandler())
+
 import numpy as np
 from ase.atoms import Atoms
 
-from fmeeeee.routines.folders import parse_folders
+from fmeee.routines.folders import parse_folders
 from fmeee.vasp.parser import pack_folder, get_childfolders
 
 def main():
