@@ -4,6 +4,7 @@ import numpy as np
 from math import inf
 
 from ase.atoms import Atoms
+from ase.io.extxyz import read_xyz as read_extxyz
 from fmeee.trajectories import Trajectory, PaddedTrajectory
 
 

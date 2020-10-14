@@ -11,13 +11,12 @@ def extxyz_to_padded_trj(filename):
     d = \
         read_pattern(filename,
                      {'natoms':r"^([0-9]+)$",
-                      # 'latt':r"Lattice=\"([\w\s\.+-]+)\"",
                       'cells':r"Lattice=\""+fl_num+sfl_num+sfl_num \
                       +sfl_num+sfl_num+sfl_num \
                       +sfl_num+sfl_num+sfl_num+r"\"",
                       'energies':r"free_energy="+fl_num,
-                      'posforce':r"^\w+"+sfl_num+sfl_num+sfl_num+r"\w+\s+\w+" \
-                          +sfl_num+sfl_num+sfl_num,
+                      'posforce': r"^\w+"+sfl_num+sfl_num+sfl_num \
+                      +"\s+[A-Z]\s+\d"+sfl_num+sfl_num+sfl_num,
                       'symbols':r"^([a-zA-Z]+)\s"
                       })
     natoms = np.array(d['natoms'], dtype=int).reshape([-1])
