@@ -19,10 +19,13 @@ def single_plot(forces, pred, prefix, symbol):
 
     layer = int(np.ceil(len(species)/2))
     fig, axs = plt.subplots(layer, 2, figsize=(6.8, 2.5*layer))
-    axsf = []
-    for i in range(layer):
-        for j in range(2):
-            axsf += [axs[i, j]]
+    if layer == 1:
+        axsf = axs
+    else:
+        axsf = []
+        for i in range(layer):
+            for j in range(2):
+                axsf += [axs[i, j]]
 
     for iele, element in enumerate(species):
 
@@ -44,8 +47,8 @@ def single_plot(forces, pred, prefix, symbol):
         if iele%2 == 0:
             axsf[iele].set_ylabel("Predicted energies (eV)")
 
-    axs[layer-1, 0].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
-    axs[layer-1, 1].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
+    axsf[-1].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
+    axsf[-2].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
 
     fig.tight_layout()
     fig.savefig(f"{prefix}force.png", dpi=300)

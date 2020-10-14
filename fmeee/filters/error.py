@@ -1,10 +1,4 @@
-import colorsys
 import logging
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cmx
-plt.switch_backend('agg')
 import numpy as np
 
 from fmeee.utils.atomic_symbols import species_to_idgroups
