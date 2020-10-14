@@ -2,6 +2,8 @@ import logging
 import numpy as np
 from copy import deepcopy
 
+from fmeee.utils.cell import convert_cell_format
+
 class Trajectory():
 
     per_frame_keys = ["positions", "forces", "energies",
@@ -41,6 +43,7 @@ class Trajectory():
         if len(self.per_frame_attrs) != 0:
 
             self.empty = False
+
             frames = []
             for k in self.per_frame_attrs:
                 frames += [len(getattr(self, k))]
@@ -51,23 +54,48 @@ class Trajectory():
             self.nframes = frames[0]
             self.per_frame_attrs = list(set(self.per_frame_attrs))
 
+            for k in self.per_frame_attrs:
+                item = getattr(self, k)
+                try:
+                    if item.shape[1] % self.natom == 0:
+                        item = item.reshape([self.nframes, ori_natom, -1])
+                        setattr(self, k, item)
+                except:
+                    pass
+
         self.metadata_attrs = list(set(self.metadata_attrs))
 
 
     @staticmethod
     def from_dict(dictionary):
         trj = Trajectory()
-        for k in dictionary:
-            if k in Trajectory.metadata_keys:
-                setattr(trj, k, np.copy(dictionary[k]))
-                trj.per_frame_attrs += [k]
-            elif k in Trajectory.metadata_keys:
-                setattr(trj, k, np.copy(dictionary[k]))
-                trj.metadata_attrs += [k]
-            else:
-                raise NotImplementedError("add numpy arrays")
-        trj.sanity_check()
+        trj.copy_dict(dictionary)
         return trj
+
+    def copy_dict(self, dictionary):
+
+        nframes = dictionary['positions'].shape[0]
+
+        if 'cells' in dictionary:
+            dictionary['cells'] = convert_cell_format(nframes, dictionary['cells'])
+
+        for k in ['positions', 'forces']:
+            if k in dictionary:
+                dictionary[k] = dictionary[k].reshape([nframes, -1, 3])
+
+
+        for k in dictionary:
+            if k in Trajectory.per_frame_keys:
+                setattr(self, k, np.copy(dictionary[k]))
+                self.per_frame_attrs += [k]
+            elif k in Trajectory.metadata_keys:
+                setattr(self, k, np.copy(dictionary[k]))
+                self.metadata_attrs += [k]
+            else:
+                logging.info("undefined attributes, set to metadata")
+                setattr(self, k, np.copy(dictionary[k]))
+                self.metadata_attrs += [k]
+        self.sanity_check()
 
     def save(self, name: str, format: str = None):
 
@@ -168,8 +196,15 @@ class Trajectory():
                         else:
                             getattr(self, k).append(dictionary[k][i])
                     elif dictionary[k].shape[1] > ori_natom:
-                        raise RuntimeError(f"{k} {dictionary[k].shape} {ori_natom} "
-                                           "cannot be handled")
+                        if dictionary[k].shape[1] % ori_natom == 0:
+                            item = dictionary[k][i].reshape([ori_natom, -1])
+                            if idorder is not None:
+                                getattr(self, k).append(item[idorder])
+                            else:
+                                getattr(self, k).append(item)
+                        else:
+                            raise RuntimeError(f"{k} {dictionary[k].shape} {ori_natom} "
+                                               "cannot be handled")
                     else:
                         getattr(self, k).append(dictionary[k][i])
             else:
@@ -381,5 +416,11 @@ class PaddedTrajectory(Trajectory):
         trj.sanity_check()
         logging.debug(f"! return {trj}")
 
+        return trj
+
+    @staticmethod
+    def from_dict(dictionary):
+        trj = PaddedTrajectory()
+        trj.copy_dict(dictionary)
         return trj
 
