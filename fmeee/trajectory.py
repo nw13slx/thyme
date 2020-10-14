@@ -31,6 +31,10 @@ class Trajectory():
         self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty']
 
     def __repr__(self):
+        s = f"{self.name}: {self.nframes} frames with {self.natom} atoms"
+        return s
+
+    def __str__(self):
         s = f"{self.name}: {self.nframes} frames with {self.natom} atoms\n"
         for k in self.per_frame_attrs:
             s+= f"{k} "
@@ -73,6 +77,14 @@ class Trajectory():
         trj.copy_dict(dictionary)
         return trj
 
+    def to_dict(self):
+        data = {}
+        for k in self.per_frame_attrs:
+            data[k] = getattr(self, k)
+        for k in self.metadata_attrs:
+            data[k] = getattr(self, k)
+        return data
+
     def copy_dict(self, dictionary):
 
         nframes = dictionary['positions'].shape[0]
@@ -93,7 +105,7 @@ class Trajectory():
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
             elif k not in ['per_frame_attrs', 'metadata_attrs']:
-                logging.info(f"undefined attributes {k}, set to metadata")
+                logging.debug(f"undefined attributes {k}, set to metadata")
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
         self.sanity_check()
@@ -119,14 +131,15 @@ class Trajectory():
         elif format == 'npz':
             if '.npz' != name[-4:]:
                 name += '.npz'
-            for k in self.__dict__:
+            data = self.to_dict()
+            for k in data:
                 s = f"write {k}"
                 try:
-                    s += "{self.__dict__[k].shape}"
+                    s += f"{data[k].shape}"
                 except:
-                    s += f"{self.__dict__[k]}"
+                    s += f"{data[k]}"
                 logging.debug(s)
-            np.savez(name, **self.__dict__)
+            np.savez(name, **data)
             logging.info(f"! save as {name}")
         else:
             raise NotImplementedError(f"Output format not supported:"
@@ -324,7 +337,7 @@ class Trajectory():
         trj.sanity_check()
 
         logging.debug(f"skim {self.nframes} to {trj.nframes}")
-        logging.info(f"! generate {trj}")
+        logging.info(f"! generate {repr(trj)}")
 
         return trj
 
@@ -407,16 +420,17 @@ class PaddedTrajectory(Trajectory):
                     setattr(trj, k, getattr(otrj, k))
                     trj.metadata_attrs += [k]
 
-            species = np.hstack([otrj.species, datom*['NA']])
-            trj.symbols = np.vstack([species]*trj.nframes)
-            trj.natoms = np.ones(trj.nframes)*otrj.natom
-            trj.per_frame_attrs += ['symbols']
-            trj.per_frame_attrs += ['natoms']
             trj.name = f"{otrj.name}_padded"
             trj.natom = max_atom
 
+        species = np.hstack([otrj.species, datom*['NA']])
+        trj.symbols = np.vstack([species]*trj.nframes)
+        trj.natoms = np.ones(trj.nframes)*otrj.natom
+        trj.per_frame_attrs += ['symbols']
+        trj.per_frame_attrs += ['natoms']
+
         trj.sanity_check()
-        logging.debug(f"! return {trj}")
+        logging.debug(f"! return {repr(trj)}")
 
         return trj
 

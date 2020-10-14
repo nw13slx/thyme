@@ -46,6 +46,7 @@ class Trajectories():
         init_trj = Trajectory()
         for trj in self.alldata.values():
             ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
+            logging.debug(f"padd {trj.name} to {ptrj}")
             init_trj.add_trj(ptrj)
         return init_trj
 
@@ -56,7 +57,6 @@ class Trajectories():
             name += '.npz'
 
         init_trj = self.to_padded_trajectory()
-        init_trj.save(name)
         init_trj.save(name)
 
     @staticmethod
@@ -83,24 +83,40 @@ class Trajectories():
 
 
     @staticmethod
-    def from_dict(dictionary:dict):
+    def from_dict(dictionary:dict, merge=True):
         """
         convert dictionary to a Trajectory instance
         """
-        pass
-        # alldata = dict(np.load("alldata.npz", allow_pickle=True))
+        trjs = Trajectories()
+        alldata = trjs.alldata
 
-        # trjnames = sort_filenames(alldata)
+        trjnames = sorted(list(dictionary.keys()))
 
-        # positions = []
-        # forces = []
-        # energies = []
-        # cells = []
-        # ntrjs = 0
-        # merge_data = {}
-        # for trjname in trjnames:
-        #     data = alldata[trjname].item()
-        #     count = dict(Counter(data['species']))
+        for trjname in trjnames:
+            try:
+                 data = dictionary[trjname].item()
+                 order, label = species_to_order_label(data['species'])
+            except:
+                 data = dictionary[trjname].item()
+                 order, label = species_to_order_label(data['species'])
+
+            logging.info(f"read {trjname} from dict formula {label}")
+
+            if merge:
+                if label not in alldata:
+                    alldata[label] = Trajectory()
+                    alldata[label].python_list = True
+                alldata[label].add_trj(Trajectory.from_dict(data))
+            else:
+                alldata[trjname] = Trajectory.from_dict(data)
+
+        for label in alldata:
+            alldata[label].convert_to_np()
+            alldata[label].name = f"{label}"
+            logging.info(f"from dict {repr(alldata[label])}")
+
+        return trjs
+
         #     label = "".join([f"{k}{count[k]}" for k in np.sort(list(count.keys()))])
         #     sort_id = np.argsort(data['species'])
         #     if label not in merge_data:
