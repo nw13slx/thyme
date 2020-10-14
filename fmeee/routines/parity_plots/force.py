@@ -19,10 +19,13 @@ def single_plot(forces, pred, prefix, symbol):
 
     layer = int(np.ceil(len(species)/2))
     fig, axs = plt.subplots(layer, 2, figsize=(6.8, 2.5*layer))
-    axsf = []
-    for i in range(layer):
-        for j in range(2):
-            axsf += [axs[i, j]]
+    if layer == 1:
+        axsf = axs
+    else:
+        axsf = []
+        for i in range(layer):
+            for j in range(2):
+                axsf += [axs[i, j]]
 
     for iele, element in enumerate(species):
 
