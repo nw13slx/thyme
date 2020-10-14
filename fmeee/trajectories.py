@@ -1,9 +1,10 @@
+import logging
 import numpy as np
 import pickle
 
 from collections import Counter
 
-from fmeee.trajectory import Trajectory
+from fmeee.trajectory import Trajectory, PaddedTrajectory
 from fmeee.utils.atomic_symbols import species_to_order_label
 
 class Trajectories():
@@ -13,7 +14,7 @@ class Trajectories():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle'] # npz
+        supported_formats = ['pickle', 'padded_mat.npz'] # npz
 
         for detect in supported_formats:
             if detect in name.lower():
@@ -21,18 +22,36 @@ class Trajectories():
                 break
 
         if format is None:
-            format = 'pickle'
+            format = supported_formats[0]
         format = format.lower()
+        if f'{format}' != name[-len(format):]:
+            name += f'.{format}'
 
         if format == 'pickle':
-            if '.pickle' != name[-7:]:
-                name += '.pickle'
             with open(name, 'wb') as f:
                 pickle.dump(self, f)
-
+        elif format == 'padded_mat.npz':
+            self.save_padded_matrices(name)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
+
+    def save_padded_matrices(self, name:str):
+
+        if ".npz" != name[-4:]:
+            name += '.npz'
+
+        max_atom = 0
+        for trj in self.alldata.values():
+            if trj.natom > max_atom:
+                max_atom = trj.natom
+
+        init_trj = Trajectory()
+        for trj in self.alldata.values():
+            ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
+            init_trj.add_trj(ptrj)
+
+        init_trj.save(name)
 
     @staticmethod
     def from_file(name: str, format: str = None):
