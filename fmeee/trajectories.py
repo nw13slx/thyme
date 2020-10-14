@@ -36,10 +36,7 @@ class Trajectories():
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
 
-    def save_padded_matrices(self, name:str):
-
-        if ".npz" != name[-4:]:
-            name += '.npz'
+    def to_padded_trajectory(self):
 
         max_atom = 0
         for trj in self.alldata.values():
@@ -50,7 +47,16 @@ class Trajectories():
         for trj in self.alldata.values():
             ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
             init_trj.add_trj(ptrj)
+        return init_trj
 
+
+    def save_padded_matrices(self, name:str):
+
+        if ".npz" != name[-4:]:
+            name += '.npz'
+
+        init_trj = self.to_padded_trajectory()
+        init_trj.save(name)
         init_trj.save(name)
 
     @staticmethod

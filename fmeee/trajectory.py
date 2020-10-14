@@ -292,6 +292,15 @@ class Trajectory():
 
         return trj
 
+    def shuffle(self):
+
+        self.convert_to_np()
+
+        frame_list = np.random.permutation(self.nframes)
+
+        for k in self.per_frame_attrs:
+            setattr(self, k, getattr(self, k)[frame_list])
+
     def copy(self, otrj):
 
         for k in otrj.per_frame_attrs:
