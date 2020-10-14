@@ -128,6 +128,14 @@ class Trajectories():
 
         # return 0
 
+    @property
+    def nframes(self):
+        nframes = 0
+        for trj in self.alldata.values():
+            nframes += trj.nframes
+        return nframes
+
+
     @staticmethod
     def from_padded_matrices(dictionary:dict,
                              per_frame_attr:list =None):

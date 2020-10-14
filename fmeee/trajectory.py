@@ -98,7 +98,7 @@ class Trajectory():
                     s += f"{self.__dict__[k]}"
                 logging.debug(s)
             np.savez(name, **self.__dict__)
-            logging.info(f"save as {name}")
+            logging.info(f"! save as {name}")
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
@@ -276,15 +276,19 @@ class Trajectory():
 
         trj = Trajectory()
         trj.empty = False
-        trj.nframes = len(frame_list)
-
         for k in self.per_frame_attrs:
             setattr(trj, k, getattr(self, k)[frame_list])
+            trj.per_frame_attrs += [k]
         for k in self.metadata_attrs:
             setattr(trj, k, getattr(self, k))
+            trj.metadata_attrs += [k]
         trj.python_list = False
         trj.name = f"{self.name}_{trj.nframes}"
+        trj.nframes = len(frame_list)
         trj.sanity_check()
+
+        logging.debug(f"skim {self.nframes} to {trj.nframes}")
+        logging.info(f"! generate {trj}")
 
         return trj
 

@@ -34,7 +34,7 @@ def species_to_order_label(symbol):
 def species_to_idgroups(symbol):
 
     idgroups = []
-    symbol_list = set(list(symbol))
+    symbol_list = list(set(list(symbol)))
     for k in symbol_list:
         idgroups += [[i for i, s in enumerate(symbol) if s==k]]
     return symbol_list, idgroups
