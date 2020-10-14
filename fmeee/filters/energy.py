@@ -2,15 +2,15 @@ import logging
 import numpy as np
 
 from fmeee.utils.atomic_symbols import species_to_idgroups
+from fmeee.trajectory import PaddedTrajectory
 
 def lowe(trj, chosen_specie=None, chosen_count=0):
     """
     """
 
     sorted_id = np.argsort(trj.energies)
-    print(trj.per_frame_attrs)
     if chosen_specie is not None:
-        if 'natoms' in trj.per_frame_attrs:
+        if isinstance(trj, PaddedTrajectory):
             for i in sorted_id:
                 ncount=len([idx for idx in range(trj.natom) if trj.symbols[i][idx]==chosen_specie])
                 if ncount >= chosen_count:
