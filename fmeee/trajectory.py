@@ -133,12 +133,13 @@ class Trajectory():
                 name += '.npz'
             data = self.to_dict()
             for k in data:
-                s = f"write {k}"
                 try:
+                    s = f"write {k}"
                     s += f"{data[k].shape}"
                 except:
-                    s += f"{data[k]}"
-                logging.debug(s)
+                    pass
+                    # s += f"{data[k]}"
+                logging.info(s)
             np.savez(name, **data)
             logging.info(f"! save as {name}")
         else:
