@@ -9,15 +9,16 @@ class Trajectory():
     per_frame_keys = ["positions", "forces", "energies",
                       "cells"]
     metadata_keys = ["dipole_correction", "species",
-                "nelm", "nframes", "cutoff",
-                "natom", "kpoints"]
+                     "nelm", "nframes", "cutoff",
+                     "natom", "kpoints", "empty",
+                     "python_list", "name"]
 
     def __init__(self):
         """
         dummy init. do nothing
         """
 
-        allkeys = Trajectory.per_frame_keys + Trajectory.metadata_keys
+        allkeys = type(self).per_frame_keys + type(self).metadata_keys
         for k in allkeys:
             setattr(self, k, None)
 
@@ -85,14 +86,14 @@ class Trajectory():
 
 
         for k in dictionary:
-            if k in Trajectory.per_frame_keys:
+            if k in type(self).per_frame_keys:
                 setattr(self, k, np.copy(dictionary[k]))
                 self.per_frame_attrs += [k]
-            elif k in Trajectory.metadata_keys:
+            elif k in type(self).metadata_keys:
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
-            else:
-                logging.info("undefined attributes, set to metadata")
+            elif k not in ['per_frame_attrs', 'metadata_attrs']:
+                logging.info(f"undefined attributes {k}, set to metadata")
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
         self.sanity_check()
@@ -154,7 +155,7 @@ class Trajectory():
         else:
             raise NotImplementedError("add numpy arrays")
 
-        self.natom = natom
+        self.natom = int(natom)
         self.species = species
         self.empty = False
         for k in ['natom', 'species']:
@@ -350,8 +351,7 @@ class Trajectory():
 
 class PaddedTrajectory(Trajectory):
 
-    per_frame_keys = ["natoms", "symbols"]
-    per_frame_keys.append(Trajectory.per_frame_keys)
+    per_frame_keys = ["natoms", "symbols"] + Trajectory.per_frame_keys
 
     def __init__(self):
         Trajectory.__init__(self)
@@ -361,6 +361,8 @@ class PaddedTrajectory(Trajectory):
         if 'species' in self.metadata_attrs:
             del self.species
             self.metadata_attrs.remove('species')
+        if 'natoms' in self.per_frame_attrs:
+            self.natoms = np.array(self.natoms, dtype=int)
 
     @staticmethod
     def from_trajectory(otrj, max_atom):
