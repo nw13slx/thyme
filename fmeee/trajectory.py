@@ -70,6 +70,15 @@ class Trajectory():
 
         self.metadata_attrs = list(set(self.metadata_attrs))
 
+    @staticmethod
+    def from_file(filename):
+        trj = Trajectory()
+        if ".npz" == filename[-4:]:
+            dictionary = dict(np.load(filename, allow_pickle=True))
+            trj.copy_dict(dictionary)
+        else:
+            raise NotImplementedError(f"{filename} format not supported")
+        return trj
 
     @staticmethod
     def from_dict(dictionary):
@@ -105,7 +114,7 @@ class Trajectory():
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
             elif k not in ['per_frame_attrs', 'metadata_attrs']:
-                logging.debug(f"undefined attributes {k}, set to metadata")
+                logging.info(f"undefined attributes {k}, set to metadata")
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
         self.sanity_check()
@@ -438,5 +447,15 @@ class PaddedTrajectory(Trajectory):
     def from_dict(dictionary):
         trj = PaddedTrajectory()
         trj.copy_dict(dictionary)
+        return trj
+
+    @staticmethod
+    def from_file(filename):
+        trj = PaddedTrajectory()
+        if ".npz" == filename[-4:]:
+            dictionary = dict(np.load(filename, allow_pickle=True))
+            trj.copy_dict(dictionary)
+        else:
+            raise NotImplementedError(f"{filename} format not supported")
         return trj
 
