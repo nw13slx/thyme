@@ -47,8 +47,8 @@ def single_plot(forces, pred, prefix, symbol):
         if iele%2 == 0:
             axsf[iele].set_ylabel("Predicted energies (eV)")
 
-    axs[layer-1, 0].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
-    axs[layer-1, 1].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
+    axsf[-1].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
+    axsf[-2].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
 
     fig.tight_layout()
     fig.savefig(f"{prefix}force.png", dpi=300)
