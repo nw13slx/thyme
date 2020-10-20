@@ -142,12 +142,13 @@ class Trajectory():
                 name += '.npz'
             data = self.to_dict()
             for k in data:
-                s = f"write {k}"
                 try:
+                    s = f"write {k}"
                     s += f"{data[k].shape}"
                 except:
-                    s += f"{data[k]}"
-                logging.debug(s)
+                    pass
+                    # s += f"{data[k]}"
+                logging.info(s)
             np.savez(name, **data)
             logging.info(f"! save as {name}")
         else:
@@ -267,7 +268,24 @@ class Trajectory():
 
             self.convert_to_np()
 
-            assert self.natom == trj.natom
+            if isinstance(self, Trajectory):
+                assert type(self) == type(trj)
+
+            if self.natom != trj.natom and isinstance(self, PaddedTrajectory):
+                logging.info(f"adding trajectory with different number of atoms {trj.natom}")
+                max_atoms = np.max([self.natom, trj.natom])
+                if self.natom < max_atoms:
+                    logging.info(f"padd original trj")
+                    padded_trj = PaddedTrajectory.from_trajectory(self, max_atoms)
+                    self.copy(padded_trj)
+                else:
+                    logging.info(f"padd the added trj")
+                    newtrj = PaddedTrajectory.from_trajectory(trj, max_atoms)
+                    trj = newtrj
+            elif self.natom != trj.natom:
+                logging.info(f"adding trajectory with different number of atoms {trj.natom}")
+                raise RuntimeError(f"Trajectory cannot be padded during adding."
+                                   " Please initialize as a PaddedTrajectory")
 
             for k in self.per_frame_attrs:
                 item = getattr(trj, k)
@@ -361,6 +379,14 @@ class Trajectory():
 
     def copy(self, otrj):
 
+        for k in self.per_frame_attrs:
+            delattr(self, k)
+        self.per_frame_attrs = []
+        for k in self.metadata_attrs:
+            delattr(self, k)
+        self.metadata_attrs = []
+        self.empty = True
+
         for k in otrj.per_frame_attrs:
             setattr(self, k, deepcopy(getattr(otrj, k)))
             self.per_frame_attrs += [k]
@@ -383,8 +409,13 @@ class PaddedTrajectory(Trajectory):
         if 'species' in self.metadata_attrs:
             del self.species
             self.metadata_attrs.remove('species')
-        if 'natoms' in self.per_frame_attrs:
-            self.natoms = np.array(self.natoms, dtype=int)
+
+        assert 'natoms' in self.per_frame_attrs
+        assert 'symbols' in self.per_frame_attrs
+        self.natoms = np.array(self.natoms, dtype=int)
+
+        if 'natom' not in self.metadata_attrs:
+            self.natom = self.positions.shape[1]
 
     @staticmethod
     def from_trajectory(otrj, max_atom):
@@ -407,6 +438,7 @@ class PaddedTrajectory(Trajectory):
                 trj.per_frame_attrs += [k]
                 item = getattr(otrj, k)
                 dim = len(item.shape)
+                logging.debug(f"{k} before padding {item.shape}")
 
                 if dim == 1:
                     setattr(trj, k, np.copy(item))
@@ -422,6 +454,7 @@ class PaddedTrajectory(Trajectory):
                         setattr(trj, k, np.copy(item))
                 else:
                     raise RuntimeError(f"{k} is needed")
+                logging.debug(f"{k} after padding {getattr(trj, k).shape}")
 
             trj.metadata_attrs = []
             for k in otrj.metadata_attrs:
@@ -432,11 +465,18 @@ class PaddedTrajectory(Trajectory):
             trj.name = f"{otrj.name}_padded"
             trj.natom = max_atom
 
-        species = np.hstack([otrj.species, datom*['NA']])
-        trj.symbols = np.vstack([species]*trj.nframes)
-        trj.natoms = np.ones(trj.nframes)*otrj.natom
-        trj.per_frame_attrs += ['symbols']
-        trj.per_frame_attrs += ['natoms']
+        if isinstance(trj, PaddedTrajectory):
+            pad = np.array([['0']*datom]*trj.nframes)
+            trj.symbols = np.hstack((otrj.symbols, pad))
+            print(trj.symbols.shape)
+            pad = np.zeros(trj.nframes, datom)
+            print(trj.natoms.shape)
+        else:
+            species = np.hstack([otrj.species, datom*['NA']])
+            trj.symbols = np.vstack([species]*trj.nframes)
+            trj.natoms = np.ones(trj.nframes)*otrj.natom
+            trj.per_frame_attrs += ['symbols']
+            trj.per_frame_attrs += ['natoms']
 
         trj.sanity_check()
         logging.debug(f"! return {repr(trj)}")
