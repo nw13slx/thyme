@@ -12,8 +12,8 @@ def lowe(trj, chosen_specie=None, chosen_count=0):
     if chosen_specie is not None:
         if isinstance(trj, PaddedTrajectory):
             for i in sorted_id:
-                ncount=len([idx for idx in range(trj.natom) if trj.symbols[i][idx]==chosen_specie])
-                if ncount >= chosen_count:
+                ncount=len([idx for idx in range(trj.natoms[i]) if trj.symbols[i][idx]==chosen_specie])
+                if ncount == chosen_count:
                     return i
         else:
             ncount=len([idx for idx in range(trj.natom) if trj.species[idx]==chosen_specie])

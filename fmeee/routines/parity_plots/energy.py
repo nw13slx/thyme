@@ -21,7 +21,7 @@ def single_plot(energies, pred, prefix, shift=[0]):
     ax.set_xlabel("DFT energies (eV)")
     ax.set_ylabel("Predicted energies (eV)")
     xlims = ax.get_xlim()
-    for s in shift:
+    for s in [shift[0]]:
         ax.plot(xlims, xlims-s, '--', zorder=1, label=f"shift {s}")
     ax.set_title(f"{prefix}")
     ax.legend()
