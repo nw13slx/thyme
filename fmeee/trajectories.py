@@ -1,3 +1,10 @@
+"""
+Data structure that contains a collection of trajectory objects
+
+Lixin Sun (Harvard University)
+2020
+"""
+
 import logging
 import numpy as np
 import pickle
@@ -74,17 +81,17 @@ class Trajectories():
 
     @staticmethod
     def from_file(name: str, format: str = None):
+        """
+        pickle format: previous objects saved as pickle format
+        padded_mat.npz: contains matrices that can be parsed by PaddedTrajectory
+                        from file loader. and then the frames are partitioned
+                        such that eacy trajectory has the same number of atoms
+                        and same order of species
+        """
 
         supported_formats = ['pickle', 'padded_mat.npz'] # npz
 
-        for detect in supported_formats:
-            if detect in name.lower():
-                format = detect
-                break
-
-        if format is None:
-            format = 'pickle'
-        format = format.lower()
+        format, newname = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
             with open(name, 'rb') as f:
@@ -104,6 +111,9 @@ class Trajectories():
         """
         convert dictionary to a Trajectory instance
         """
+
+        raise NotImplementedError("this part need to be double check!")
+
         trjs = Trajectories()
         alldata = trjs.alldata
 
@@ -223,5 +233,4 @@ class Trajectories():
             alldata[label].convert_to_np()
 
         return trjs
-
 

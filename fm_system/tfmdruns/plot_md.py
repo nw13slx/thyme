@@ -11,7 +11,7 @@ from fmeee.routines.parity_plots.force import multiple_plots
 
 # dictionary = dict(np.load(sys.argv[1], allow_pickle=True))
 
-trjs = Trajectories.from_file(sys.argv[1], format="padded_mat.npz")
+trjs = Trajectories.from_file(sys.argv[1])
 trjs.save("trjs.pickle")
 
 for trj in trjs.alldata.values():
