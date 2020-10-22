@@ -420,10 +420,13 @@ class PaddedTrajectory(Trajectory):
             self.natom = self.positions.shape[1]
 
     @staticmethod
-    def from_trajectory(otrj, max_atom):
+    def from_trajectory(otrj, max_atom=-1):
 
         otrj.convert_to_np()
         otrj.sanity_check()
+
+        if max_atom == -1:
+            max_atom = otrj.natom
 
         datom = max_atom-otrj.natom
         trj = PaddedTrajectory()

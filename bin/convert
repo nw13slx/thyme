@@ -1,3 +1,4 @@
+#!/bin/env python
 import sys
 from fmeee.trajectories import Trajectories
 from fmeee.trajectory import Trajectory, PaddedTrajectory

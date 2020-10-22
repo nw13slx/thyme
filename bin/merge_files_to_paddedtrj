@@ -1,0 +1,24 @@
+#!/bin/env python
+import sys
+from fmeee.trajectories import Trajectories
+from fmeee.trajectory import Trajectory, PaddedTrajectory
+
+files = sys.argv[1:-1]
+
+types = [Trajectories, Trajectory, PaddedTrajectory]
+
+alldata = PaddedTrajectory()
+for filename in files:
+    for i in types:
+        try:
+            trj = i.from_file(filename)
+            print(f"work with type {i}")
+        except:
+            pass
+    if isinstance(trj, Trajectories):
+        trj = trj.to_padded_trajectory()
+    elif isinstance(trj, Trajectory):
+        trj = PaddedTrajectory.from_trajectory(trj)
+    alldata.add_trj(trj)
+
+alldata.save(sys.argv[-1])
