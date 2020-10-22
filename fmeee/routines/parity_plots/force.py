@@ -72,8 +72,8 @@ def single_plot(forces, pred, prefix, symbol):
     del fig_hist
     del axs_hist
 
-def multiple_plots(trajectories, pred_label='pred'):
+def multiple_plots(trajectories, pred_label='pred', prefix=""):
 
     for trj in trajectories.alldata.values():
-        single_plot(trj.forces, getattr(trj, pred_label), trj.name, trj.species)
+        single_plot(trj.forces, getattr(trj, pred_label), prefix+trj.name, trj.species)
 

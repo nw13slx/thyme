@@ -30,12 +30,13 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
         new_trj = pack_folder_trj(folder, data_filter)
         if new_trj.nframes >= 1:
             logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
+            new_trj.name = casename
             alldata[casename] = new_trj
             count += 1
             if count%10 == 0 and len(npz_filename)>0:
                 trjs.save(f"{npz_filename}")
         else:
-            logging.info(f"! skip whole folder {casename}, {data['nframes']}")
+            logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
     if len(npz_filename)>0:
         trjs.save(f"{npz_filename}")

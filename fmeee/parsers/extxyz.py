@@ -34,7 +34,7 @@ def pack_folder_trj(folder, data_filter, include_xyz=True):
 
     join_trj = PaddedTrajectory()
     for filename in xyzs:
-        join_trj.add_trj(extxyz_to_padded_trj(filename))
+        join_trj.add_trj(extxyz_to_padded_trj(filename, data_filter))
 
     return join_trj
 
@@ -122,11 +122,20 @@ def extxyz_to_padded_dict(filename):
 
     return dictionary
 
-def extxyz_to_padded_trj(filename):
+def extxyz_to_padded_trj(filename, data_filter):
 
     dictionary = extxyz_to_padded_dict(filename)
 
     trj = PaddedTrajectory.from_dict(dictionary)
+
+    try:
+        accept_id = data_filter(trj)
+        trj.filter_frames(accept_id)
+    except Exception as e:
+        logging.error(f"{e}")
+        logging.error("extxyz only accept batch filter work on paddedtrajectory")
+        raise RuntimeError("")
+
     trj.name = filename
 
     logging.info(f"convert {filename} to {repr(trj)}")

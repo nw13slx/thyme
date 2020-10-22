@@ -2,7 +2,11 @@ import logging
 import numpy as np
 from copy import deepcopy
 
+from ase.io.extxyz import write_xyz as write_extxyz
+from ase.atoms import Atoms
+
 from fmeee.utils.cell import convert_cell_format
+from fmeee.utils.save import sort_format
 
 class Trajectory():
 
@@ -122,17 +126,7 @@ class Trajectory():
     def save(self, name: str, format: str = None):
 
         supported_formats = ['pickle', 'npz'] # npz
-
-        for detect in supported_formats:
-            if detect in name.lower():
-                format = detect
-                break
-
-        if format is None:
-            format = supported_formats[0]
-        format = format.lower()
-        if f'{format}' != name[-len(format):]:
-            name += f'.{format}'
+        format, name = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
             with open(name, 'wb') as f:
@@ -151,6 +145,13 @@ class Trajectory():
                 logging.info(s)
             np.savez(name, **data)
             logging.info(f"! save as {name}")
+        elif format == 'xyz':
+            for i in range(self.nframes):
+                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
+                                  symbols=self.species,
+                                  positions=self.positions[i].reshape([-1, 3]),
+                                  pbc=True)
+                write_extxyz(name, structure, append=True)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
@@ -419,6 +420,16 @@ class PaddedTrajectory(Trajectory):
         if 'natom' not in self.metadata_attrs:
             self.natom = self.positions.shape[1]
 
+    def filter_frames(self, accept_id=None):
+
+        if accept_id is None:
+            return
+
+        for k in self.per_frame_attrs:
+            new_mat = getattr(self, k)[accept_id]
+            setattr(self, k, new_mat)
+        self.nframes = len(accept_id)
+
     @staticmethod
     def from_trajectory(otrj, max_atom=-1):
 
@@ -504,3 +515,22 @@ class PaddedTrajectory(Trajectory):
             raise NotImplementedError(f"{filename} format not supported")
         return trj
 
+    def save(self, name: str, format: str = None):
+
+        supported_formats = ['pickle', 'npz', 'xyz'] # npz
+
+        format, name = sort_format(supported_formats, format, name)
+
+        if format in ['pickle', 'npz']:
+            Trajectory.save(self, name, format)
+        elif format == 'xyz':
+            for i in range(self.nframes):
+                natom = self.natoms[i]
+                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
+                                  symbols=self.symbols[i][:natom],
+                                  positions=self.positions[i][:natom].reshape([natom, 3]),
+                                  pbc=True)
+                write_extxyz(name, structure, append=True)
+        else:
+            raise NotImplementedError(f"Output format not supported:"
+                                      f" try from {supported_formats}")

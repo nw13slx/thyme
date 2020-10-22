@@ -6,6 +6,7 @@ from collections import Counter
 
 from fmeee.trajectory import Trajectory, PaddedTrajectory
 from fmeee.utils.atomic_symbols import species_to_order_label
+from fmeee.utils.save import sort_format
 
 class Trajectories():
 
@@ -14,18 +15,8 @@ class Trajectories():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'padded_mat.npz', 'npz']
-
-        for detect in supported_formats:
-            if detect in name.lower():
-                format = detect
-                break
-
-        if format is None:
-            format = supported_formats[0]
-        format = format.lower()
-        if f'{format}' != name[-len(format):]:
-            name += f'.{format}'
+        supported_formats = ['pickle', 'padded_mat.npz', 'npz', 'xyz']
+        format, name = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
             with open(name, 'wb') as f:
@@ -34,6 +25,9 @@ class Trajectories():
             self.save_padded_matrices(name)
         elif format == 'npz':
             self.save_npz(name)
+        elif format == 'xyz':
+            trj = self.to_padded_trajectory()
+            trj.save(name, format)
         else:
             raise NotImplementedError(f"Output format {format} not supported:"
                                       f" try from {supported_formats}")
@@ -81,7 +75,7 @@ class Trajectories():
     @staticmethod
     def from_file(name: str, format: str = None):
 
-        supported_formats = ['pickle'] # npz
+        supported_formats = ['pickle', 'padded_mat.npz'] # npz
 
         for detect in supported_formats:
             if detect in name.lower():
@@ -96,6 +90,10 @@ class Trajectories():
             with open(name, 'rb') as f:
                 trjs = pickle.load(f)
             return trjs
+        elif format == 'padded_mat.npz':
+            dictionary = dict(np.load(name,
+                                      allow_pickle=True))
+            return Trajectories.from_padded_matrices(dictionary)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")

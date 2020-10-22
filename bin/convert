@@ -15,4 +15,5 @@ for i in types:
     except:
         pass
 
+print(f"try to save as {file2}")
 trjs.save(file2)
