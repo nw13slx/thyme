@@ -4,8 +4,10 @@ plt.switch_backend('agg')
 import numpy as np
 
 from fmeee.routines.parity_plots.setup import tabcolors
+from fmeee.routines.dist_plots.base import base_hist
 
-def base_parity(reference, prediction, prefix, postfix, xlabel, ylabel, shift=[0]):
+def base_parity(reference, prediction, prefix, postfix, xlabel, ylabel, shift=[0],
+                scatter_skip=0):
     """
     """
 
@@ -19,7 +21,7 @@ def base_parity(reference, prediction, prefix, postfix, xlabel, ylabel, shift=[0
 
     # for each config, compute the possible shift
     fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
-    axs[0].scatter(reference, prediction, linewidths=0.5, edgecolors='k',
+    axs[0].scatter(reference[::scatter_skip], prediction[::scatter_skip], linewidths=0.5, edgecolors='k',
                label=f"mae {mae:.2f} rmse {rmse:.2f}")
     axs[0].set_xlabel(xlabel)
     axs[0].set_ylabel(ylabel)
@@ -31,10 +33,8 @@ def base_parity(reference, prediction, prefix, postfix, xlabel, ylabel, shift=[0
     axs[0].set_title(f"{prefix}")
     axs[0].legend()
 
-    axs[1].hist(prediction-reference, zorder=1, bins=50,
-               label=f"mae {mae:.2f} rmse {rmse:.2f}")
-    axs[1].set_xlabel("Prediction - Reference")
-    axs[1].set_ylabel("Counts")
+    base_hist(axs[1], prediction-reference, "Prediction - Reference",
+              lims=[None, None])
     for s in shift:
         axs[1].axvline(x=-s, linestyle='--', color='k', zorder=0)
     if len(shift) == 0:
