@@ -1,15 +1,47 @@
 import logging
 import numpy as np
 
-from fmeee.parsers.monty import read_pattern, read_table_pattern
-from fmeee.trajectory import PaddedTrajectory
+from glob import glob
 
 from ase.io.extxyz import key_val_str_to_dict, parse_properties
+
+from fmeee.parsers.monty import read_pattern, read_table_pattern
+from fmeee.trajectory import PaddedTrajectory
+from fmeee.routines.folders import find_folders, find_folders_matching
 
 fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
 sfl_num = r"\s+([+-]?\d+.\d+[eE]?[+-]?\d*)"
 
-def extxyz_to_padded_trj(filename):
+def get_childfolders(path, include_xyz=True):
+
+    if include_xyz:
+        return find_folders_matching(['*.xyz', '*.extxyz'], path)
+    else:
+        return find_folders_matching(['*.extxyz'], path)
+
+def pack_folder(folder, data_filter, include_xyz=True):
+
+    data = dict(
+        nframes = 0,
+    )
+
+    xyzs = glob(f"{folder}/*.extxyz")
+    if include_xyz:
+        xyzs += glob(f"{folder}/*.xyz")
+
+    hasxyz = len(xyzs) > 0
+    if not hasxyz:
+        return data
+
+    join_trj = PaddedTrajectory()
+    for filename in xyzs:
+        join_trj.add_trj(extxyz_to_padded_trj(filename))
+    data = join_trj.to_dict()
+    data['path'] = folder
+
+    return data
+
+def extxyz_to_padded_dict(filename):
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
@@ -75,12 +107,19 @@ def extxyz_to_padded_trj(filename):
         natoms=natoms,
         natom=max_atoms
     )
+
+    # double check all arrays have the same number of frames
     nframes = []
     for k in dictionary:
         if k!= 'natom':
             nframes += [dictionary[k].shape[0]]
-
     assert len(set(nframes)) == 1
+
+    return dictionary
+
+def extxyz_to_padded_trj(filename):
+
+    dictionary = extxyz_to_padded_dict(filename)
 
     trj = PaddedTrajectory.from_dict(dictionary)
     trj.name = filename
@@ -91,6 +130,7 @@ def extxyz_to_padded_trj(filename):
     return trj
 
 def posforce_regex(filename):
+
     with open(filename) as fin:
         fin.readline()
         line = fin.readline()

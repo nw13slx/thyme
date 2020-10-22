@@ -17,7 +17,7 @@ from fmeee.trajectories import Trajectories
 def main():
 
     join_trj = PaddedTrajectory()
-    for filename in glob("*.extxyz"):
+    for filename in glob("*.xyz"):
         join_trj.add_trj(extxyz_to_padded_trj(filename))
     join_trj.save(f"{join_trj.nframes}frames.npz")
 #     folders = get_childfolders("./")

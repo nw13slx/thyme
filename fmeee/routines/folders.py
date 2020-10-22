@@ -45,10 +45,9 @@ def find_folders_matching(filenames, path):
     folders = []
     for root, dirs, files in walk("./"):
         for filename in filenames:
-            if len(glob(filename)) > 0:
+            if len(glob(f"{root}/{filename}")) > 0:
                 folders += [root]
     return set(folders)
-
 
 def find_folders(filenames, path):
 
