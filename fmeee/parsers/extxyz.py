@@ -4,28 +4,47 @@ import numpy as np
 from fmeee.parsers.monty import read_pattern, read_table_pattern
 from fmeee.trajectory import PaddedTrajectory
 
+from ase.io.extxyz import key_val_str_to_dict, parse_properties
+
+fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
+sfl_num = r"\s+([+-]?\d+.\d+[eE]?[+-]?\d*)"
+
 def extxyz_to_padded_trj(filename):
+
+    string, index = posforce_regex(filename)
+    logging.debug(f"use regex {string} to parse for posforce")
+    logging.debug(f"posindex {index}")
+
     logging.info(f"converting {filename}")
-    fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
-    sfl_num = r"\s+([+-]?\d+.\d+[eE]?[+-]?\d*)"
     d = \
         read_pattern(filename,
                      {'natoms':r"^([0-9]+)$",
                       'cells':r"Lattice=\""+fl_num+sfl_num+sfl_num \
                       +sfl_num+sfl_num+sfl_num \
                       +sfl_num+sfl_num+sfl_num+r"\"",
-                      'energies':r"free_energy="+fl_num,
-                      'posforce': r"^\w+"+sfl_num+sfl_num+sfl_num \
-                      +"\s+[A-Z]\s+\d"+sfl_num+sfl_num+sfl_num,
+                      'free_energies':r"free_energy="+fl_num,
+                      'energies':r"energy="+fl_num,
+                      'posforce': string,
                       'symbols':r"^([a-zA-Z]+)\s"
                       })
-    natoms = np.array(d['natoms'], dtype=int).reshape([-1])
-    cells = np.array(d['cells'], dtype=float).reshape([-1, 3, 3])
-    energies = np.array(d['energies'], dtype=float).reshape([-1])
-    posforce = np.array(d['posforce'], dtype=float).reshape([-1, 6])
 
-    positions = posforce[:, :3]
-    forces = posforce[:, 3:]
+    natoms = np.array(d['natoms'], dtype=int).reshape([-1])
+    logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
+
+    if len(d['free_energies']) > 0:
+        energies = np.array(d['free_energies'], dtype=float).reshape([-1])
+        logging.debug("use free_energies tag for energies")
+    else:
+        energies = np.array(d['energies'], dtype=float).reshape([-1])
+        logging.debug("use energies tag for energies")
+
+    cells = np.array(d['cells'], dtype=float).reshape([-1, 3, 3])
+
+    posforce = np.array(d['posforce'], dtype=float).reshape([-1, 6])
+    positions = posforce[:, index['pos']:index['pos']+3]
+    forces = posforce[:, index['forces']:index['forces']+3]
+    logging.debug(f"pos.shape {positions.shape} force.shape {forces.shape}")
+
     symbols = np.array(d['symbols'], dtype=str).reshape([-1])
 
     max_atoms = np.max(natoms)
@@ -71,6 +90,41 @@ def extxyz_to_padded_trj(filename):
 
     return trj
 
-#  71
-#   Lattice="9.18446134 0.0 0.0 0.0 22.63986204 -4.15391219 0.0 0.0 29.07738533"                  Properties=species:S:1:pos:R:3:move_mask:L:1:tags:I:1:forces:R:3 energy=-181.54722937         free_energy=-181.54878652 pbc="T T T"
-#
+def posforce_regex(filename):
+    with open(filename) as fin:
+        fin.readline()
+        line = fin.readline()
+        info = key_val_str_to_dict(line)
+    properties, properties_list, dtype, convertesr \
+        = parse_properties(info['Properties'])
+
+    string = ""
+    pos_id = -1
+    forces_id = -1
+    index = {'pos':0, 'forces':0}
+    item_count = 0
+    for k, v in properties.items():
+        length = v[1]
+        if len(string) > 0:
+            string += r"\s+"
+        if k in ['pos', 'forces']:
+            string += fl_num+r"\s+"+fl_num+r"\s+"+fl_num
+            index[k] = item_count
+        else:
+            for i in range(length):
+                if i>0:
+                    string += r'\s+'
+                if convertesr[item_count+i] == str:
+                    string += r'\w+'
+                elif convertesr[item_count+i] == float:
+                    string += fl_num
+                else:
+                    logging.info(f"parser is not implemented for type {convertesr[item_count+i]}")
+        item_count += length
+    if index['pos'] > index['forces']:
+        index['pos'] = 3
+        index['forces'] = 0
+    else:
+        index['pos'] = 0
+        index['forces'] = 3
+    return string, index
