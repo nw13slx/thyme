@@ -9,13 +9,12 @@ atomic_numbers_dict.update(
      0: 0}
 )
 
-
-
 def species_to_order_label(symbol):
 
     count = dict(Counter(symbol))
-    if 'NA' in count:
-        del count['NA']
+    for i in ['0', 0, 'NA']:
+        if i in count:
+            del count[i]
 
     symbol_list = []
     number_list = []
