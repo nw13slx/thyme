@@ -269,7 +269,9 @@ class Trajectory():
             self.convert_to_np()
 
             if isinstance(self, Trajectory):
-                assert type(self) == type(trj)
+                if type(self) != type(trj):
+                    logging.error(f"type {type(self)} != type {type(trj)}")
+                    raise RuntimeError("")
 
             if self.natom != trj.natom and isinstance(self, PaddedTrajectory):
                 logging.info(f"adding trajectory with different number of atoms {trj.natom}")

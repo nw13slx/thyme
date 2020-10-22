@@ -2,6 +2,7 @@ import logging
 import numpy as np
 
 from glob import glob
+from os.path import getmtime
 
 from ase.io.extxyz import key_val_str_to_dict, parse_properties
 
@@ -19,11 +20,7 @@ def get_childfolders(path, include_xyz=True):
     else:
         return find_folders_matching(['*.extxyz'], path)
 
-def pack_folder(folder, data_filter, include_xyz=True):
-
-    data = dict(
-        nframes = 0,
-    )
+def pack_folder_trj(folder, data_filter, include_xyz=True):
 
     xyzs = glob(f"{folder}/*.extxyz")
     if include_xyz:
@@ -33,11 +30,19 @@ def pack_folder(folder, data_filter, include_xyz=True):
     if not hasxyz:
         return data
 
+    xyzs = sorted(xyzs, key=getmtime)
+
     join_trj = PaddedTrajectory()
     for filename in xyzs:
         join_trj.add_trj(extxyz_to_padded_trj(filename))
+
+    return join_trj
+
+def pack_folder(folder, data_filter, include_xyz=True):
+
+    join_trj = pack_folder_trj(folder, data_filter, include_xyz)
+
     data = join_trj.to_dict()
-    data['path'] = folder
 
     return data
 

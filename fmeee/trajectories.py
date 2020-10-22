@@ -14,7 +14,7 @@ class Trajectories():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'padded_mat.npz'] # npz
+        supported_formats = ['pickle', 'padded_mat.npz', 'npz']
 
         for detect in supported_formats:
             if detect in name.lower():
@@ -32,9 +32,20 @@ class Trajectories():
                 pickle.dump(self, f)
         elif format == 'padded_mat.npz':
             self.save_padded_matrices(name)
+        elif format == 'npz':
+            self.save_npz(name)
         else:
-            raise NotImplementedError(f"Output format not supported:"
+            raise NotImplementedError(f"Output format {format} not supported:"
                                       f" try from {supported_formats}")
+
+    def to_dict(self):
+
+        alldata = {}
+
+        for name, trj in self.alldata.items():
+            alldata[name] = trj.to_dict()
+
+        return alldata
 
     def to_padded_trajectory(self):
 
@@ -43,7 +54,7 @@ class Trajectories():
             if trj.natom > max_atom:
                 max_atom = trj.natom
 
-        init_trj = Trajectory()
+        init_trj = PaddedTrajectory()
         for trj in self.alldata.values():
             ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
             logging.debug(f"padd {trj.name} to {ptrj}")
@@ -58,6 +69,14 @@ class Trajectories():
 
         init_trj = self.to_padded_trajectory()
         init_trj.save(name)
+
+    def save_npz(self, name:str):
+
+        if ".npz" != name[-4:]:
+            name += '.npz'
+
+        dictionary = self.to_dict()
+        np.savez(name, **dictionary)
 
     @staticmethod
     def from_file(name: str, format: str = None):

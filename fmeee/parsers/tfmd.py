@@ -7,6 +7,7 @@ from os.path import getmtime
 from fmeee.parsers.monty import read_pattern, read_table_pattern
 from fmeee.parsers.extxyz import extxyz_to_padded_trj
 from fmeee.parsers.extxyz import pack_folder as pack_extxyz_folder
+from fmeee.parsers.extxyz import pack_folder_trj as pack_extxyz_folder_trj
 from fmeee.trajectory import PaddedTrajectory
 from fmeee.routines.folders import find_folders_matching
 
@@ -20,3 +21,7 @@ def get_childfolders(path, include_xyz=True):
 def pack_folder(folder, data_filter, include_xyz=True):
 
     return pack_extxyz_folder(f"{folder}/xyz_strucs", data_filter, include_xyz)
+
+def pack_folder_trj(folder, data_filter, include_xyz=True):
+
+    return pack_extxyz_folder_trj(f"{folder}/xyz_strucs", data_filter, include_xyz)

@@ -6,13 +6,14 @@ logging.getLogger().addHandler(logging.StreamHandler())
 import numpy as np
 from ase.atoms import Atoms
 
-from fmeee.routines.folders import parse_folders
-from fmeee.parsers.tfmd import pack_folder, get_childfolders
+from fmeee.routines.folders import parse_folders_trjs
+from fmeee.parsers.tfmd import pack_folder_trj, get_childfolders
 
 def main():
 
     folders = get_childfolders("./", include_xyz = True)
-    parse_folders(folders, pack_folder, e_filter, "all_data")
+    trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data.pickle")
+    trjs.save("alldata_padded_mat.npz")
 
 def e_filter(xyz, f, e, c, species):
     return True
