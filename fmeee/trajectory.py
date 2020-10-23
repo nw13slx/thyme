@@ -28,6 +28,8 @@ class Trajectory():
             setattr(self, k, None)
 
         self.nframes = 0
+        self.natom = 0
+        self.species = []
         self.python_list = False
         self.empty = True
         self.name = ""
@@ -111,6 +113,15 @@ class Trajectory():
         return data
 
     def copy_dict(self, dictionary):
+        """
+
+        requirement
+
+        positions: nframe x ?
+        cells
+        forces
+
+        """
 
         nframes = dictionary['positions'].shape[0]
 
@@ -427,7 +438,9 @@ class PaddedTrajectory(Trajectory):
         Trajectory.__init__(self)
 
     def sanity_check(self):
+
         Trajectory.sanity_check(self)
+
         if 'species' in self.metadata_attrs:
             del self.species
             self.metadata_attrs.remove('species')
@@ -490,16 +503,16 @@ class PaddedTrajectory(Trajectory):
             trj.name = f"{otrj.name}_padded"
             trj.natom = max_atom
 
-        if isinstance(trj, PaddedTrajectory):
-            pad = np.array([['0']*datom]*trj.nframes)
-            trj.symbols = np.hstack((otrj.symbols, pad))
-            pad = np.zeros((trj.nframes, datom))
-        else:
-            species = np.hstack([otrj.species, datom*['NA']])
-            trj.symbols = np.vstack([species]*trj.nframes)
-            trj.natoms = np.ones(trj.nframes)*otrj.natom
-            trj.per_frame_attrs += ['symbols']
-            trj.per_frame_attrs += ['natoms']
+            if isinstance(otrj, PaddedTrajectory):
+                pad = np.array([['0']*datom]*trj.nframes)
+                trj.symbols = np.hstack((otrj.symbols, pad))
+                pad = np.zeros((trj.nframes, datom))
+            else:
+                species = np.hstack([otrj.species, datom*['NA']])
+                trj.symbols = np.vstack([species]*trj.nframes)
+                trj.natoms = np.ones(trj.nframes)*otrj.natom
+                trj.per_frame_attrs += ['symbols']
+                trj.per_frame_attrs += ['natoms']
 
         trj.sanity_check()
         logging.debug(f"! return {repr(trj)}")
@@ -549,3 +562,29 @@ class PaddedTrajectory(Trajectory):
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
+
+    def copy(self, otrj):
+
+        for k in self.per_frame_attrs:
+            delattr(self, k)
+        self.per_frame_attrs = []
+        for k in self.metadata_attrs:
+            delattr(self, k)
+        self.metadata_attrs = []
+        self.empty = True
+
+        for k in otrj.per_frame_attrs:
+            setattr(self, k, deepcopy(getattr(otrj, k)))
+            self.per_frame_attrs += [k]
+        for k in otrj.metadata_attrs:
+            setattr(self, k, deepcopy(getattr(otrj, k)))
+            self.metadata_attrs += [k]
+        self.empty = otrj.empty
+
+        if isinstance(otrj, Trajectory) and not isinstance(otrj, PaddedTrajectory):
+            self.natoms = np.ones(otrj.nframes)*otrj.natom
+            self.symbols = np.vstack([otrj.species]*otrj.nframes)
+            self.per_frame_attrs += ['natoms']
+            self.per_frame_attrs += ['symbols']
+
+        self.sanity_check()

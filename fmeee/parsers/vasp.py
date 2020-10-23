@@ -5,6 +5,7 @@ import time
 
 from fmeee.parsers.monty import read_pattern, read_table_pattern
 from fmeee.routines.folders import find_folders
+from fmeee.trajectory import Trajectory
 
 from collections import Counter
 from os.path import isfile
@@ -18,41 +19,20 @@ def get_childfolders(path):
 
 def pack_folder_trj(folder, data_filter):
 
-    data = pack_folder(folder, data_filter)
-    trj = Trajectory.from_dict(data)
-    return trj
+    return pack_folder_trj(folder, data_filter)
 
-
-def pack_folder(folder, data_filter):
-
-    data = dict(
-        positions = None,
-        forces = None,
-        energies = None,
-        cells = None,
-        nelm = None,
-        nframes = 0,
-        cutoff = None,
-        dipole_correction = None,
-        species = None,
-        natom = None,
-        kpoints = None
-    )
+def pack_folder_trj(folder, data_filter):
 
     if folder == "./":
         folder = "."
 
-    meta = parse_outcar(folder, data_filter)
-    if len(meta) > 1:
-        data.update(meta)
-    else:
-        meta = parse_vasprun(folder, data_filter)
-        if len(meta) > 1:
-            data.update(meta)
-    return data
+    trj = parse_outcar_trj(folder, data_filter)
+    if trj.nframes < 1:
+        trj = parse_vasprun_trj(folder, data_filter)
+    return trj
 
 
-def parse_outcar(folder, data_filter):
+def parse_outcar_trj(folder, data_filter):
 
     data = {}
 
@@ -126,14 +106,16 @@ def parse_outcar(folder, data_filter):
                                            {'n_e_iter':r"Iteration\s+(\d+)\s?\(\s+\d+\)"},
                                             postprocess=lambda x: int(x))
     n_electronic_steps = np.array(d_n_e_iter['n_e_iter'], dtype=int).reshape([-1])
-    logging.debug("grep time {time.time()-t}")
+    logging.info(f"Outcar grep time {time.time()-t}")
+    logging.info("loaded outcar")
 
+    t = time.time()
     try:
         incar = Incar.from_file(filename)
     except Exception as e:
         logging.info("fail to load outcar", e)
         return {}
-    logging.info("load outcar")
+    logging.info(f"Incar grep time {time.time()-t}")
 
     nelm = incar['NELM']
     data['nelm'] = nelm
@@ -158,81 +140,89 @@ def parse_outcar(folder, data_filter):
     natom = pos_force.shape[1]
     data['natom'] = natom
 
-    cs = cs[converged_steps]
-    xyzs = pos_force[converged_steps, :, :3]
-    fs = pos_force[converged_steps, :, 3:]
-    es = energies[converged_steps]
+    data.update(dict(cells = cs[converged_steps],
+                     positions = pos_force[converged_steps, :, :3],
+                     forces = pos_force[converged_steps, :, 3:],
+                     energies = energies[converged_steps],
+                     species = species
+                     ))
+    trj = Trajectory.from_dict(data)
+
+    try:
+        accept_id = data_filter(trj)
+        trj.filter_frames(accept_id)
+    except Exception as e:
+        logging.error(f"{e}")
+        logging.error("extxyz only accept batch filter work on paddedtrajectory")
+        raise RuntimeError("")
+
+    trj.name = filename
+
+    logging.info(f"convert {filename} to {repr(trj)}")
+    logging.debug(f"{trj}")
+
+    return trj
+
+def parse_vasprun_trj(folder, data_filter):
+
+    if not isfile(filename):
+        return Trajectory()
+
+    data = {}
+    filename = "/".join([folder, "vasprun.xml"])
+
+    try:
+        vasprun = Vasprun(filename, ionic_step_skip=0,
+                          exception_on_bad_xml=False)
+    except Exception as e:
+        logging.info("fail to load vasprun", e)
+        return data
+
+    nelm = vasprun.incar['NELM']
+    data['nelm'] = nelm
+    data['cutoff'] =vasprun.incar['ENCUT']
+    data['dipole_correction'] = vasprun.parameters['LDIPOL']
+    species = vasprun.atomic_symbols
+    data['species'] = species
+    data['natom'] = len(vasprun.atomic_symbols)
+    data['kpoints'] = vasprun.kpoints.kpts[0]
 
     positions = []
     forces = []
     energies = []
     cells = []
-    nframes = xyzs.shape[0]
-    for istep in range(nframes):
-        xyz = xyzs[istep]
-        f = fs[istep]
-        e = es[istep]
-        c = cs[istep]
-        if data_filter(xyz, f, e, c, species):
-            positions += [xyz.reshape([-1])]
-            forces += [np.hstack(f)]
-            energies += [e]
-            cells += [c.reshape([-1])]
-    nframes = len(positions)
-    if nframes >=1 :
-        data['positions'] = np.vstack(positions)
-        data['forces'] = np.vstack(forces)
-        data['energies'] = np.hstack(energies)
-        data['cells'] = np.vstack(cells)
-    data['nframes'] = nframes
-    data['species'] = species
+    electronic_steps = []
+    for step in vasprun.ionic_steps:
+        electronic_steps += [step['electronic_steps']]
+        positions += [step['structure'].cart_coords.reshape([-1])]
+        forces += [np.hstack(step['forces'])]
+        energies += [step['e_fr_energy']]
+        cells += [step['structure'].attice.matrix.reshape([-1])]
 
-    return data
+    data.update(dict(cells = np.vstack(cells),
+                     positions = np.vstack(positions),
+                     forces = np.vstack(forces),
+                     energies = np.hstack(energies),
+                     species = species
+                     ))
+    trj = Trajectory.from_dict(data)
 
-def parse_vasprun(folder, data_filter):
+    accept_id = np.where(np.hstack(electronic_steps)<nelm)[0]
+    reject_id = np.where(np.hstack(electronic_steps)>=nelm)[0]
+    if len(accept_id) < trj.nframes:
+        logging.info(f"skip unconverged step {reject_id}")
+    trj.filter_frames(accept_id)
 
-    data = {}
-    filename = "/".join([folder, "vasprun.xml"])
-    if isfile(filename):
-        try:
-            vasprun = Vasprun(filename, ionic_step_skip=0,
-                              exception_on_bad_xml=False)
-        except Exception as e:
-            logging.info("fail to load vasprun", e)
-            return data
+    try:
+        accept_id = data_filter(trj)
+        trj.filter_frames(accept_id)
+    except Exception as e:
+        logging.error(f"{e}")
+        logging.error("extxyz only accept batch filter work on paddedtrajectory")
+        raise RuntimeError("")
 
-        nelm = vasprun.incar['NELM']
-        data['nelm'] = nelm
-        data['cutoff'] =vasprun.incar['ENCUT']
-        data['dipole_correction'] = vasprun.parameters['LDIPOL']
-        species = vasprun.atomic_symbols
-        data['species'] = species
-        data['natom'] = len(vasprun.atomic_symbols)
-        data['kpoints'] = vasprun.kpoints.kpts[0]
+    trj.name = filename
 
-        positions = []
-        forces = []
-        energies = []
-        cells = []
-        for step in vasprun.ionic_steps:
-            if len(step['electronic_steps']) < nelm:
-                xyz = step['structure'].cart_coords
-                f = step['forces']
-                e = step['e_fr_energy']
-                c = step['structure'].lattice.matrix
-                if data_filter(xyz, f, e, c, species):
-                    positions += [xyz.reshape([-1])]
-                    forces += [np.hstack(f)]
-                    energies += [e]
-                    cells += [c.reshape([-1])]
-            else:
-                logging.info("skip unconverged", len(step['electronic_steps']))
-        nframes = len(positions)
-        if nframes >=1 :
-            data['positions'] = np.vstack(positions)
-            data['forces'] = np.vstack(forces)
-            data['energies'] = np.hstack(energies)
-            data['cells'] = np.vstack(cells)
-        data['nframes'] = nframes
+    logging.info(f"convert {filename} to {repr(trj)}")
 
-    return data
+    return trj
