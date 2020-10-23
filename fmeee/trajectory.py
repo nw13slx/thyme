@@ -114,7 +114,7 @@ class Trajectory():
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
             elif k not in ['per_frame_attrs', 'metadata_attrs']:
-                logging.info(f"undefined attributes {k}, set to metadata")
+                logging.debug(f"undefined attributes {k}, set to metadata")
                 setattr(self, k, np.copy(dictionary[k]))
                 self.metadata_attrs += [k]
         self.sanity_check()
@@ -468,9 +468,7 @@ class PaddedTrajectory(Trajectory):
         if isinstance(trj, PaddedTrajectory):
             pad = np.array([['0']*datom]*trj.nframes)
             trj.symbols = np.hstack((otrj.symbols, pad))
-            print(trj.symbols.shape)
             pad = np.zeros(trj.nframes, datom)
-            print(trj.natoms.shape)
         else:
             species = np.hstack([otrj.species, datom*['NA']])
             trj.symbols = np.vstack([species]*trj.nframes)
