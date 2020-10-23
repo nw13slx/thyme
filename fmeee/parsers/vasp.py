@@ -16,6 +16,13 @@ def get_childfolders(path):
 
     return find_folders(['vasprun.xml', 'OUTCAR', 'vasp.out'], path)
 
+def pack_folder_trj(folder, data_filter):
+
+    data = pack_folder(folder, data_filter)
+    trj = Trajectory.from_dict(data)
+    return trj
+
+
 def pack_folder(folder, data_filter):
 
     data = dict(

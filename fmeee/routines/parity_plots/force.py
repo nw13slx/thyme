@@ -19,24 +19,28 @@ def single_plot(forces, pred, prefix, symbol):
 
     layer = int(np.ceil(len(species)/2))
     fig, axs = plt.subplots(layer, 2, figsize=(6.8, 2.5*layer))
+    fig_hist, axs_hist = plt.subplots(layer, 2, figsize=(6.8, 2.5*layer))
     if layer == 1:
         axsf = axs
+        axsf_hist = axs_hist
     else:
         axsf = []
+        axsf_hist = []
         for i in range(layer):
             for j in range(2):
                 axsf += [axs[i, j]]
+                axsf_hist += [axs_hist[i, j]]
 
     for iele, element in enumerate(species):
 
         reference = forces[:, idgroups[iele], :]
         prediction = pred[:, idgroups[iele], :]
 
-        df = reference-prediction
+        df = np.max(np.abs(reference-prediction).reshape([-1, 3]), axis=-1)
         mae = np.average(np.abs(df))
         rmse = np.sqrt(np.average(df*df))
 
-        axsf[iele].scatter(reference, prediction, zorder=2, linewidths=0.5, edgecolors='k',
+        axsf[iele].scatter(reference.reshape([-1]), prediction.reshape([-1]), zorder=2, linewidths=0.5, edgecolors='k',
                            label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
                            c=tabcolors[iele])
         logging.info(f"    {element:2s} mae {mae:5.2f} rmse {rmse:5.2f}")
@@ -44,20 +48,32 @@ def single_plot(forces, pred, prefix, symbol):
         axsf[iele].plot(xlims, xlims, '--', zorder=1, color=tabcolors[iele])
         axsf[iele].legend()
 
-        if iele%2 == 0:
-            axsf[iele].set_ylabel("Predicted energies (eV)")
+        axsf_hist[iele].hist(df, zorder=2,
+                           label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
+                           color=tabcolors[iele])
+        axsf_hist[iele].legend()
 
-    axsf[-1].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
-    axsf[-2].set_xlabel("DFT energies (eV/$\\mathrm{\\AA}$)")
+        if iele%2 == 0:
+            axsf[iele].set_ylabel("Predicted forces (eV)")
+            axsf_hist[iele].set_ylabel("Counts")
+
+    axsf[-1].set_xlabel("DFT forces (eV/$\\mathrm{\\AA}$)")
+    axsf[-2].set_xlabel("DFT forces (eV/$\\mathrm{\\AA}$)")
+    axsf_hist[-1].set_xlabel("Predicted force - DFT force (eV)")
+    axsf_hist[-2].set_xlabel("Predicted force - DFT force (eV)")
 
     fig.tight_layout()
     fig.savefig(f"{prefix}force.png", dpi=300)
+    fig_hist.tight_layout()
+    fig_hist.savefig(f"{prefix}force_hist.png", dpi=300)
     plt.close()
     del fig
     del axs
+    del fig_hist
+    del axs_hist
 
-def multiple_plots(trajectories, pred_label='pred'):
+def multiple_plots(trajectories, pred_label='pred', prefix=""):
 
     for trj in trajectories.alldata.values():
-        single_plot(trj.forces, getattr(trj, pred_label), trj.name, trj.species)
+        single_plot(trj.forces, getattr(trj, pred_label), prefix+trj.name, trj.species)
 

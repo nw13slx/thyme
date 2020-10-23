@@ -1,3 +1,10 @@
+"""
+Data structure that contains a collection of trajectory objects
+
+Lixin Sun (Harvard University)
+2020
+"""
+
 import logging
 import numpy as np
 import pickle
@@ -6,6 +13,7 @@ from collections import Counter
 
 from fmeee.trajectory import Trajectory, PaddedTrajectory
 from fmeee.utils.atomic_symbols import species_to_order_label
+from fmeee.utils.save import sort_format
 
 class Trajectories():
 
@@ -14,27 +22,38 @@ class Trajectories():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'padded_mat.npz'] # npz
-
-        for detect in supported_formats:
-            if detect in name.lower():
-                format = detect
-                break
-
-        if format is None:
-            format = supported_formats[0]
-        format = format.lower()
-        if f'{format}' != name[-len(format):]:
-            name += f'.{format}'
+        supported_formats = ['pickle', 'padded_mat.npz', 'npz', 'padded.xyz',
+                             'xyz', 'poscar']
+        format, name = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
             with open(name, 'wb') as f:
                 pickle.dump(self, f)
         elif format == 'padded_mat.npz':
             self.save_padded_matrices(name)
+        elif format == 'npz':
+            self.save_npz(name)
+        elif format == 'padded.xyz':
+            trj = self.to_padded_trajectory()
+            trj.save(name, format)
+        elif format == 'xyz':
+            for trj in self.alldata.values():
+                trj.save(f"{trj.name}_{name}", format)
+        elif format == 'poscar':
+            for trj in self.alldata.values():
+                trj.save(f"{trj.name}_{name}", format)
         else:
-            raise NotImplementedError(f"Output format not supported:"
+            raise NotImplementedError(f"Output format {format} not supported:"
                                       f" try from {supported_formats}")
+
+    def to_dict(self):
+
+        alldata = {}
+
+        for name, trj in self.alldata.items():
+            alldata[name] = trj.to_dict()
+
+        return alldata
 
     def to_padded_trajectory(self):
 
@@ -43,7 +62,7 @@ class Trajectories():
             if trj.natom > max_atom:
                 max_atom = trj.natom
 
-        init_trj = Trajectory()
+        init_trj = PaddedTrajectory()
         for trj in self.alldata.values():
             ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
             logging.debug(f"padd {trj.name} to {ptrj}")
@@ -59,24 +78,36 @@ class Trajectories():
         init_trj = self.to_padded_trajectory()
         init_trj.save(name)
 
+    def save_npz(self, name:str):
+
+        if ".npz" != name[-4:]:
+            name += '.npz'
+
+        dictionary = self.to_dict()
+        np.savez(name, **dictionary)
+
     @staticmethod
     def from_file(name: str, format: str = None):
+        """
+        pickle format: previous objects saved as pickle format
+        padded_mat.npz: contains matrices that can be parsed by PaddedTrajectory
+                        from file loader. and then the frames are partitioned
+                        such that eacy trajectory has the same number of atoms
+                        and same order of species
+        """
 
-        supported_formats = ['pickle'] # npz
+        supported_formats = ['pickle', 'padded_mat.npz'] # npz
 
-        for detect in supported_formats:
-            if detect in name.lower():
-                format = detect
-                break
-
-        if format is None:
-            format = 'pickle'
-        format = format.lower()
+        format, newname = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
             with open(name, 'rb') as f:
                 trjs = pickle.load(f)
             return trjs
+        elif format == 'padded_mat.npz':
+            dictionary = dict(np.load(name,
+                                      allow_pickle=True))
+            return Trajectories.from_padded_matrices(dictionary)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
@@ -87,6 +118,9 @@ class Trajectories():
         """
         convert dictionary to a Trajectory instance
         """
+
+        raise NotImplementedError("this part need to be double check!")
+
         trjs = Trajectories()
         alldata = trjs.alldata
 
@@ -206,5 +240,4 @@ class Trajectories():
             alldata[label].convert_to_np()
 
         return trjs
-
 
