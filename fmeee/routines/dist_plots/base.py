@@ -64,8 +64,6 @@ def base_hist(ax, data, label, lims=[None, None]):
         newlims[0] = dmin
     if newlims[1] is None:
         newlims[1] = dmax
-    if newlims[0] < dmin:
-        newlims[0] = dmin
     if newlims[1] > dmax:
         newlims[1] = dmax
 

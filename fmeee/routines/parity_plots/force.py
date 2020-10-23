@@ -29,28 +29,28 @@ def single_plot(forces, pred, prefix, symbol):
         for i in range(layer):
             for j in range(2):
                 axsf += [axs[i, j]]
-                axsf_hist += [axs[i, j]]
+                axsf_hist += [axs_hist[i, j]]
 
     for iele, element in enumerate(species):
 
         reference = forces[:, idgroups[iele], :]
         prediction = pred[:, idgroups[iele], :]
 
-        df = reference-prediction
+        df = np.max(np.abs(reference-prediction).reshape([-1, 3]), axis=-1)
         mae = np.average(np.abs(df))
         rmse = np.sqrt(np.average(df*df))
 
-        axsf[iele].scatter(reference, prediction, zorder=2, linewidths=0.5, edgecolors='k',
-                           label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
-                           c=tabcolors[iele])
-        axsf_hist[iele].hist(prediction-reference, zorder=2, edgecolors='k',
+        axsf[iele].scatter(reference.reshape([-1]), prediction.reshape([-1]), zorder=2, linewidths=0.5, edgecolors='k',
                            label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
                            c=tabcolors[iele])
         logging.info(f"    {element:2s} mae {mae:5.2f} rmse {rmse:5.2f}")
         xlims = axsf[iele].get_xlim()
         axsf[iele].plot(xlims, xlims, '--', zorder=1, color=tabcolors[iele])
         axsf[iele].legend()
-        axsf_hist[iele].axvline(x=0, linestyle='--', color=tabcolors[iele])
+
+        axsf_hist[iele].hist(df, zorder=2,
+                           label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
+                           color=tabcolors[iele])
         axsf_hist[iele].legend()
 
         if iele%2 == 0:

@@ -56,5 +56,5 @@ def multiple_plots(trajectories, pred_label='pe', prefix=""):
     axs[1].axvline(x=-universal_shift, linestyle='--', color='k', zorder=0)
 
     fig.tight_layout()
-    fig.savefig(f"all_energy.png", dpi=300)
+    fig.savefig(f"{prefix}_all_energy.png", dpi=300)
 
