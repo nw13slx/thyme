@@ -12,6 +12,7 @@ for i in types:
     try:
         trjs = i.from_file(file1)
         print(f"work with type {i}")
+        break
     except:
         pass
 
