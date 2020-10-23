@@ -12,6 +12,7 @@ from fmeee.routines.folders import find_folders, find_folders_matching
 
 fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
 sfl_num = r"\s+([+-]?\d+.\d+[eE]?[+-]?\d*)"
+nc_fl_num = r"[+-]?\d+.\d+[eE]?[+-]?\d*"
 
 def get_childfolders(path, include_xyz=True):
 
@@ -66,7 +67,7 @@ def extxyz_to_padded_dict(filename):
                       })
 
     natoms = np.array(d['natoms'], dtype=int).reshape([-1])
-    logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
+    # logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
 
     if len(d['free_energies']) > 0:
         energies = np.array(d['free_energies'], dtype=float).reshape([-1])
@@ -80,7 +81,11 @@ def extxyz_to_padded_dict(filename):
     posforce = np.array(d['posforce'], dtype=float).reshape([-1, 6])
     positions = posforce[:, index['pos']:index['pos']+3]
     forces = posforce[:, index['forces']:index['forces']+3]
-    logging.debug(f"pos.shape {positions.shape} force.shape {forces.shape}")
+    # logging.debug(f"pos.shape {positions.shape} force.shape {forces.shape}")
+    # logging.debug(f"first couple lines of posforce")
+    # logging.debug(f"{posforce[0]}")
+    # logging.debug(f"{posforce[1]}")
+    # logging.debug(f"{posforce[2]}")
 
     symbols = np.array(d['symbols'], dtype=str).reshape([-1])
 
@@ -101,6 +106,12 @@ def extxyz_to_padded_dict(filename):
     positions = np.vstack(newpos)
     forces = np.vstack(newforce)
     symbols = np.vstack(newsymbols)
+
+    # logging.debug(f"after reshape: pos.shape {positions.shape} force.shape {forces.shape}")
+    # logging.debug(f"first couple lines of posforce")
+    # logging.debug(f"{positions[0][0]}")
+    # logging.debug(f"{positions[0][1]}")
+    # logging.debug(f"{positions[0][2]}")
 
 
     dictionary = dict(
@@ -171,7 +182,7 @@ def posforce_regex(filename):
                 if convertesr[item_count+i] == str:
                     string += r'\w+'
                 elif convertesr[item_count+i] == float:
-                    string += fl_num
+                    string += nc_fl_num
                 else:
                     logging.info(f"parser is not implemented for type {convertesr[item_count+i]}")
         item_count += length
