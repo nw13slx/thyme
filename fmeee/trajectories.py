@@ -22,7 +22,8 @@ class Trajectories():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'padded_mat.npz', 'npz', 'xyz']
+        supported_formats = ['pickle', 'padded_mat.npz', 'npz', 'padded.xyz',
+                             'xyz', 'poscar']
         format, name = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
@@ -32,9 +33,15 @@ class Trajectories():
             self.save_padded_matrices(name)
         elif format == 'npz':
             self.save_npz(name)
-        elif format == 'xyz':
+        elif format == 'padded.xyz':
             trj = self.to_padded_trajectory()
             trj.save(name, format)
+        elif format == 'xyz':
+            for trj in self.alldata.values():
+                trj.save(f"{trj.name}_{name}", format)
+        elif format == 'poscar':
+            for trj in self.alldata.values():
+                trj.save(f"{trj.name}_{name}", format)
         else:
             raise NotImplementedError(f"Output format {format} not supported:"
                                       f" try from {supported_formats}")

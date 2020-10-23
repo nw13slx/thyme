@@ -3,6 +3,7 @@ import numpy as np
 from copy import deepcopy
 
 from ase.io.extxyz import write_xyz as write_extxyz
+from ase.io.vasp import write_vasp
 from ase.atoms import Atoms
 
 from fmeee.utils.cell import convert_cell_format
@@ -74,6 +75,17 @@ class Trajectory():
 
         self.metadata_attrs = list(set(self.metadata_attrs))
 
+    def filter_frames(self, accept_id=None):
+
+        if accept_id is None:
+            return
+
+        for k in self.per_frame_attrs:
+            new_mat = getattr(self, k)[accept_id]
+            setattr(self, k, new_mat)
+        self.nframes = len(accept_id)
+
+
     @staticmethod
     def from_file(filename):
         trj = Trajectory()
@@ -125,7 +137,7 @@ class Trajectory():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'npz'] # npz
+        supported_formats = ['pickle', 'npz', 'xyz', 'poscar']
         format, name = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
@@ -152,6 +164,13 @@ class Trajectory():
                                   positions=self.positions[i].reshape([-1, 3]),
                                   pbc=True)
                 write_extxyz(name, structure, append=True)
+        elif format == 'poscar':
+            for i in range(self.nframes):
+                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
+                                  symbols=self.species,
+                                  positions=self.positions[i].reshape([-1, 3]),
+                                  pbc=True)
+                write_vasp(f"{i}_{name}", structure, vasp5=True)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
@@ -420,16 +439,6 @@ class PaddedTrajectory(Trajectory):
         if 'natom' not in self.metadata_attrs:
             self.natom = self.positions.shape[1]
 
-    def filter_frames(self, accept_id=None):
-
-        if accept_id is None:
-            return
-
-        for k in self.per_frame_attrs:
-            new_mat = getattr(self, k)[accept_id]
-            setattr(self, k, new_mat)
-        self.nframes = len(accept_id)
-
     @staticmethod
     def from_trajectory(otrj, max_atom=-1):
 
@@ -484,9 +493,7 @@ class PaddedTrajectory(Trajectory):
         if isinstance(trj, PaddedTrajectory):
             pad = np.array([['0']*datom]*trj.nframes)
             trj.symbols = np.hstack((otrj.symbols, pad))
-            print(trj.symbols.shape)
-            pad = np.zeros(trj.nframes, datom)
-            print(trj.natoms.shape)
+            pad = np.zeros((trj.nframes, datom))
         else:
             species = np.hstack([otrj.species, datom*['NA']])
             trj.symbols = np.vstack([species]*trj.nframes)
@@ -517,7 +524,7 @@ class PaddedTrajectory(Trajectory):
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'npz', 'xyz'] # npz
+        supported_formats = ['pickle', 'npz', 'xyz', 'poscar'] # npz
 
         format, name = sort_format(supported_formats, format, name)
 
@@ -531,6 +538,14 @@ class PaddedTrajectory(Trajectory):
                                   positions=self.positions[i][:natom].reshape([natom, 3]),
                                   pbc=True)
                 write_extxyz(name, structure, append=True)
+        elif format == 'poscar':
+            for i in range(self.nframes):
+                natom = self.natoms[i]
+                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
+                                  symbols=self.symbols[i][:natom],
+                                  positions=self.positions[i][:natom].reshape([natom, 3]),
+                                  pbc=True)
+                write_vasp(f"{i}{name}", structure, vasp5=True)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
