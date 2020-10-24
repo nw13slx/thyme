@@ -9,5 +9,7 @@ from fmeee.routines.parity_plots.setup import tabcolors
 def multiple_plots(trajectories, prefix=""):
 
     for i, trj in enumerate(trajectories.alldata.values()):
+        single_plot(trj, prefix)
 
+def single_plot(trj, prefix=""):
         base_line_hist(trj.energies, "Energy (eV)", f"{prefix}{trj.name}_energy_dist")

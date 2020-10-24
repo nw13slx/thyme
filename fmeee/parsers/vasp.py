@@ -30,6 +30,7 @@ def pack_folder_trj(folder, data_filter):
     trj = parse_outcar_trj(folder, data_filter)
     if trj.nframes < 1:
         trj = parse_vasprun_trj(folder, data_filter)
+
     return trj
 
 
@@ -64,13 +65,13 @@ def parse_outcar_trj(folder, data_filter):
                 data['species'] = species
             except Exception as e:
                 logging.info(f"error loading poscar {e}")
-                return {}
+                return Trajectory()
         # else:
         #     logging.info("cannot find", filename2)
 
     if species is None:
-        logging.info("cannot find speciesin either POSCAR or CONTCAR")
-        return {}
+        logging.info("cannot find species in either POSCAR or CONTCAR")
+        return Trajectory()
 
     filename = "/".join([folder, "OUTCAR"])
 
@@ -80,7 +81,7 @@ def parse_outcar_trj(folder, data_filter):
                      {'energies':r"free  energy   TOTEN\s+=\s+([+-]?\d+.\d+)"},
                      postprocess=lambda x:float(x))
     if len(d_energies['energies']) == 0:
-        return {}
+        return Trajectory()
     energies = np.hstack(d_energies['energies'])
 
     pos_force = read_table_pattern(filename,
@@ -115,7 +116,7 @@ def parse_outcar_trj(folder, data_filter):
         incar = Incar.from_file(filename)
     except Exception as e:
         logging.info("fail to load outcar", e)
-        return {}
+        return Trajectory()
     logging.info(f"Incar grep time {time.time()-t}")
 
     nelm = incar['NELM']
@@ -136,7 +137,7 @@ def parse_outcar_trj(folder, data_filter):
         logging.info("skip unconverged step", [i for i, s in enumerate(n_electronic_steps) \
                                         if (s >= nelm or i >= nframes)])
     if len(converged_steps) == 0:
-        return data
+        return Trajectory.from_dict(data)
 
     natom = pos_force.shape[1]
     data['natom'] = natom
@@ -166,11 +167,11 @@ def parse_outcar_trj(folder, data_filter):
 
 def parse_vasprun_trj(folder, data_filter):
 
+    data = {}
+    filename = "/".join([folder, "vasprun.xml"])
     if not isfile(filename):
         return Trajectory()
 
-    data = {}
-    filename = "/".join([folder, "vasprun.xml"])
 
     try:
         vasprun = Vasprun(filename, ionic_step_skip=0,
@@ -194,11 +195,11 @@ def parse_vasprun_trj(folder, data_filter):
     cells = []
     electronic_steps = []
     for step in vasprun.ionic_steps:
-        electronic_steps += [step['electronic_steps']]
+        electronic_steps += [len(step['electronic_steps'])]
         positions += [step['structure'].cart_coords.reshape([-1])]
         forces += [np.hstack(step['forces'])]
         energies += [step['e_fr_energy']]
-        cells += [step['structure'].attice.matrix.reshape([-1])]
+        cells += [step['structure'].lattice.matrix.reshape([-1])]
 
     data.update(dict(cells = np.vstack(cells),
                      positions = np.vstack(positions),
@@ -208,8 +209,11 @@ def parse_vasprun_trj(folder, data_filter):
                      ))
     trj = Trajectory.from_dict(data)
 
-    accept_id = np.where(np.hstack(electronic_steps)<nelm)[0]
-    reject_id = np.where(np.hstack(electronic_steps)>=nelm)[0]
+    # print(electronic_steps)
+    # print(energies)
+    electronic_steps = np.hstack(electronic_steps)
+    accept_id = np.where(electronic_steps<nelm)[0]
+    reject_id = np.where(electronic_steps>=nelm)[0]
     if len(accept_id) < trj.nframes:
         logging.info(f"skip unconverged step {reject_id}")
     trj.filter_frames(accept_id)
