@@ -5,6 +5,7 @@ from glob import glob
 from os.path import getmtime
 
 from ase.io.extxyz import key_val_str_to_dict, parse_properties
+from ase.io.extxyz import write_xyz as write_extxyz
 
 from fmeee.parsers.monty import read_pattern, read_table_pattern
 from fmeee.trajectory import PaddedTrajectory
@@ -193,3 +194,21 @@ def posforce_regex(filename):
         index['pos'] = 0
         index['forces'] = 3
     return string, index
+
+def write(trj):
+    if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
+        for i in range(trj.nframes):
+            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
+                              symbols=trj.species,
+                              positions=trj.positions[i].reshape([-1, 3]),
+                              pbc=True)
+            write_extxyz(name, structure, append=True)
+    elif isinstance(trj, PaddedTrajectory):
+        for i in range(trj.nframes):
+            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
+                              symbols=trj.symbols[i],
+                              positions=trj.positions[i].reshape([-1, 3]),
+                              pbc=True)
+            write_extxyz(name, structure, append=True)
+    else:
+        raise NotImplementedError("")

@@ -2,8 +2,6 @@ import logging
 import numpy as np
 from copy import deepcopy
 
-from ase.io.extxyz import write_xyz as write_extxyz
-from ase.io.vasp import write_vasp
 from ase.atoms import Atoms
 
 from fmeee.utils.cell import convert_cell_format
@@ -148,7 +146,7 @@ class Trajectory():
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'npz', 'xyz', 'poscar']
+        supported_formats = ['pickle', 'npz']
         format, name = sort_format(supported_formats, format, name)
 
         if format == 'pickle':
@@ -168,20 +166,6 @@ class Trajectory():
                 logging.info(s)
             np.savez(name, **data)
             logging.info(f"! save as {name}")
-        elif format == 'xyz':
-            for i in range(self.nframes):
-                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
-                                  symbols=self.species,
-                                  positions=self.positions[i].reshape([-1, 3]),
-                                  pbc=True)
-                write_extxyz(name, structure, append=True)
-        elif format == 'poscar':
-            for i in range(self.nframes):
-                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
-                                  symbols=self.species,
-                                  positions=self.positions[i].reshape([-1, 3]),
-                                  pbc=True)
-                write_vasp(f"{i}_{name}", structure, vasp5=True)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
@@ -537,28 +521,12 @@ class PaddedTrajectory(Trajectory):
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = ['pickle', 'npz', 'xyz', 'poscar'] # npz
+        supported_formats = ['pickle', 'npz']
 
         format, name = sort_format(supported_formats, format, name)
 
         if format in ['pickle', 'npz']:
             Trajectory.save(self, name, format)
-        elif format == 'xyz':
-            for i in range(self.nframes):
-                natom = self.natoms[i]
-                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
-                                  symbols=self.symbols[i][:natom],
-                                  positions=self.positions[i][:natom].reshape([natom, 3]),
-                                  pbc=True)
-                write_extxyz(name, structure, append=True)
-        elif format == 'poscar':
-            for i in range(self.nframes):
-                natom = self.natoms[i]
-                structure = Atoms(cell=self.cells[i].reshape([3, 3]),
-                                  symbols=self.symbols[i][:natom],
-                                  positions=self.positions[i][:natom].reshape([natom, 3]),
-                                  pbc=True)
-                write_vasp(f"{i}{name}", structure, vasp5=True)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")

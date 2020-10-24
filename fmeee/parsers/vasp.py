@@ -12,6 +12,7 @@ from os.path import isfile
 
 from pymatgen.io.vasp.outputs import Outcar, Vasprun
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
+from ase.io.vasp import write_vasp
 
 def get_childfolders(path):
 
@@ -226,3 +227,22 @@ def parse_vasprun_trj(folder, data_filter):
     logging.info(f"convert {filename} to {repr(trj)}")
 
     return trj
+
+
+def write(name, trj):
+    if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
+        for i in range(trj.nframes):
+            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
+                              symbols=trj.species,
+                              positions=trj.positions[i].reshape([-1, 3]),
+                              pbc=True)
+            write_vasp(f"{i}_{name}", structure, vasp5=True)
+    elif isinstance(trj, PaddedTrajectory):
+        for i in range(trj.nframes):
+            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
+                              symbols=trj.symbols[i],
+                              positions=trj.positions[i].reshape([-1, 3]),
+                              pbc=True)
+            write_vasp(f"{i}_{name}", structure, vasp5=True)
+    else:
+        raise NotImplementedError("")
