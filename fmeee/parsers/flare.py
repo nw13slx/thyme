@@ -14,10 +14,11 @@ def write(trj):
     structures = []
     if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
         for i in range(trj.nframes):
+            natom = trj.natoms[i]
             structure = Structure(cell=trj.cells[i].reshape([3, 3]),
-                                  species=trj.species,
-                                  positions=trj.positions[i].reshape([-1, 3]),
-                                  forces=trj.forces[i].reshape([-1, 3]),
+                                  species=trj.species[:natom],
+                                  positions=trj.positions[i][:natom].reshape([-1, 3]),
+                                  forces=trj.forces[i][:natom].reshape([-1, 3]),
                                   energiy=trj.energy[i])
             structures += [structure]
     elif isinstance(trj, PaddedTrajectory):

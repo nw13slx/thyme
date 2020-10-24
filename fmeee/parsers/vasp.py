@@ -236,9 +236,10 @@ def parse_vasprun_trj(folder, data_filter):
 def write(name, trj):
     if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
         for i in range(trj.nframes):
+            natom = trj.natom[i]
             structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
-                              symbols=trj.species,
-                              positions=trj.positions[i].reshape([-1, 3]),
+                              symbols=trj.species[:natom],
+                              positions=trj.positions[i][:natom].reshape([-1, 3]),
                               pbc=True)
             write_vasp(f"{i}_{name}", structure, vasp5=True)
     elif isinstance(trj, PaddedTrajectory):
