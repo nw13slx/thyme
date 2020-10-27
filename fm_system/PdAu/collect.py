@@ -16,6 +16,7 @@ def main():
     folders = get_childfolders("./")
     trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data.pickle")
     trjs.save("alldata_padded_mat.npz")
+    write("flare.pickle", trjs)
     multiple_plots_e(trjs, prefix='alldata')
     multiple_plots_f(trjs, prefix='alldata')
 
