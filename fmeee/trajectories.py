@@ -87,7 +87,7 @@ class Trajectories():
         np.savez(name, **dictionary)
 
     @staticmethod
-    def from_file(name: str, format: str = None):
+    def from_file(name: str, format: str = None, preserve_order: bool=False):
         """
         pickle format: previous objects saved as pickle format
         padded_mat.npz: contains matrices that can be parsed by PaddedTrajectory
@@ -107,7 +107,8 @@ class Trajectories():
         elif format == 'padded_mat.npz':
             dictionary = dict(np.load(name,
                                       allow_pickle=True))
-            return Trajectories.from_padded_matrices(dictionary)
+            return Trajectories.from_padded_matrices(dictionary,
+                                                     preserve_order=preserve_order)
         else:
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
@@ -194,13 +195,17 @@ class Trajectories():
 
     @staticmethod
     def from_padded_matrices(dictionary:dict,
-                             per_frame_attr:list =None):
+                             per_frame_attr:list =None,
+                             preserve_order=False):
         """
         Keys needed:
 
         positions  (n, m, 3)
         symbols    (n, m)
         natoms     (n, m)
+
+        if preserve_order is off (default)
+            all the configures that has the same number of species
 
         """
 
@@ -221,18 +226,42 @@ class Trajectories():
                 except Exception as e:
                     logging.debug(f"skip {k} because of {e}")
 
+        last_label = None
+        label = None
+        last_label_count = 0
         for i in range(nframes):
 
             # obtain label
             order, label = species_to_order_label(symbols[i])
             natom = dictionary['natoms'][i]
 
-            if label not in alldata:
-                alldata[label] = Trajectory()
-                alldata[label].name = label
-                alldata[label].python_list = True
+            if preserve_order:
+                if i > 0:
+                    if label == last_label:
+                        curr_label_count = last_label_count
+                    else:
+                        curr_label_count = 0
+                        for l in alldata:
+                            if label == l.split("_")[0]:
+                                count = int(l.split("_")[1])
+                                if count >= curr_label_count:
+                                    curr_label_count = count + 1
+                else:
+                    curr_label_count = 0
 
-            alldata[label].add_frame_from_dict(dictionary, nframes,
+                last_label_count = curr_label_count
+                last_label = label
+
+                stored_label = f"{label}_{curr_label_count}"
+            else:
+                stored_label = label
+
+            if stored_label not in alldata:
+                alldata[stored_label] = Trajectory()
+                alldata[stored_label].name = stored_label
+                alldata[stored_label].python_list = True
+
+            alldata[stored_label].add_frame_from_dict(dictionary, nframes,
                                                i=i, attributes=per_frame_attr,
                                                idorder=order)
 
