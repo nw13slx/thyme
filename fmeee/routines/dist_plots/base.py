@@ -5,7 +5,7 @@ import numpy as np
 
 from fmeee.routines.parity_plots.setup import tabcolors
 
-def base_line_hist(data, label, filename, lims=[None, None],
+def base_line_hist_axs(axs, data, label, legend, filename, lims=[None, None],
                    scatter_skip=100):
     """
     """
@@ -36,10 +36,10 @@ def base_line_hist(data, label, filename, lims=[None, None],
     logging.info(f"filename {filename} mean {mean:6.3f} std {std:6.3f}")
 
     # for each config, compute the possible shift
-    fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
     axs[0].scatter(np.arange(plot_d.shape[0])[include_id],
-                   plot_d[include_id], linewidths=0.5, edgecolors='k',
-                   label=f"mean {mean:6.3f} std {std:6.3f}")
+                   plot_d[include_id],
+                   s=5, linewidths=0.5, edgecolors='k',
+                   label=f"{legend} mean {mean:6.3f} std {std:6.3f}")
     axs[0].set_xlabel("Step (a.u.)")
     axs[0].set_ylabel(label)
     axs[0].set_ylim(newlims)
@@ -47,13 +47,21 @@ def base_line_hist(data, label, filename, lims=[None, None],
 
     base_hist(axs[1], plot_d, label, lims)
 
+def base_line_hist(data, label, filename, lims=[None, None], legend="",
+                   scatter_skip=100):
+    """
+    """
+
+    fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
+    base_line_hist_axs(axs, data, label, legend,
+                       filename, lims, scatter_skip)
     fig.tight_layout()
     fig.savefig(f"{filename}.png", dpi=300)
     plt.close()
     del fig
     del axs
 
-def base_hist(ax, data, label, lims=[None, None]):
+def base_hist(ax, data, label, lims=[None, None], legend=""):
     """
     """
 
@@ -70,13 +78,14 @@ def base_hist(ax, data, label, lims=[None, None]):
     outliers1 = len(np.where(data<newlims[0])[0])
     outliers2 = len(np.where(data>newlims[1])[0])
 
-    text = ""
+    text = f"{legend} "
     if outliers1 > 0:
-        text += f"{outliers1} samples < {newlims[0]}"
+        text += f"{outliers1} pts. < {newlims[0]}"
     if outliers2 > 0:
-        text += f"\n{outliers2} samples > {newlims[1]}"
+        text += f" {outliers2} pts. > {newlims[1]}"
 
-    ax.hist(data, range=(newlims[0], newlims[1]), zorder=1, bins=50, label=text, log=True)
+    ax.hist(data, range=(newlims[0], newlims[1]), zorder=1, bins=50, label=text, log=True,
+            alpha=0.5)
     ax.set_xlabel(label)
     ax.set_ylabel("log(Counts)")
     if len(text) > 0:

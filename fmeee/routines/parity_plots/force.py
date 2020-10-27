@@ -31,6 +31,7 @@ def single_plot(forces, pred, prefix, symbol):
                 axsf += [axs[i, j]]
                 axsf_hist += [axs_hist[i, j]]
 
+    data = {}
     for iele, element in enumerate(species):
 
         reference = forces[:, idgroups[iele], :]
@@ -39,6 +40,8 @@ def single_plot(forces, pred, prefix, symbol):
         df = np.max(np.abs(reference-prediction).reshape([-1, 3]), axis=-1)
         mae = np.average(np.abs(df))
         rmse = np.sqrt(np.average(df*df))
+
+        data[element] = (mae, rmse**2, len(df))
 
         axsf[iele].scatter(reference.reshape([-1]), prediction.reshape([-1]), zorder=2, linewidths=0.5, edgecolors='k',
                            label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
@@ -72,8 +75,22 @@ def single_plot(forces, pred, prefix, symbol):
     del fig_hist
     del axs_hist
 
+    return data
+
 def multiple_plots(trajectories, pred_label='pred', prefix=""):
 
+    alldata = {}
     for trj in trajectories.alldata.values():
-        single_plot(trj.forces, getattr(trj, pred_label), prefix+trj.name, trj.species)
+        data = single_plot(trj.forces, getattr(trj, pred_label), prefix+trj.name, trj.species)
+        for element in data:
+            mae, rmse, count = data[element]
+            if element not in alldata:
+                alldata[element] = [0, 0, 0]
+            alldata[element][0] += mae *count
+            alldata[element][1] += rmse *count
+            alldata[element][2] += count
+    for element in alldata:
+        mae = alldata[element][0] / alldata[element][2]
+        rmse = np.sqrt(alldata[element][1] / alldata[element][2])
+        logging.info(f"overall {element} {mae} {rmse} {alldata[element][2]}")
 
