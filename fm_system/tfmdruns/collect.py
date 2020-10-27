@@ -20,7 +20,7 @@ def main():
 def e_filter(trj):
     print("enter efilter")
     set1 = set(np.where(trj.energies<0)[0])
-    set2 = set(np.where(trj.energies>-1000)[0])
+    set2 = set(np.where(trj.energies>-3000)[0])
     return list(set1.intersection(set2))
 
 if __name__ == '__main__':

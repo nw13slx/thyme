@@ -24,7 +24,7 @@ grid = 1000
 all_trjs = []
 min_length = -1
 for filename in glob("result*.npz"):
-    trjs = Trajectories.from_file(filename, format="padded_mat.npz")
+    trjs = Trajectories.from_file(filename, format="padded_mat.npz", preserve_order=True)
     all_trjs += [trjs]
 
 for spe_list in all_trjs[0].alldata:
@@ -47,9 +47,13 @@ for spe_list in all_trjs[0].alldata:
     skip = int(np.max([np.ceil(ref.shape[0]/2000), 1]))
     pred = np.vstack(pred)
     pred_var = np.sqrt(np.var(pred, axis=0))
+    pred_mean = np.average(pred, axis=0)
+
+    # take the largest element out
     pred_var = pred_var.reshape([nframe, -1, 3])
     pred_var = np.max(pred_var, axis=-1)
     pred_var = pred_var.reshape([-1])
+
     base_line_hist(pred_var, "std (eV/A)", f"{spe_list}_ce_w_ref", lims=[None, 1],
                    scatter_skip=skip)
     for i, trjs in enumerate(all_trjs):
