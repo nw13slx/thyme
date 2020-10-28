@@ -1,20 +1,18 @@
+import matplotlib.pyplot as plt
+from fmeee.routines.parity_plots.force import multiple_plots
+from fmeee.routines.parity_plots.energy import multiple_plots as multiple_plots_e
+from fmeee.routines.parity_plots.base import base_parity_ax
+from fmeee.routines.dist_plots.base import base_line_hist
+from fmeee.trajectories import Trajectories
+from fmeee.trajectory import PaddedTrajectory
+from glob import glob
+import sys
+import numpy as np
 import logging
 logging.basicConfig(filename=f'plot.log', filemode='w',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
-import numpy as np
-import sys
 
-from glob import glob
-
-from fmeee.trajectory import PaddedTrajectory
-from fmeee.trajectories import Trajectories
-from fmeee.routines.dist_plots.base import base_line_hist
-from fmeee.routines.parity_plots.base import base_parity_ax
-from fmeee.routines.parity_plots.energy import multiple_plots as multiple_plots_e
-from fmeee.routines.parity_plots.force import multiple_plots
-
-import matplotlib.pyplot as plt
 
 # dictionary = dict(np.load(sys.argv[1], allow_pickle=True))
 
@@ -24,13 +22,14 @@ grid = 1000
 all_trjs = []
 min_length = -1
 for filename in glob("result*.npz"):
-    trjs = Trajectories.from_file(filename, format="padded_mat.npz", preserve_order=True)
+    trjs = Trajectories.from_file(
+        filename, format="padded_mat.npz", preserve_order=True)
     all_trjs += [trjs]
 
 for spe_list in all_trjs[0].alldata:
 
     # remove unphysicsl configs
-    filter_id = np.where(trjs.alldata[spe_list].energies<0)[0]
+    filter_id = np.where(trjs.alldata[spe_list].energies < 0)[0]
 
     fig_m, axs_m = plt.subplots(1, 2, figsize=(6.8, 2.5))
     fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
@@ -62,14 +61,14 @@ for spe_list in all_trjs[0].alldata:
         error = np.max(error, axis=-1)
         error = error.reshape([-1])
         base_parity_ax(axs, error, pred_var,
-                    f"{spe_list}parity_e_ce", i, "True Error (eV/A)",
-                    "Predicted Error (eV/A)", shift=[],
-                    scatter_skip=skip)
+                       f"{spe_list}parity_e_ce", i, "True Error (eV/A)",
+                       "Predicted Error (eV/A)", shift=[],
+                       scatter_skip=skip)
         x = []
         y = []
         for idx in range(grid):
             thred = (idx+1)/grid*upper_error
-            indices = np.where(error>thred)[0]
+            indices = np.where(error > thred)[0]
             if len(indices) > 0:
                 x += [np.min(error[indices])]
                 y += [np.min(pred_var[indices])]
