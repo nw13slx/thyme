@@ -10,7 +10,7 @@ from fmeee.trajectories import Trajectories
 
 def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
-    folders = sorted(folders)
+    folders = folders
     logging.info(f"all folders: {folders}")
 
     count = 0
@@ -48,7 +48,7 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
 def parse_folders(folders, pack_folder, data_filter, npz_filename):
 
-    folders = sorted(folders)
+    folders = folders
     logging.info(f"all folders: {folders}")
 
     count = 0

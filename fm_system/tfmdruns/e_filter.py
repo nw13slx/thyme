@@ -16,7 +16,7 @@ logging.getLogger().addHandler(logging.StreamHandler())
 from fmeee.routines.write.xyz import write_single_xyz
 
 
-filename = "ref1/result_3.npz"
+filename = "ref3/result_3.npz"
 trjs = Trajectories.from_file(
     filename, format="padded_mat.npz", preserve_order=False)
 # original = Trajectories.from_file(
@@ -33,12 +33,17 @@ trjs = Trajectories.from_file(
 # ori_train = 827
 # ori_test = 10
 
-original = Trajectories.from_file(
-    "947_127.npz", format="padded_mat.npz", preserve_order=False)
-ori_train = 947
-ori_test = 127
+# original = Trajectories.from_file(
+#     "947_127.npz", format="padded_mat.npz", preserve_order=False)
+# ori_train = 947
+# ori_test = 127
 
-nsample = 20
+original = Trajectories.from_file(
+    "953_133.npz", format="padded_mat.npz", preserve_order=False)
+ori_train = 953
+ori_test = 133
+
+nsample = 100
 
 train = Trajectories()
 test = Trajectories()
@@ -51,11 +56,19 @@ alle = []
 for i, trj in enumerate(original.alldata.values()):
     if count < ori_train:
         select_id = np.arange(np.min([trj.nframes, ori_train-count]))
+        e_id = np.where(trj.energies>0)[0]
+        for idx in e_id:
+            if idx in select_id:
+                select_id.remove(idx)
         if trj.nframes > (ori_train-count):
             if count_test < ori_test:
                 test_id = np.arange(ori_train-count,
                                     np.min([trj.nframes,
                                             ori_test+ori_train-count_test-count]))
+                e_id = np.where(trj.energies>0)[0]
+                for idx in e_id:
+                    if idx in test_id:
+                        test_id.remove(idx)
                 new_trj = trj.skim(test_id)
                 testdata[trj.name] = new_trj
                 alle += [new_trj.energies]
@@ -81,6 +94,11 @@ for i, trj in enumerate(trjs.alldata.values()):
         logging.info(f"{i} {trj}")
 
         sorted_id, err = sort_by_force(trj, 'pred', 'O')
+        e_id = np.where(trj.energies>0)[0]
+        for idx in e_id:
+            if idx in sorted_id:
+                sorted_id.remove(idx)
+
         e_bar = np.where(trj.energies < (np.min(trj.energies)+60))[0]
 
         new_list = []
@@ -93,8 +111,8 @@ for i, trj in enumerate(trjs.alldata.values()):
 
         sorted_id = np.array(new_list, dtype=int)
         lower_bound = np.min([nsample, len(sorted_id)])
-        train_id = sorted_id[-lower_bound:-2:3]
-        test_id = sorted_id[-lower_bound+1:-2:3]
+        train_id = sorted_id[-lower_bound:-2:2]
+        test_id = sorted_id[-lower_bound+1:-2:2]
 
         logging.info(
             f"add to train: configs with err {err[train_id]}")
