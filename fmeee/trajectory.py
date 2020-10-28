@@ -73,6 +73,9 @@ class Trajectory():
                 except:
                     pass
 
+            if 'cells' in self.per_frame_attrs:
+                self.cells = convert_cell_format(self.nframes, self.cells)
+
         self.metadata_attrs = list(set(self.metadata_attrs))
 
     def filter_frames(self, accept_id=None):
@@ -307,6 +310,7 @@ class Trajectory():
             for k in self.per_frame_attrs:
                 item = getattr(trj, k)
                 ori_item = getattr(self, k)
+                logging.info(f"merge {k} {ori_item.shape} {item.shape}")
                 if len(item.shape) == 1:
                     setattr(self, k, np.hstack((ori_item, item)))
                 else:
@@ -331,6 +335,8 @@ class Trajectory():
                           f" with shape {np_mat.shape} ")
             setattr(self, k, np_mat)
         self.python_list = False
+
+        self.sanity_check()
 
     def convert_to_list(self):
         """
