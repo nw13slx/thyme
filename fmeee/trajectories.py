@@ -192,6 +192,17 @@ class Trajectories():
             nframes += trj.nframes
         return nframes
 
+    @staticmethod
+    def from_padded_trajectory(trj:dict,
+                               preserve_order=False):
+        dictionary = {}
+        for k in trj.per_frame_attrs:
+            dictionary[k] = getattr(trj, k)
+        for k in trj.metadata_attrs:
+            dictionary[k] = getattr(trj, k)
+        return Trajectories.from_padded_matrices(dictionary, trj.per_frame_attrs,
+                                                   preserve_order)
+
 
     @staticmethod
     def from_padded_matrices(dictionary:dict,
