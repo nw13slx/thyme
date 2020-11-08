@@ -49,12 +49,22 @@ def pack_folder_trj(folder, data_filter):
     MD_xyz = {}
     if has_out:
 
+        # sort files from new to old
+        outfile_list = []
+        outfile_mtime = []
         for outfile in glob(f"{folder}/*out*"):
+            outfile_list += [outfile]
+            outfile_mtime += [-getctime(outfile)]
+        sort_id = np.argsort(outfile_mtime)
+        outfile_list = np.array(outfile_list, dtype=str)
+        outfile_list = outfile_list[sort_id]
+
+        for outfile in outfile_list:
 
             if not isfile(outfile):
                 continue
 
-            outfile_dict = parse_std_out(folder, outfile)
+            outfile_dict = parse_std_out(outfile)
             if 'abort' in outfile_dict:
                 continue
 
@@ -72,7 +82,7 @@ def pack_folder_trj(folder, data_filter):
                     _trj = parse_force_eval_pairs(folder, outfile, outfile_dict)
                 elif run_type == 'MD':
                     if 'xyzout' in outfile_dict:
-                        MD_xyz[proj_name] = (outfile, outfile_dict['xyzout'])
+                        MD_xyz[proj_name] = f"{folder}/"+outfile_dict['inputfile']
                     else:
                         raise NotImplementedError(f"cannot parse MD without xyz {run_type}")
                 else:
@@ -85,32 +95,32 @@ def pack_folder_trj(folder, data_filter):
                 trj.add_trj(_trj)
 
     for k in MD_xyz:
-        _trj = parse_md(folder, outfile_dict=outfile_dict)
+        _trj = parse_md(folder, inp=MD_xyz[k],
+                        proj_name=k)
         logging.info(f"repr {repr(_trj)}")
         trj.add_trj(_trj)
 
     if has_xyz and has_inp and len(MD_xyz) == 0:
 
-        mtime = 0
+        mtime = 10e9
         mfile = ""
+        proj_name = ""
 
-        for filename in glob(f"{folder}/*.inp") + glob(f"{folder}/*.restart"):
-            if getctime(filename) > mtime:
-                mtime = getctime(filename)
-                mfile = filename
+        # choose the earliest input
+        for inputfile in glob(f"{folder}/*.inp") + glob(f"{folder}/*.restart"):
+            _mtime = getctime(inputfile)
+            if _mtime < mtime:
+                metadata = parse_std_inp_metadata(inputfile)
+                if metadata['run_type'] == 'MD':
+                    mtime = _mtime
+                    mfile = inputfile
+                    proj_name = metadata['proj_name']
 
-        outfile_dict=dict(run_type="MD",
-                          inputfile=mfile
-                          )
-
-
-        for filename in glob("*-frc*.xyz"):
-            proj_name = filename.split("-")[0]
-            outfile_dict['proj_name'] = proj_name
-            if isfile(f"{proj_name}-pos-1.xyz"):
-                _trj = parse_md(folder, outfile_dict=outfile_dict)
-                logging.info(f"repr {repr(_trj)}")
-                trj.add_trj(_trj)
+        if isfile(f"{folder}/{proj_name}-pos-1.xyz"):
+            _trj = parse_md(folder, inp=inputfile,
+                            proj_name=proj_name)
+            logging.info(f"repr {repr(_trj)}")
+            trj.add_trj(_trj)
 
     logging.info(trj)
     logging.info(repr(trj))
@@ -130,18 +140,15 @@ def pack_folder_trj(folder, data_filter):
 
     # return Trajectory()
 
-def parse_md(folder, outfile_dict):
+def parse_md(folder, inp, proj_name):
 
     logging.info(f"parse md in folder {folder}")
 
     # if above strings are found
     find_input = False
     try:
-        inp = outfile_dict['inputfile']
-        inp = f"{folder}/{inp}"
-        run_type = outfile_dict['run_type']
-        proj_name = outfile_dict['proj_name']
-        find_input = (run_type == 'MD') and isfile(inp)
+        find_input = isfile(inp) and isfile(f"{folder}/{proj_name}-pos-1.xyz") \
+            and isfile(f"{folder}/{proj_name}-frc-1.xyz")
     except Exception as e:
         logging.info(f"It is not a MD {e}")
 
@@ -156,11 +163,11 @@ def parse_md(folder, outfile_dict):
                            data['cells'], metadata)
 
 
-def parse_std_out(folder, outfile):
+def parse_std_out(filename):
 
-    logging.info(f"parse {outfile}")
+    logging.info(f"parse {filename}")
 
-    d = read_pattern(outfile, {'inputfile':r"Input file name\s+(\S+)",
+    d = read_pattern(filename, {'inputfile':r"Input file name\s+(\S+)",
                                'abort':r"(ABORT)",
                                'run_type':r"Run type\s+(\S+)",
                                'proj_name':r"Project name\s+(\S+)",
@@ -305,15 +312,16 @@ def parse_std_inp_metadata(filename):
     data = {}
 
     d = read_pattern(filename,
-                     {'kpoints':r"SCHEME MONKHORST-PACK\s(\d+)\s(\d+)\s(\d+)",
-                      'gamma':r"SCHEME ([gG][a-zA-Z]*)",
+                     {'kpoints':r"SCHEME\s+MONKHORST-PACK\s+(\d+)\s(\d+)\s(\d+)",
+                      'gamma':r"SCHEME\s+([gG][a-zA-Z]*)",
                       'cutoff': r"REL_CUTOFF"+sfl_num,
                       'thermostat':r"ENSEMBLE\s+(\w*)",
-                      'dipole_correction':r"SURFACE_DIPOLE_CORRECTION (\w+)",
+                      'dipole_correction':r"SURFACE_DIPOLE_CORRECTION\s+(\w+)",
                       'run_type':r"RUN_TYPE\s+(\S+)",
-                      'proj_name':r"PROJECT\s+(\S+)",
-                      'filenames':r'FILENAME (\S+)',
-                      'etemp':r'ELECTRONIC_TEMPERATURE [K] (\w+)'})
+                      'project':r"PROJECT\s+(\S+)",
+                      'proj_name':r"PROJECT_NAME\s+(\S+)",
+                      'filenames':r'FILENAME\s+(\S+)',
+                      'etemp':r'ELECTRONIC_TEMPERATURE\s+[K]\s+(\w+)'})
 
     fix = read_table_pattern(filename,
                              header_pattern=r"\&FIXED_ATOMS",
@@ -321,6 +329,16 @@ def parse_std_inp_metadata(filename):
                              footer_pattern=r"&END",
                              last_one_only=False
                              )
+
+    if len(d['run_type']) > 0:
+        data['run_type'] = d['run_type'][0][0]
+    else:
+        data['run_type'] = 'unknown'
+
+    if len(d['proj_name']) > 0:
+        data['proj_name'] = d['proj_name'][0][0]
+    if len(d['project']) > 0:
+        data['proj_name'] = d['project'][0][0]
 
     if len(fix) > 0:
         fix = np.arange(int(fix[0]), int(fix[1])+1)
@@ -458,7 +476,6 @@ def parse_ase_shell_out(folder, filename):
         logging.info(f"cannot find species, give up the whole frame")
         return Trajectory()
 
-    logging.debug(f"shell species {trj.species}")
     return trj
 
 def parse_cp2k_xyzs(posxyz, forcexyz, cell, metadata):
