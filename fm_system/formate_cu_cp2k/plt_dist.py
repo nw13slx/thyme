@@ -10,6 +10,7 @@ from fmeee.trajectories import Trajectories
 from fmeee.parsers.cp2k import pack_folder_trj, get_childfolders
 from fmeee.routines.dist_plots.energy import multiple_plots as multiple_plots_e
 from fmeee.routines.dist_plots.energy import single_plot as single_plot_e
+from fmeee.parsers.extxyz import write
 from fmeee.filters.distance import e_filter
 
 def main():
@@ -25,6 +26,9 @@ def main():
     single_plot_e(trjs, prefix='merge')
     trjs = Trajectories.from_padded_trajectory(trjs,
                                                preserve_order=False)
+    for i, trj in trjs.alldata.items():
+        write(f"vmd{i}.xyz", trj)
+
     multiple_plots_e(trjs, prefix='elemenet')
 
     trjs.save("alldata_padded_mat.npz")

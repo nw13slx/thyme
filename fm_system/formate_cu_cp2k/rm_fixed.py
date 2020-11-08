@@ -8,6 +8,7 @@ from ase.atoms import Atoms
 
 from fmeee.trajectories import Trajectories
 from fmeee.parsers.cp2k import pack_folder_trj, get_childfolders
+from fmeee.parsers.extxyz import write
 from fmeee.routines.dist_plots.energy import multiple_plots as multiple_plots_e
 from fmeee.routines.dist_plots.energy import single_plot as single_plot_e
 from fmeee.filters.energy import rm_duplicate
@@ -38,14 +39,24 @@ def main():
     trjs = trjs.to_padded_trajectory()
     trjs = Trajectories.from_padded_trajectory(trjs,
                                                preserve_order=False)
+    # for i, trj in trjs.alldata.items():
+    #     ids = rm_duplicate(trj)
+    #     trj.filter_frames(accept_id=ids)
+    #     write(f"vmd{i}.xyz", trj)
+
+    trjs.save("clean_up.padded_mat.npz")
+    # logging.info("----FINAL TRJS----")
+    # logging.info(f"{trjs}")
+    # logging.info("-------END--------")
+
+
+    trjs = Trajectories.from_file("clean_up.padded_mat.npz",
+                                  format='padded_mat.npz',
+                                  preserve_order=False)
     for i, trj in trjs.alldata.items():
         ids = rm_duplicate(trj)
         trj.filter_frames(accept_id=ids)
-
-    trjs.save("clean_up.padded_mat.npz")
-    logging.info("----FINAL TRJS----")
-    logging.info(f"{trjs}")
-    logging.info("-------END--------")
+        write(f"new_vmd{i}.xyz", trj)
 
 
 
