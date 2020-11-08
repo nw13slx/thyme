@@ -44,7 +44,7 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
     """
     with zopen(filename, 'rt') as f:
         text = f.read()
-    table_pattern_text = header_pattern + r"\s*^(?P<table_body>(?:\s+" + row_pattern + r")+)\s+" + footer_pattern
+    table_pattern_text = header_pattern + r"\s*^(?P<table_body>(?:\s*" + row_pattern + r")+)\s+" + footer_pattern
     table_pattern = re.compile(table_pattern_text, re.MULTILINE | re.DOTALL)
     rp = re.compile(row_pattern)
     tables = []
