@@ -23,3 +23,20 @@ def lowe(trj, chosen_specie=None, chosen_count=0):
                 return sorted_id[0]
     else:
         return sorted_id[0]
+
+def rm_duplicate(trj):
+    """
+    remove top 2 energy, and then remove duplicated
+    """
+
+    sorted_id = np.argsort(trj.energies)[:-2]
+    keep_id = []
+    last_id = sorted_id[0]
+    for i, idx in enumerate(sorted_id[1:]):
+        if trj.energies[idx] != trj.energies[last_id]:
+            keep_id += [idx]
+            last_id = idx
+        else:
+            logging.info(f"remove duplicate energy {trj.energies[last_id]}")
+
+    return keep_id

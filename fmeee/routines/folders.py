@@ -8,6 +8,54 @@ from os.path import isdir, isfile
 
 from fmeee.trajectories import Trajectories
 
+def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename="", merge_level=1):
+
+    folders = folders
+    logging.info(f"all folders: {folders}")
+
+    count = 0
+    trjs = Trajectories()
+    alldata = trjs.alldata
+    for folder in folders:
+
+        if folder == "./":
+            casename = "current_folder"
+        if folder[:2] == "./":
+            maxl = np.min((len(folder[2:].split("/")), merge_level))
+            casename = "_".join(folder[2:].split("/")[:-maxl])
+            oldname = "_".join(folder[2:].split("/"))
+        else:
+            maxl = np.min((len(folder.split("/")), merge_level))
+            casename = "_".join(folder.split("/")[:-maxl])
+            oldname = "_".join(folder.split("/"))
+
+        logging.info(casename)
+
+        new_trj = pack_folder_trj(folder, data_filter)
+        if new_trj.nframes >= 1:
+            logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
+            new_trj.name = casename
+            if casename not in alldata:
+                alldata[casename] = new_trj
+            else:
+                try:
+                    alldata[casename].add_trj(new_trj)
+                except:
+                    alldata[oldname]=new_trj
+            count += 1
+            if count%10 == 0 and len(npz_filename)>0:
+                trjs.save(f"{npz_filename}")
+        else:
+            logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
+
+    if len(npz_filename)>0:
+        trjs.save(f"{npz_filename}")
+        logging.info(f"save as {npz_filename}")
+
+    logging.info("Complete parsing")
+
+    return trjs
+
 def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
     folders = folders

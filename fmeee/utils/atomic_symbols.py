@@ -1,6 +1,7 @@
 import numpy as np
 from collections import Counter
 from ase.data import atomic_numbers
+import logging
 
 atomic_numbers_dict = atomic_numbers
 atomic_numbers_dict.update(
