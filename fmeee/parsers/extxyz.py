@@ -197,22 +197,20 @@ def posforce_regex(filename):
     return string, index
 
 def write(name, trj):
-    if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
+    if not trj.is_padded:
         for i in range(trj.nframes):
             structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
                               symbols=trj.species,
                               positions=trj.positions[i].reshape([-1, 3]),
                               pbc=True)
             write_extxyz(name, structure, append=True)
-    elif isinstance(trj, PaddedTrajectory):
+    else:
         for i in range(trj.nframes):
             structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
                               symbols=trj.symbols[i],
                               positions=trj.positions[i].reshape([-1, 3]),
                               pbc=True)
             write_extxyz(name, structure, append=True)
-    else:
-        raise NotImplementedError("")
 
 def write_trjs(name, trjs):
     for i, trj in trjs.alldata.items():

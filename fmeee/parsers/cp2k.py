@@ -384,7 +384,7 @@ def parse_ase_shell_out(folder, filename):
     input_dict = None
     species = None
 
-    for filename in glob("*.inp"):
+    for filename in glob(f"{folder}/*.inp"):
         if species is None:
             data = parse_std_inp_pos(filename)
             species = data['species']
@@ -451,9 +451,12 @@ def parse_ase_shell_out(folder, filename):
 
     if species is not None:
         trj.species = np.array(species, dtype=str).reshape([-1])
-
-    if 'species' not in trj.metadata_attrs:
-        trj.metadata_attrs += ['species']
+        if 'species' not in trj.metadata_attrs:
+            trj.metadata_attrs += ['species']
+    else:
+        logging.info(f"{trj}")
+        logging.info(f"cannot find species, give up the whole frame")
+        return Trajectory()
 
     logging.debug(f"shell species {trj.species}")
     return trj

@@ -578,12 +578,12 @@ class PaddedTrajectory(Trajectory):
             trj.name = f"{otrj.name}_padded"
             trj.natom = max_atom
 
-            if otrj.species is None:
-                species = ['C']+['O']*2+['H']+['Cu']*48
-            elif otrj.natom == 52 or otrj.species[0] == 'None':
-                species = ['C']+['O']*2+['H']+['Cu']*48
-            else:
-                species = otrj.species
+            # if otrj.species is None:
+            #     species = ['C']+['O']*2+['H']+['Cu']*48
+            # elif otrj.natom == 52 or otrj.species[0] == 'None':
+            #     species = ['C']+['O']*2+['H']+['Cu']*48
+            # else:
+            species = otrj.species
             logging.info(f"obtain {species}")
 
             if otrj.is_padded:
@@ -649,10 +649,10 @@ class PaddedTrajectory(Trajectory):
         if not otrj.is_padded:
             self.natoms = np.ones(otrj.nframes)*otrj.natom
 
-            if otrj.species is None:
-                species = ['C']+['O']*2+['H']+['Cu']*48
-            else:
-                species = otrj.species
+            # if otrj.species is None:
+            #     species = ['C']+['O']*2+['H']+['Cu']*48
+            # else:
+            species = otrj.species
 
             species = np.array(species, dtype=str).reshape([-1])
             self.symbols = np.hstack(

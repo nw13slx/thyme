@@ -29,7 +29,7 @@ def rm_duplicate(trj):
     remove top 2 energy, and then remove duplicated
     """
 
-    sorted_id = np.argsort(trj.energies)[:-2]
+    sorted_id = np.argsort(trj.energies)[:-3]
     keep_id = []
     last_id = sorted_id[0]
     for i, idx in enumerate(sorted_id[1:]):
