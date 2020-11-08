@@ -20,6 +20,15 @@ class Trajectories():
     def __init__(self):
         self.alldata = {}
 
+    def __str__(self):
+
+        s = f"{len(self.alldata)} trajectories\n"
+        for name in self.alldata:
+            s += f"----{name}----\n"
+            s += f"{self.alldata[name]}\n"
+        return s
+
+
     def save(self, name: str, format: str = None):
 
         supported_formats = ['pickle', 'padded_mat.npz', 'npz', 'padded.xyz',
@@ -65,7 +74,7 @@ class Trajectories():
         init_trj = PaddedTrajectory()
         for trj in self.alldata.values():
             ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
-            logging.debug(f"padd {trj.name} to {ptrj}")
+            logging.info(f"padd {trj.name} to {ptrj}")
             init_trj.add_trj(ptrj)
         return init_trj
 
