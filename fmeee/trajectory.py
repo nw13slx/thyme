@@ -65,10 +65,10 @@ class Trajectory():
             frames = []
             for k in self.per_frame_attrs:
                 frames += [len(getattr(self, k))]
-                # logging.info(f"{k} {len(getattr(self, k))}")
+                # logging.info(f"debugg {k} {len(getattr(self, k))}")
 
             if len(set(frames)) > 1:
-                raise RuntimeError("Data inconsistent")
+                raise RuntimeError(f"Data inconsistent")
 
             self.nframes = self.positions.shape[0]
             self.per_frame_attrs = list(set(self.per_frame_attrs))
@@ -183,12 +183,31 @@ class Trajectory():
                 setattr(self, k, item)
                 if k not in self.metadata_attrs:
                     self.metadata_attrs += [k]
-            elif not np.equal(ori_item, item).all():
+            else:
 
-                ori_item = getattr(self, k, None)
-                logging.info(f"key {k} are not the same in the two objects")
-                logging.info(f"        {item} {ori_item}")
+                equal = False
+                try:
+                    if ori_item == item:
+                        equal = True
+                except:
+                    pass
 
+                try:
+                    if (ori_item == item).all():
+                        equal = True
+                except:
+                    pass
+
+                try:
+                    if np.equal(ori_item, item).all():
+                        equal = True
+                except:
+                    pass
+
+                if not equal and item is None:
+                    ori_item = getattr(self, k, None)
+                    logging.info(f"key {k} are not the same in the two objects")
+                    logging.info(f"        {item} {ori_item}")
 
 
     def save(self, name: str, format: str = None):
@@ -373,7 +392,7 @@ class Trajectory():
                     setattr(self, k, np.vstack((ori_item, item)))
                 ori_item = getattr(self, k)
 
-            self.copy_metadata(trj, exception=['name', 'nframes', 'natom'])
+            self.copy_metadata(trj, exception=['name', 'nframes', 'natom', 'filenames'])
 
             self.nframes += trj.nframes
 
@@ -515,9 +534,13 @@ class PaddedTrajectory(Trajectory):
 
         datom = max_atom-otrj.natom
         trj = PaddedTrajectory()
+
         if datom == 0:
+
             trj.copy(otrj)
+
         elif datom < 0:
+
             raise RuntimeError("wrong max atom is set")
 
         else:
@@ -555,16 +578,28 @@ class PaddedTrajectory(Trajectory):
             trj.name = f"{otrj.name}_padded"
             trj.natom = max_atom
 
+            if otrj.species is None:
+                species = ['C']+['O']*2+['H']+['Cu']*48
+            elif otrj.natom == 52 or otrj.species[0] == 'None':
+                species = ['C']+['O']*2+['H']+['Cu']*48
+            else:
+                species = otrj.species
+            logging.info(f"obtain {species}")
+
             if otrj.is_padded:
                 pad = np.array([['0']*datom]*trj.nframes)
                 trj.symbols = np.hstack((otrj.symbols, pad))
                 pad = np.zeros((trj.nframes, datom))
+                logging.info(f"padded to pad symbols {otrj.symbols}")
             else:
-                species = np.hstack([otrj.species, datom*['NA']])
-                trj.symbols = np.vstack([species]*trj.nframes)
+                species = np.array(species, dtype=str).reshape([-1])
+                species = np.hstack([species, datom*['NA']])
+                trj.symbols = np.hstack([species]*trj.nframes).reshape([trj.nframes, -1])
+                logging.info(f"non-padded to pad symbols {otrj.species} {species}")
                 trj.natoms = np.ones(trj.nframes)*otrj.natom
                 trj.per_frame_attrs += ['symbols']
                 trj.per_frame_attrs += ['natoms']
+        logging.info(f"padded symbols {trj.symbols}")
 
         trj.sanity_check()
         logging.debug(f"! return {repr(trj)}")
@@ -613,7 +648,15 @@ class PaddedTrajectory(Trajectory):
 
         if not otrj.is_padded:
             self.natoms = np.ones(otrj.nframes)*otrj.natom
-            self.symbols = np.vstack([otrj.species]*otrj.nframes)
+
+            if otrj.species is None:
+                species = ['C']+['O']*2+['H']+['Cu']*48
+            else:
+                species = otrj.species
+
+            species = np.array(species, dtype=str).reshape([-1])
+            self.symbols = np.hstack(
+                [species]*otrj.nframes).reshape([otrj.nframes, -1])
             self.per_frame_attrs += ['natoms']
             self.per_frame_attrs += ['symbols']
 
@@ -645,25 +688,18 @@ class PaddedTrajectory(Trajectory):
 
             if not trj.is_padded:
                 logging.info(f"conver to padded trj")
-                trj = PaddedTrajectory.from_trajectory(trj, max_atoms)
+                trj = PaddedTrajectory.from_trajectory(trj, trj.natom)
 
             for k in self.per_frame_attrs:
                 ori_item = getattr(self, k)
-                if k not in trj.per_frame_attrs and (not trj.is_padded) and \
-                        (k in ['symbols', 'natoms']):
-                    if k == 'symbols':
-                        item = trj.species.reshape([1, -1])
-                    else:
-                        item = np.array([trj.natom])
-                else:
-                    item = getattr(trj, k)
+                item = getattr(trj, k)
 
-                logging.debug(f"merge {k} {ori_item.shape} {item.shape}")
+                logging.info(f"merge {k} {ori_item.shape} {item.shape}")
                 if len(item.shape) == 1:
                     setattr(self, k, np.hstack((ori_item, item)))
                 else:
                     setattr(self, k, np.vstack((ori_item, item)))
                 ori_item = getattr(self, k)
 
-            self.copy_metadata(trj, exception=['name', 'nframes', 'species'])
+            self.copy_metadata(trj, exception=['name', 'nframes', 'species', 'filenames'])
             self.nframes += trj.nframes
