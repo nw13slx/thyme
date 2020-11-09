@@ -12,16 +12,17 @@ plt.switch_backend('agg')
 species = ['Ag']*143+['Pd']*7+['C']*3+['O']*3
 natom = len(species)
 
+
 def main():
     with open("npz/metadata.json") as fin:
-         metadata = json.load(fin)
+        metadata = json.load(fin)
     alle = {}
     fout3 = open("all_sort_e.xyz", "w+")
     for ifolder, folder in enumerate(metadata['foldername']):
         e_dict = pack_folder(folder, metadata)
         alle.update(e_dict)
 
-        if len(e_dict)>0:
+        if len(e_dict) > 0:
             k = np.sort(list(e_dict.keys()))[0]
             values = e_dict[k]
             xyz = values['x'].reshape([-1, 3])
@@ -49,26 +50,27 @@ def main():
         natom = xyz.shape[0]
         for kref in list_pos:
             pos = list_pos[kref]
-            dist = np.linalg.norm(pos0[143:].reshape([-1])-pos[143:].reshape([-1]))
+            dist = np.linalg.norm(pos0[143:].reshape(
+                [-1])-pos[143:].reshape([-1]))
             alldist += [dist]
             if dist < 10:
                 find = True
                 ref = kref
         if not find:
-           with open(f"npz/sort_e{ind}.POSCAR", "w+") as fout:
-               print(head, file=fout)
-               list_pos[k] = pos0
-               print("selected natom", natom)
-               print("C", file=fout)
-               for iatom in range(natom):
-                   print(xyz[iatom, 0], xyz[iatom, 1], xyz[iatom, 2],
-                         file=fout)
-               print(natom, file=fout2)
-               print(natom, file=fout2)
-               for iatom in range(natom):
-                   print(species[iatom], xyz[iatom, 0], xyz[iatom, 1], xyz[iatom, 2],
-                         file=fout2)
-           ind += 1
+            with open(f"npz/sort_e{ind}.POSCAR", "w+") as fout:
+                print(head, file=fout)
+                list_pos[k] = pos0
+                print("selected natom", natom)
+                print("C", file=fout)
+                for iatom in range(natom):
+                    print(xyz[iatom, 0], xyz[iatom, 1], xyz[iatom, 2],
+                          file=fout)
+                print(natom, file=fout2)
+                print(natom, file=fout2)
+                for iatom in range(natom):
+                    print(species[iatom], xyz[iatom, 0], xyz[iatom, 1], xyz[iatom, 2],
+                          file=fout2)
+            ind += 1
         else:
             print("found before", k, ref)
     fout2.close()
@@ -77,10 +79,11 @@ def main():
     fig.savefig("dist_hist.png", dpi=300)
     print(np.sort(alldist)[:100])
 
+
 def pack_folder(folder, metadata):
 
     e_dict = {}
-    casename="_".join(folder.split("/"))
+    casename = "_".join(folder.split("/"))
 
     if isfile(f"npz/{casename}.npz"):
 
@@ -92,17 +95,18 @@ def pack_folder(folder, metadata):
         species = data['species']
         meta = data['metadata']
         index = np.argmin(energy)
-        e_dict[energy[index]] = {'x':positions[index],
-                                 'x0':data['original_slab'],
-                                 'f':forces[index],
-                                 'cell':cell,
-                                 'species':species,
-                                 'metadata':meta}
+        e_dict[energy[index]] = {'x': positions[index],
+                                 'x0': data['original_slab'],
+                                 'f': forces[index],
+                                 'cell': cell,
+                                 'species': species,
+                                 'metadata': meta}
     else:
         print(folder, f"npz/{casename}.npz")
     return e_dict
 
-head="""
+
+head = """
 1
 17.627098    0.000000    0.000000
 8.852748   15.333410    0.000000
@@ -112,4 +116,3 @@ Ag   Pd   C   O
 
 if __name__ == '__main__':
     main()
-

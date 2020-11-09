@@ -1,18 +1,15 @@
+from thyme.trajectories import Trajectories
+from thyme.trajectory import PaddedTrajectory
+from thyme.parsers.extxyz import extxyz_to_padded_trj
+from thyme.routines.folders import parse_folders
+from ase.atoms import Atoms
+from glob import glob
+import numpy as np
 import logging
 logging.basicConfig(filename=f'collect.log', filemode='w',
-                                          level=logging.INFO, format="%(message)s")
+                    level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 
-import numpy as np
-
-from glob import glob
-
-from ase.atoms import Atoms
-
-from thyme.routines.folders import parse_folders
-from thyme.parsers.extxyz import extxyz_to_padded_trj
-from thyme.trajectory import PaddedTrajectory
-from thyme.trajectories import Trajectories
 
 def main():
 

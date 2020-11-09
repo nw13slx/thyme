@@ -3,6 +3,7 @@ import numpy as np
 
 from ase.atoms import Atoms
 
+
 def e_filter(trj):
     """
     filter away non-negative energies
@@ -11,17 +12,19 @@ def e_filter(trj):
 
     accept_frame = []
     species = trj.species
-    energy_id = np.where(trj.energies<0)[0]
+    energy_id = np.where(trj.energies < 0)[0]
     for i in energy_id:
         xyz = trj.positions[i]
         c = trj.cells[i]
         atoms = Atoms(species, xyz, cell=c, pbc=True)
         dist_mat = atoms.get_all_distances(mic=True)
-        not_metal = [i for i in range(dist_mat.shape[0]) if species[i] in ['C', 'H', 'O']]
+        not_metal = [i for i in range(dist_mat.shape[0]) if species[i] in [
+            'C', 'H', 'O']]
         accept = True
         for ind in range(dist_mat.shape[0]):
 
-            neigh = np.argmin(np.hstack([dist_mat[ind, :ind], dist_mat[ind, ind+1:]]))
+            neigh = np.argmin(
+                np.hstack([dist_mat[ind, :ind], dist_mat[ind, ind+1:]]))
             if neigh >= ind:
                 neigh += 1
             mindist = dist_mat[ind, neigh]
@@ -34,12 +37,13 @@ def e_filter(trj):
             else:
                 # if mindist > 3.0:
                 #     logging.info(f"skip frame for isolated metal atom {mindist} {ind} {species[ind]} {neigh} {species[neigh]}")
-                metal = [i for i in range(dist_mat.shape[0]) if species[i] not in \
-                      ['C', 'H', 'O'] and i!=ind]
+                metal = [i for i in range(dist_mat.shape[0]) if species[i] not in
+                         ['C', 'H', 'O'] and i != ind]
                 neigh = metal[np.argmin(dist_mat[ind, metal])]
                 min_metal = dist_mat[ind, neigh]
                 if min_metal > 3.5:
-                    print(ind, dist_mat[ind, ind-3:np.min([ind+3, dist_mat.shape[0]])])
+                    print(ind, dist_mat[ind, ind -
+                                        3:np.min([ind+3, dist_mat.shape[0]])])
                     logging.info(f"skip frame for isolated metal from other metal"
                                  f" {min_metal} {ind}"
                                  f" {species[ind]} {neigh} {species[neigh]}")
@@ -49,6 +53,37 @@ def e_filter(trj):
 
     return np.array(accept_frame, dtype=int)
 
+
+def fixed_bottom(trj, layer_no=12):
+    """
+    filter away non-negative energies
+    and configs with isolated metal atoms
+    """
+
+    accept_frame = []
+    species = trj.species
+    energy_id = np.where(trj.energies < 0)[0]
+
+    for i in energy_id:
+
+        if trj.is_padded:
+            n = trj.natoms[i]
+            xyz = trj.positions[i][:n]
+        else:
+            xyz = trj.positions[i]
+        sort_id = np.argsort(xyz[:, 2])
+        std_z = np.std(xyz[sort_id[:layer_no], 2])
+
+        if std_z < 0.05:
+            sf = np.sum(np.abs(trj.forces[i][sort_id[:layer_no]]))
+            if sf != 0:
+                accept_frame += [i]
+            else:
+                logging.info(f"skip config with 0 forces {sf}")
+        else:
+            logging.info(f"skip config with varying z {std_z}")
+
+    return np.array(accept_frame, dtype=int)
 
 # def mind_filter(trj):
 #     """

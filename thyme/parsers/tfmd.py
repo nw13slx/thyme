@@ -11,6 +11,7 @@ from thyme.parsers.extxyz import pack_folder_trj as pack_extxyz_folder_trj
 from thyme.trajectory import PaddedTrajectory
 from thyme.routines.folders import find_folders_matching
 
+
 def get_childfolders(path, include_xyz=True):
 
     if include_xyz:
@@ -18,9 +19,11 @@ def get_childfolders(path, include_xyz=True):
     else:
         return find_folders_matching(['xyz_strucs/*.extxyz'], path)
 
+
 def pack_folder(folder, data_filter, include_xyz=True):
 
     return pack_extxyz_folder(f"{folder}/xyz_strucs", data_filter, include_xyz)
+
 
 def pack_folder_trj(folder, data_filter, include_xyz=True):
 

@@ -1,26 +1,24 @@
+from thyme.routines.write.xyz import write_single_xyz
+from thyme.filters.error import sort_by_force
+from thyme.trajectories import Trajectories
+import numpy as np
 import logging
 logging.basicConfig(filename=f'filter.log', filemode='a',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 
-import numpy as np
-
-from thyme.trajectories import Trajectories
-from thyme.filters.error import sort_by_force
-from thyme.routines.write.xyz import write_single_xyz
 
 skips = {
-    'C1O1Pd7Ag144': [  8, 10,  5 ], # 5124 frames with 153 atoms
-    'C1O1Pd5Ag144': [  8, 10,  5 ], # 171 frames with 151 atoms
-    'C2O2Pd7Ag144': [  4, 10,  5 ], # 98 frames with 155 atoms
-    'C2O2Pd7Ag143': [ 10, 10,  10], # 2504 frames with 154 atoms
-    'C3O3Pd7Ag143': [ 10, 10,  20], # 2837 frames with 156 atoms
-    'C4O4Pd7Ag144': [  8, 10,  5 ], # 290 frames with 159 atoms
-    'C4O4Pd7Ag143': [  8, 20,  1 ], # 2117 frames with 158 atoms
-    'Pd19Ag147':    [ 60, 10,  1 ], # 3536 frames with 166 atoms
-    'Pd7Ag144':     [  0,  0,  0 ], # 5 frames with 151 atoms
+    'C1O1Pd7Ag144': [8, 10,  5],  # 5124 frames with 153 atoms
+    'C1O1Pd5Ag144': [8, 10,  5],  # 171 frames with 151 atoms
+    'C2O2Pd7Ag144': [4, 10,  5],  # 98 frames with 155 atoms
+    'C2O2Pd7Ag143': [10, 10,  10],  # 2504 frames with 154 atoms
+    'C3O3Pd7Ag143': [10, 10,  20],  # 2837 frames with 156 atoms
+    'C4O4Pd7Ag144': [8, 10,  5],  # 290 frames with 159 atoms
+    'C4O4Pd7Ag143': [8, 20,  1],  # 2117 frames with 158 atoms
+    'Pd19Ag147':    [60, 10,  1],  # 3536 frames with 166 atoms
+    'Pd7Ag144':     [0,  0,  0],  # 5 frames with 151 atoms
 }
-
 
 
 trjs = Trajectories.from_file("trjs.pickle")

@@ -40,7 +40,7 @@ def main():
         nframes += data['positions'].shape[0]
     print("valid", nframes)
 
-    ele_to_N = {'Ag':46, 'Pd':47, 'C':6, 'O':8}
+    ele_to_N = {'Ag': 46, 'Pd': 47, 'C': 6, 'O': 8}
     for npz in train_npzs+valid_npzs+test_npzs:
 
         folder = dirname(npz)
@@ -76,8 +76,6 @@ def main():
                       xyz[idx, 2], file=fout)
             xyz = None
     fout.close()
-
-
 
 
 if __name__ == '__main__':

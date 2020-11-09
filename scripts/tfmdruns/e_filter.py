@@ -1,3 +1,4 @@
+from thyme.routines.write.xyz import write_single_xyz
 import matplotlib.pyplot as plt
 from thyme.routines.parity_plots.force import multiple_plots
 from thyme.routines.parity_plots.energy import multiple_plots as multiple_plots_e
@@ -13,7 +14,6 @@ import logging
 logging.basicConfig(filename=f'filter.log', filemode='a',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
-from thyme.routines.write.xyz import write_single_xyz
 
 
 # original = Trajectories.from_file(
@@ -43,10 +43,10 @@ alle = []
 for i, trj in enumerate(original.alldata.values()):
     if count < ori_train:
         select_id = np.arange(np.min([trj.nframes, ori_train-count]))
-        e_id = np.where(trj.energies>0)[0]
-        if len(e_id)>0:
+        e_id = np.where(trj.energies > 0)[0]
+        if len(e_id) > 0:
             logging.info(f" pop non-negative elements {e_id}")
-        select_id = np.setdiff1d(select_id,e_id)
+        select_id = np.setdiff1d(select_id, e_id)
         # for idx in e_id:
         #     if idx in select_id:
         #         select_id.remove(idx)
@@ -55,10 +55,10 @@ for i, trj in enumerate(original.alldata.values()):
                 test_id = np.arange(ori_train-count,
                                     np.min([trj.nframes,
                                             ori_test+ori_train-count_test-count]))
-                e_id = np.where(trj.energies>0)[0]
-                if len(e_id)>0:
+                e_id = np.where(trj.energies > 0)[0]
+                if len(e_id) > 0:
                     logging.info(f" pop non-negative elements {e_id}")
-                select_id = np.setdiff1d(select_id,e_id)
+                select_id = np.setdiff1d(select_id, e_id)
                 # for idx in e_id:
                 #     if idx in test_id:
                 #         test_id.remove(idx)
@@ -97,21 +97,20 @@ for idf, filename in enumerate(new_files):
             # # remove top 3 highest energy configuration
             # e_id = np.argsort(trj.energies)[-3:]
 
-            pop_id = [np.where(trj.energies>0)[0]]
+            pop_id = [np.where(trj.energies > 0)[0]]
             pop_info = ["non-negative energies"]
 
             pop_id += [np.where(trj.energies > (np.min(trj.energies)+60))[0]]
             pop_info += ["energy > 60 eV + min"]
 
-            pop_id += [np.where(err<threshold)[0]]
+            pop_id += [np.where(err < threshold)[0]]
             pop_info += [f"force error < {threshold}"]
 
             for ipop, pop in enumerate(pop_id):
                 intersection = np.intersect1d(sorted_id, pop)
                 if len(intersection) > 0:
                     logging.info(f"pop {pop_info[ipop]} {intersection}")
-                sorted_id = np.setdiff1d(sorted_id,pop)
-
+                sorted_id = np.setdiff1d(sorted_id, pop)
 
             # double check whether the config was included before
             new_list = []
@@ -129,7 +128,7 @@ for idf, filename in enumerate(new_files):
             test_id = sorted_id[-lower_bound+1::2]
 
             new_trj = trj.skim(train_id)
-            if len(train_id)>0:
+            if len(train_id) > 0:
                 traindata[trj.name+"new"] = new_trj
                 logging.info(
                     f"add to train: configs with err {err[train_id]}")

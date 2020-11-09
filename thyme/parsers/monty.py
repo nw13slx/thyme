@@ -8,9 +8,10 @@ import numpy as np
 from monty.io import zopen
 from monty.re import regrep
 
+
 def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
-                           postprocess=str,
-                           last_one_only=True):
+                       postprocess=str,
+                       last_one_only=True):
     r"""
     Parse table-like data. A table composes of three parts: header,
     main body, footer. All the data matches "row pattern" in the main body
@@ -44,7 +45,8 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
     """
     with zopen(filename, 'rt') as f:
         text = f.read()
-    table_pattern_text = header_pattern + r"\s*^(?P<table_body>(?:\s*" + row_pattern + r")+)\s+" + footer_pattern
+    table_pattern_text = header_pattern + \
+        r"\s*^(?P<table_body>(?:\s*" + row_pattern + r")+)\s+" + footer_pattern
     table_pattern = re.compile(table_pattern_text, re.MULTILINE | re.DOTALL)
     rp = re.compile(row_pattern)
     tables = []
@@ -70,9 +72,8 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
     return retained_data
 
 
-
 def read_pattern(filename, patterns, reverse=False, terminate_on_match=False,
-                     postprocess=str):
+                 postprocess=str):
     r"""
     General pattern reading. Uses monty's regrep method. Takes the same
     arguments.

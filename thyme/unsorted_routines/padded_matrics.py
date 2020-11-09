@@ -1,17 +1,17 @@
+import time
+from glob import glob
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from ase.io.extxyz import write_xyz
+from ase.atoms import Atoms
 import logging
 logging.basicConfig(filename=f'padded.log', filemode='a',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 logging.info("----")
 
-from ase.atoms import Atoms
-from ase.io.extxyz import write_xyz
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
-from glob import glob
-import time
 
 
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
@@ -21,7 +21,8 @@ matplotlib.rcParams['font.size'] = 8
 # https://matplotlib.org/3.1.0/gallery/color/named_colors.html
 
 tabcolors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple',
-                          'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+             'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+
 
 def main():
 
@@ -39,7 +40,7 @@ def main():
                 s += i
         s = np.sum([int(i) for i in s.split()])
         print(label, s)
-        if s>maxatom:
+        if s > maxatom:
             maxatom = s
 
     positions = []
@@ -86,7 +87,8 @@ def main():
             else:
                 nframes0 = nframes-remove_top
                 portion = int(np.floor(nframes0*skip))
-                logging.info(f"fractional skip, total {nframes0}, portion {portion}")
+                logging.info(
+                    f"fractional skip, total {nframes0}, portion {portion}")
                 idlist = max_energies[np.random.permutation(nframes0)]
                 remain_list = idlist[portion:]
                 idlist = idlist[:portion]
@@ -117,7 +119,8 @@ def main():
             count += 1
 
         ori_nframes = data['cells'].shape[0]
-        logging.info(f"{label} {count} from {ori_nframes} skip {skip} remove_top {remove_top}")
+        logging.info(
+            f"{label} {count} from {ori_nframes} skip {skip} remove_top {remove_top}")
 
         count = 0
         for index in remain_list:
@@ -137,14 +140,15 @@ def main():
             re_symbols += [symbol]
             re_natoms += [natom]
             count += 1
-        logging.info(f"remain {label} {count} from {ori_nframes} skip {skip} remove_top {remove_top}")
+        logging.info(
+            f"remain {label} {count} from {ori_nframes} skip {skip} remove_top {remove_top}")
 
-    positions=np.vstack(positions)
-    forces=np.vstack(forces)
-    cells=np.vstack(cells)
-    symbols=np.vstack(symbols)
-    natoms=np.hstack(natoms)
-    energies=np.hstack(energies)
+    positions = np.vstack(positions)
+    forces = np.vstack(forces)
+    cells = np.vstack(cells)
+    symbols = np.vstack(symbols)
+    natoms = np.hstack(natoms)
+    energies = np.hstack(energies)
 
     nframes = cells.shape[0]
     nframes0 = cells.shape[0]
@@ -156,12 +160,12 @@ def main():
     natoms = natoms[permute_id]
     energies = energies[permute_id]
 
-    re_positions=np.vstack(re_positions)
-    re_forces=np.vstack(re_forces)
-    re_cells=np.vstack(re_cells)
-    re_symbols=np.vstack(re_symbols)
-    re_natoms=np.hstack(re_natoms)
-    re_energies=np.hstack(re_energies)
+    re_positions = np.vstack(re_positions)
+    re_forces = np.vstack(re_forces)
+    re_cells = np.vstack(re_cells)
+    re_symbols = np.vstack(re_symbols)
+    re_natoms = np.hstack(re_natoms)
+    re_energies = np.hstack(re_energies)
 
     nframes = re_cells.shape[0]
     permute_id = np.random.permutation(nframes)
@@ -172,7 +176,8 @@ def main():
     re_natoms = re_natoms[permute_id]
     re_energies = re_energies[permute_id]
 
-    logging.info(f"save as {nframes0}_frames.npz with {nframes0} training and {nframes} validation")
+    logging.info(
+        f"save as {nframes0}_frames.npz with {nframes0} training and {nframes} validation")
     np.savez(f"{nframes0}_frames.npz",
              positions=np.vstack([positions, re_positions]),
              forces=np.vstack([forces, re_forces]),

@@ -12,7 +12,8 @@ def configuration(trj, i):
         natom = trj.natoms[i]
         structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
                           symbols=trj.symbols[i][:natom],
-                          positions=trj.positions[i][:natom].reshape([natom, 3]),
+                          positions=trj.positions[i][:natom].reshape(
+                              [natom, 3]),
                           pbc=True)
     else:
         structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
@@ -20,5 +21,3 @@ def configuration(trj, i):
                           positions=trj.positions[i].reshape([-1, 3]),
                           pbc=True)
     return structure
-
-

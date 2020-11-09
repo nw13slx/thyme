@@ -16,12 +16,14 @@ fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
 sfl_num = r"\s+([+-]?\d+.\d+[eE]?[+-]?\d*)"
 nc_fl_num = r"[+-]?\d+.\d+[eE]?[+-]?\d*"
 
+
 def get_childfolders(path, include_xyz=True):
 
     if include_xyz:
         return find_folders_matching(['*.xyz', '*.extxyz'], path)
     else:
         return find_folders_matching(['*.extxyz'], path)
+
 
 def pack_folder_trj(folder, data_filter, include_xyz=True):
 
@@ -41,6 +43,7 @@ def pack_folder_trj(folder, data_filter, include_xyz=True):
 
     return join_trj
 
+
 def pack_folder(folder, data_filter, include_xyz=True):
 
     join_trj = pack_folder_trj(folder, data_filter, include_xyz)
@@ -48,6 +51,7 @@ def pack_folder(folder, data_filter, include_xyz=True):
     data = join_trj.to_dict()
 
     return data
+
 
 def extxyz_to_padded_dict(filename):
 
@@ -58,14 +62,14 @@ def extxyz_to_padded_dict(filename):
     logging.info(f"converting {filename}")
     d = \
         read_pattern(filename,
-                     {'natoms':r"^([0-9]+)$",
-                      'cells':r"Lattice=\""+fl_num+sfl_num+sfl_num \
-                      +sfl_num+sfl_num+sfl_num \
-                      +sfl_num+sfl_num+sfl_num+r"\"",
-                      'free_energies':r"free_energy="+fl_num,
-                      'energies':r"energy="+fl_num,
+                     {'natoms': r"^([0-9]+)$",
+                      'cells': r"Lattice=\""+fl_num+sfl_num+sfl_num
+                      + sfl_num+sfl_num+sfl_num
+                      + sfl_num+sfl_num+sfl_num+r"\"",
+                      'free_energies': r"free_energy="+fl_num,
+                      'energies': r"energy="+fl_num,
                       'posforce': string,
-                      'symbols':r"^([a-zA-Z]+)\s"
+                      'symbols': r"^([a-zA-Z]+)\s"
                       })
 
     natoms = np.array(d['natoms'], dtype=int).reshape([-1])
@@ -103,7 +107,8 @@ def extxyz_to_padded_dict(filename):
         fo = np.zeros((max_atoms, 3))
         fo[:natom] += forces[counter:counter+natom]
         newforce += [[fo]]
-        newsymbols += [np.hstack((symbols[counter:counter+natom],['0']*(max_atoms-natom)))]
+        newsymbols += [np.hstack((symbols[counter:counter+natom],
+                                  ['0']*(max_atoms-natom)))]
         counter += natom
     positions = np.vstack(newpos)
     forces = np.vstack(newforce)
@@ -115,11 +120,10 @@ def extxyz_to_padded_dict(filename):
     # logging.debug(f"{positions[0][1]}")
     # logging.debug(f"{positions[0][2]}")
 
-
     dictionary = dict(
-        positions = positions,
-        forces = forces,
-        energies = energies,
+        positions=positions,
+        forces=forces,
+        energies=energies,
         cells=cells,
         symbols=symbols,
         natoms=natoms,
@@ -129,11 +133,12 @@ def extxyz_to_padded_dict(filename):
     # double check all arrays have the same number of frames
     nframes = []
     for k in dictionary:
-        if k!= 'natom':
+        if k != 'natom':
             nframes += [dictionary[k].shape[0]]
     assert len(set(nframes)) == 1
 
     return dictionary
+
 
 def extxyz_to_padded_trj(filename, data_filter):
 
@@ -146,7 +151,8 @@ def extxyz_to_padded_trj(filename, data_filter):
         trj.filter_frames(accept_id)
     except Exception as e:
         logging.error(f"{e}")
-        logging.error("extxyz only accept batch filter work on paddedtrajectory")
+        logging.error(
+            "extxyz only accept batch filter work on paddedtrajectory")
         raise RuntimeError("")
 
     trj.name = filename
@@ -155,6 +161,7 @@ def extxyz_to_padded_trj(filename, data_filter):
     logging.debug(f"{trj}")
 
     return trj
+
 
 def posforce_regex(filename):
 
@@ -168,7 +175,7 @@ def posforce_regex(filename):
     string = ""
     pos_id = -1
     forces_id = -1
-    index = {'pos':0, 'forces':0}
+    index = {'pos': 0, 'forces': 0}
     item_count = 0
     for k, v in properties.items():
         length = v[1]
@@ -179,14 +186,15 @@ def posforce_regex(filename):
             index[k] = item_count
         else:
             for i in range(length):
-                if i>0:
+                if i > 0:
                     string += r'\s+'
                 if convertesr[item_count+i] == str:
                     string += r'\w+'
                 elif convertesr[item_count+i] == float:
                     string += nc_fl_num
                 else:
-                    logging.info(f"parser is not implemented for type {convertesr[item_count+i]}")
+                    logging.info(
+                        f"parser is not implemented for type {convertesr[item_count+i]}")
         item_count += length
     if index['pos'] > index['forces']:
         index['pos'] = 3
@@ -195,6 +203,7 @@ def posforce_regex(filename):
         index['pos'] = 0
         index['forces'] = 3
     return string, index
+
 
 def write(name, trj):
     if not trj.is_padded:
@@ -211,6 +220,7 @@ def write(name, trj):
                               positions=trj.positions[i].reshape([-1, 3]),
                               pbc=True)
             write_extxyz(name, structure, append=True)
+
 
 def write_trjs(name, trjs):
     for i, trj in trjs.alldata.items():

@@ -1,15 +1,15 @@
+from glob import glob
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from ase.io.extxyz import write_xyz
+from ase.atoms import Atoms
 import logging
 logging.basicConfig(filename=f'plot.log', filemode='w',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 
-from ase.atoms import Atoms
-from ase.io.extxyz import write_xyz
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
-from glob import glob
 
 
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
@@ -19,7 +19,8 @@ matplotlib.rcParams['font.size'] = 8
 # https://matplotlib.org/3.1.0/gallery/color/named_colors.html
 
 tabcolors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple',
-                          'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+             'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+
 
 def main():
     for npz in glob("all_*.npz"):
@@ -50,10 +51,11 @@ def main():
         for index in max_energies:
             atoms = Atoms(data['species'], positions=positions[index].reshape([-1, 3]),
                           cell=cells[index].reshape([3, 3]), pbc=True,
-                          info={'energy':data['energies'][index]})
+                          info={'energy': data['energies'][index]})
             write_xyz(f"{label}.xyz", atoms, comment=data['names'][index],
                       append=True)
-            logging.info(f"{label} {count} {data['names'][index]} {data['energies'][index]}")
+            logging.info(
+                f"{label} {count} {data['names'][index]} {data['energies'][index]}")
             count += 1
 
 
