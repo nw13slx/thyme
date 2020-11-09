@@ -19,17 +19,17 @@ def base_line_hist_axs(axs, data, label, legend, filename, lims=[None, None],
     include_id.update(sort_id[-n:])
     include_id = np.array(list(include_id), dtype=int)
 
-    newlims = np.copy(lims)
-    dmin = np.min(plot_d)
-    dmax = np.max(plot_d)
-    if newlims[0] is None:
-        newlims[0] = dmin
-    if newlims[1] is None:
-        newlims[1] = dmax
-    if newlims[0] < dmin:
-        newlims[0] = dmin
-    if newlims[1] > dmax:
-        newlims[1] = dmax
+    # newlims = np.copy(lims)
+    # dmin = np.min(plot_d)
+    # dmax = np.max(plot_d)
+    # if newlims[0] is None:
+    #     newlims[0] = dmin
+    # if newlims[1] is None:
+    #     newlims[1] = dmax
+    # if newlims[0] < dmin:
+    #     newlims[0] = dmin
+    # if newlims[1] > dmax:
+    #     newlims[1] = dmax
 
     mean = np.average(plot_d)
     std = np.sqrt(np.var(plot_d))
@@ -42,7 +42,7 @@ def base_line_hist_axs(axs, data, label, legend, filename, lims=[None, None],
                    label=f"{legend} mean {mean:6.3f} std {std:6.3f}")
     axs[0].set_xlabel("Step (a.u.)")
     axs[0].set_ylabel(label)
-    axs[0].set_ylim(newlims)
+    # axs[0].set_ylim(newlims)
     axs[0].legend()
 
     base_hist(axs[1], plot_d, label, lims)

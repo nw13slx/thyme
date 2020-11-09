@@ -4,6 +4,21 @@ import numpy as np
 from thyme.utils.atomic_symbols import species_to_idgroups
 from thyme.trajectory import PaddedTrajectory
 
+def rm_sudden_drop(trj, thredshold):
+    """
+    """
+
+    ref = trj.energies[0]
+    upper_bound = trj.nframes
+    for i in range(trj.nframes):
+        if trj.energies[i] < (ref-thredshold):
+            upper_bound = i
+            break
+    if upper_bound != trj.nframes:
+        logging.info(f" later part of the trj from {upper_bound} will be drop "
+                     "due to a sudden potential energy drop")
+    return np.arange(upper_bound)
+
 def lowe(trj, chosen_specie=None, chosen_count=0):
     """
     """

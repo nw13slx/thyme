@@ -20,10 +20,6 @@ def get_childfolders(path):
 
 def pack_folder_trj(folder, data_filter):
 
-    return pack_folder_trj(folder, data_filter)
-
-def pack_folder_trj(folder, data_filter):
-
     if folder == "./":
         folder = "."
 
@@ -115,7 +111,7 @@ def parse_outcar_trj(folder, data_filter):
     try:
         incar = Incar.from_file(filename)
     except Exception as e:
-        logging.info("fail to load outcar", e)
+        logging.info(f"fail to load outcar {e}")
         return Trajectory()
     logging.info(f"Incar grep time {time.time()-t}")
 
@@ -177,8 +173,8 @@ def parse_vasprun_trj(folder, data_filter):
         vasprun = Vasprun(filename, ionic_step_skip=0,
                           exception_on_bad_xml=False)
     except Exception as e:
-        logging.info("fail to load vasprun", e)
-        return data
+        logging.info("fail to load vasprun {e}")
+        return Trajectory()
 
     nelm = vasprun.incar['NELM']
     data['nelm'] = nelm
