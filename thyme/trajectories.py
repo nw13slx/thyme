@@ -21,6 +21,13 @@ class Trajectories():
     def __init__(self):
         self.alldata = {}
 
+    @property
+    def nframes(self):
+        nframes = 0
+        for trj in self.alldata.values():
+            nframes += trj.nframes
+        return nframes
+
     def __str__(self):
 
         s = f"{len(self.alldata)} trajectories\n"
@@ -77,6 +84,18 @@ class Trajectories():
             logging.info(f"padd {trj.name} to {ptrj}")
             init_trj.add_trj(ptrj)
         return init_trj
+
+    def add_trj(self, trj, name=None):
+
+        if isinstance(trj, Trajectories):
+            self.alldata.update(trj.alldata)
+        else:
+            if name in self.alldata:
+                logging.info(f"warning, overwriting trj with name {name}")
+
+            if name is None:
+                name = trj.name
+            self.alldata[name] = trj
 
     def save_padded_matrices(self, name: str):
 

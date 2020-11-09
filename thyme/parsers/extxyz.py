@@ -25,7 +25,7 @@ def get_childfolders(path, include_xyz=True):
         return find_folders_matching(['*.extxyz'], path)
 
 
-def pack_folder_trj(folder, data_filter, include_xyz=True):
+def pack_folder_trj(folder, data_filter=None, include_xyz=True):
 
     xyzs = glob(f"{folder}/*.extxyz")
     if include_xyz:
@@ -44,7 +44,7 @@ def pack_folder_trj(folder, data_filter, include_xyz=True):
     return join_trj
 
 
-def pack_folder(folder, data_filter, include_xyz=True):
+def pack_folder(folder, data_filter=None, include_xyz=True):
 
     join_trj = pack_folder_trj(folder, data_filter, include_xyz)
 
@@ -140,20 +140,21 @@ def extxyz_to_padded_dict(filename):
     return dictionary
 
 
-def extxyz_to_padded_trj(filename, data_filter):
+def extxyz_to_padded_trj(filename, data_filter=None):
 
     dictionary = extxyz_to_padded_dict(filename)
 
     trj = PaddedTrajectory.from_dict(dictionary)
 
-    try:
-        accept_id = data_filter(trj)
-        trj.filter_frames(accept_id)
-    except Exception as e:
-        logging.error(f"{e}")
-        logging.error(
-            "extxyz only accept batch filter work on paddedtrajectory")
-        raise RuntimeError("")
+    if data_filter is not None:
+        try:
+            accept_id = data_filter(trj)
+            trj.filter_frames(accept_id)
+        except Exception as e:
+            logging.error(f"{e}")
+            logging.error(
+                "extxyz only accept batch filter work on paddedtrajectory")
+            raise RuntimeError("")
 
     trj.name = filename
 

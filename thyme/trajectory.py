@@ -35,7 +35,7 @@ class Trajectory():
         self.name = ""
 
         self.per_frame_attrs = []
-        self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty']
+        self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty', 'species', 'natom']
 
     def __repr__(self):
         s = f"{self.name}: {self.nframes} frames with {self.natom} atoms"
@@ -133,8 +133,10 @@ class Trajectory():
         requirement
 
         positions: nframe x ?
-        cells
-        forces
+
+        optional:
+            cells
+            forces
 
         species, or symbols
 
@@ -247,10 +249,9 @@ class Trajectory():
         self.name = ""
 
         self.per_frame_attrs = []
-        self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty']
+        self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty', 'species', 'natom']
 
     def add_containers(self, natom: int = 0,
-                       species=None,
                        attributes: list = None):
         """
         initialize all attributes with empty list (python_list = True)
@@ -273,11 +274,7 @@ class Trajectory():
             raise NotImplementedError("add numpy arrays")
 
         self.natom = int(natom)
-        self.species = species
         self.empty = False
-        for k in ['natom', 'species']:
-            if k not in self.metadata_attrs:
-                self.metadata_attrs.append(k)
 
     def add_frame_from_dict(self, dictionary: dict, nframes: int,
                             i: int = -1, attributes: list = None, idorder=None):
@@ -291,16 +288,22 @@ class Trajectory():
             return
 
         natom = len(idorder)
-        species = dictionary['symbols'][i]
-        ori_natom = len(species)
-
-        if idorder is not None:
-            species = [species[i] for i in idorder]
+        ori_natom = len(dictionary['positions'])
 
         if self.empty:
             self.add_containers(natom=natom,
-                                species=species,
                                 attributes=attributes)
+
+        if 'symbols' in dictionary:
+            species = dictionary['symbols'][i]
+            if idorder is not None and 'symbols' in dictionary:
+                species = [species[i] for i in idorder]
+
+            if len(self.species) == 0:
+                self.species = species
+            # elif:
+            #     not all(np.equal(self.species, species)):
+            #     raise RuntimeError("fail to add frame from dict, species are not the same")
 
         for k in self.per_frame_attrs:
             if k in dictionary:
@@ -335,17 +338,22 @@ class Trajectory():
         add one(i) or all frames from dictionary to trajectory
         """
 
-        natom = dictionary['symbols'].shape[1]
-        species = dictionary['symbols'][0]
-
-        if idorder is not None:
-            species = species[idorder],
-
+        natom = dictionary['positions'].shape[1]
         if self.empty:
             self.python_list = False
             self.add_containers(natom=natom,
-                                species=species,
                                 attributes=attributes)
+
+        if 'symbols' in dictionary:
+            species = dictionary['symbols'][0]
+            if idorder is not None and 'symbols' in dictionary:
+                species = [species[i] for i in idorder]
+
+            if len(self.species) == 0:
+                self.species = species
+            elif not all(np.equal(self.species, species)):
+                raise RuntimeError("fail to add frame from dict, species are not the same")
+
         self.convert_to_np()
 
         raise NotImplementedError("add numpy arrays")
@@ -500,8 +508,8 @@ class Trajectory():
             if len(set(otrj.natoms)) != 1:
                 raise RuntimeError(
                     "cannot convert a padded_trj to trj with different length")
-            del self.symbols
             self.species = self.symbols[0]
+            del self.symbols
 
         self.sanity_check()
 
@@ -581,11 +589,6 @@ class PaddedTrajectory(Trajectory):
             trj.name = f"{otrj.name}_padded"
             trj.natom = max_atom
 
-            # if otrj.species is None:
-            #     species = ['C']+['O']*2+['H']+['Cu']*48
-            # elif otrj.natom == 52 or otrj.species[0] == 'None':
-            #     species = ['C']+['O']*2+['H']+['Cu']*48
-            # else:
             species = otrj.species
             logging.info(f"obtain {species}")
 
@@ -595,8 +598,9 @@ class PaddedTrajectory(Trajectory):
                 pad = np.zeros((trj.nframes, datom))
                 logging.info(f"padded to pad symbols {otrj.symbols}")
             else:
-                species = np.array(species, dtype=str).reshape([-1])
-                species = np.hstack([species, datom*['NA']])
+                if len(species) > 0:
+                    species = np.array(species, dtype=str).reshape([-1])
+                    species = np.hstack([species, datom*['NA']])
                 trj.symbols = np.hstack(
                     [species]*trj.nframes).reshape([trj.nframes, -1])
                 logging.info(
