@@ -685,6 +685,10 @@ class PaddedTrajectory(Trajectory):
                     logging.info(f"pad original trj")
                     padded_trj = PaddedTrajectory.from_trajectory(self, max_atoms)
                     self.copy(padded_trj)
+                else:
+                    logging.info(f"pad trj")
+                    padded_trj = PaddedTrajectory.from_trajectory(trj, max_atoms)
+                    trj = padded_trj
 
             if not trj.is_padded:
                 logging.info(f"conver to padded trj")
@@ -695,6 +699,7 @@ class PaddedTrajectory(Trajectory):
                 item = getattr(trj, k)
 
                 logging.info(f"merge {k} {ori_item.shape} {item.shape}")
+                print(f"merge {k} {ori_item.shape} {item.shape}")
                 if len(item.shape) == 1:
                     setattr(self, k, np.hstack((ori_item, item)))
                 else:
