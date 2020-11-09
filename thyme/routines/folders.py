@@ -141,7 +141,7 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
 def find_folders_matching(filenames, path):
 
     folders = []
-    for root, dirs, files in walk("./"):
+    for root, dirs, files in walk(path):
         for filename in filenames:
             if len(glob(f"{root}/{filename}")) > 0:
                 folders += [root]
