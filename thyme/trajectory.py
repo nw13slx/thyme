@@ -11,7 +11,7 @@ from thyme.utils.save import sort_format
 class Trajectory():
 
     per_frame_keys = ["positions", "forces", "energies",
-                      "cells"]
+                      "cells", 'pe', 'label', 'labels']
     metadata_keys = ["dipole_correction", "species",
                      "nelm", "nframes", "cutoff",
                      "natom", "kpoints", "empty",
@@ -66,7 +66,6 @@ class Trajectory():
             frames = []
             for k in self.per_frame_attrs:
                 frames += [len(getattr(self, k))]
-                # logging.info(f"debugg {k} {len(getattr(self, k))}")
 
             if len(set(frames)) > 1:
                 raise RuntimeError(f"Data inconsistent")
@@ -395,7 +394,6 @@ class Trajectory():
             for k in self.per_frame_attrs:
                 item = getattr(trj, k)
                 ori_item = getattr(self, k)
-                logging.debug(f"merge {k} {ori_item.shape} {item.shape}")
                 if len(item.shape) == 1:
                     setattr(self, k, np.hstack((ori_item, item)))
                 else:
@@ -476,7 +474,7 @@ class Trajectory():
         trj.nframes = len(frame_list)
         trj.sanity_check()
 
-        logging.debug(f"skim {self.nframes} to {trj.nframes}")
+        logging.info(f"skim {self.nframes} to {trj.nframes}")
         logging.info(f"! generate {repr(trj)}")
 
         return trj
@@ -492,6 +490,7 @@ class Trajectory():
 
     def copy(self, otrj):
 
+
         self.clean_containers()
 
         for k in otrj.per_frame_attrs:
@@ -505,11 +504,55 @@ class Trajectory():
         self.empty = otrj.empty
 
         if otrj.is_padded:
+
+            del self.symbols
+            del self.natoms
+            self.per_frame_attrs.remove('symbols')
+            self.per_frame_attrs.remove('natoms')
+
             if len(set(otrj.natoms)) != 1:
                 raise RuntimeError(
                     "cannot convert a padded_trj to trj with different length")
-            self.species = self.symbols[0]
-            del self.symbols
+            self.natom = otrj.natoms[0]
+
+            for k in otrj.per_frame_attrs:
+                item = getattr(self, k)
+                item = item[:, :self.natom]
+                setattr(self, k, item)
+
+            species = otrj.symbols[0][:self.natom]
+            reorder = False
+            for i in range(otrj.nframes):
+                if not all(species==otrj.symbols[i][:self.natom]):
+                    c1 = dict(Counter(species))
+                    c2 = dict(Counter(otrj.symbols[i][:self.natom]))
+                    if set(list(c1.keys())) != set(list(c2.keys())):
+                        raise RuntimeError(
+                            "cannot convert a padded_trj to trj with "
+                            "different component")
+                    for ele in c1:
+                        if c1[ele] != c2[ele]:
+                            raise RuntimeError(
+                                "cannot convert a padded_trj to trj with "
+                                "different component")
+            #         reorder = True
+
+            # if reorder:
+
+            #     order, label = species_to_order_label(otrj.symbols[0][:self.natom])
+
+            #     self.species = otrj.symbols[0][order]
+            #     self.natom = self.positions.shape[1]
+
+            #     for i in range(otrj.nframes):
+            #         order, label = species_to_order_label(otrj.symbols[i][:self.natom])
+            #         for k in self.per_frame_attrs:
+            #             item = getattr(self, k)
+            #             try:
+            #                 if item.shape[1] == self.natom:
+            #                     item[i] = item[i][order]
+            #             except:
+            #                 pass
 
         self.sanity_check()
 
@@ -562,7 +605,6 @@ class PaddedTrajectory(Trajectory):
                 trj.per_frame_attrs += [k]
                 item = getattr(otrj, k)
                 dim = len(item.shape)
-                logging.debug(f"{k} before padding {item.shape}")
 
                 if dim == 1:
                     setattr(trj, k, np.copy(item))
@@ -578,7 +620,6 @@ class PaddedTrajectory(Trajectory):
                         setattr(trj, k, np.copy(item))
                 else:
                     raise RuntimeError(f"{k} is needed")
-                logging.debug(f"{k} after padding {getattr(trj, k).shape}")
 
             trj.metadata_attrs = []
             for k in otrj.metadata_attrs:
@@ -590,28 +631,22 @@ class PaddedTrajectory(Trajectory):
             trj.natom = max_atom
 
             species = otrj.species
-            logging.info(f"obtain {species}")
 
             if otrj.is_padded:
                 pad = np.array([['0']*datom]*trj.nframes)
                 trj.symbols = np.hstack((otrj.symbols, pad))
                 pad = np.zeros((trj.nframes, datom))
-                logging.info(f"padded to pad symbols {otrj.symbols}")
             else:
                 if len(species) > 0:
                     species = np.array(species, dtype=str).reshape([-1])
                     species = np.hstack([species, datom*['NA']])
                 trj.symbols = np.hstack(
                     [species]*trj.nframes).reshape([trj.nframes, -1])
-                logging.info(
-                    f"non-padded to pad symbols {otrj.species} {species}")
                 trj.natoms = np.ones(trj.nframes)*otrj.natom
                 trj.per_frame_attrs += ['symbols']
                 trj.per_frame_attrs += ['natoms']
-        logging.info(f"padded symbols {trj.symbols}")
 
         trj.sanity_check()
-        logging.debug(f"! return {repr(trj)}")
 
         return trj
 
@@ -691,26 +726,22 @@ class PaddedTrajectory(Trajectory):
                     f"adding trajectory with different number of atoms {trj.natom}")
                 max_atoms = np.max([self.natom, trj.natom])
                 if self.natom < max_atoms:
-                    logging.info(f"pad original trj")
                     padded_trj = PaddedTrajectory.from_trajectory(
                         self, max_atoms)
                     self.copy(padded_trj)
                 else:
-                    logging.info(f"pad trj")
                     padded_trj = PaddedTrajectory.from_trajectory(
                         trj, max_atoms)
                     trj = padded_trj
 
             if not trj.is_padded:
-                logging.info(f"conver to padded trj")
                 trj = PaddedTrajectory.from_trajectory(trj, trj.natom)
 
             for k in self.per_frame_attrs:
                 ori_item = getattr(self, k)
                 item = getattr(trj, k)
 
-                logging.info(f"merge {k} {ori_item.shape} {item.shape}")
-                print(f"merge {k} {ori_item.shape} {item.shape}")
+                logging.info(f"merging {k} {ori_item.shape} {item.shape}")
                 if len(item.shape) == 1:
                     setattr(self, k, np.hstack((ori_item, item)))
                 else:

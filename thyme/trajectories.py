@@ -73,16 +73,9 @@ class Trajectories():
 
     def to_padded_trajectory(self):
 
-        max_atom = 0
-        for trj in self.alldata.values():
-            if trj.natom > max_atom:
-                max_atom = trj.natom
-
         init_trj = PaddedTrajectory()
         for trj in self.alldata.values():
-            ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
-            logging.info(f"padd {trj.name} to {ptrj}")
-            init_trj.add_trj(ptrj)
+            init_trj.add_trj(trj)
         return init_trj
 
     def add_trj(self, trj, name=None):
