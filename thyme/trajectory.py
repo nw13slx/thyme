@@ -94,6 +94,29 @@ class Trajectory():
         if 'natom' not in self.metadata_attrs:
             self.metadata_attrs += ['natom']
 
+    def add_per_frame_attr(name, item):
+
+        if len(item) != self.nframes:
+            logging.error(f"{item}\'s length {len(item)} does not match {self.nframes}")
+            raise RuntimeError
+
+        if name in self.per_frame_attrs:
+            logging.warning(f"try to add {name}, but it already exists")
+        else:
+            self.per_frame_attrs += [name]
+
+        setattr(self, name, item)
+        logging.info(f"add {name} to the system")
+
+    def add_metadata(name, item):
+
+        if name in self.metadata_attrs:
+            logging.warning(f"try to add {name}, but it already exists")
+
+        self.metadata_attrs += [name]
+        setattr(self, name, item)
+        logging.info(f"add {name} to the system")
+
     def filter_frames(self, accept_id=None):
 
         if accept_id is None:
@@ -163,8 +186,7 @@ class Trajectory():
 
             if k in type(self).per_frame_keys:
 
-                setattr(self, k, np.copy(dictionary[k]))
-                self.per_frame_attrs += [k]
+                self.add_per_frame_attr(k, deepcopy(dictionary[k]))
 
             elif k in type(self).metadata_keys:
 
@@ -173,16 +195,14 @@ class Trajectory():
 
             elif k not in ['per_frame_attrs', 'metadata_attrs']:
 
-                setattr(self, k, deepcopy(dictionary[k]))
-
                 logging.debug(f"undefined attributes {k}, set to metadata")
                 try:
                     if dictionary[k].shape[0] == nframes:
-                        self.per_frame_attrs += [k]
+                        self.add_per_frame_attr(k, deepcopy(dictionary[k]))
                     else:
-                        self.metadata_attrs += [k]
+                        self.add_metadata(k, deepcopy(dictionary[k]))
                 except:
-                    self.metadata_attrs += [k]
+                    self.add_metadata(k, deepcopy(dictionary[k]))
 
             else:
                 raise RuntimeError(f"?? {k}")
@@ -263,7 +283,7 @@ class Trajectory():
         self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty', 'species', 'natom']
 
     def add_containers(self, natom: int = 0,
-                       attributes: list = None):
+                       attributes: list = [])
         """
         initialize all attributes with empty list (python_list = True)
         or numpy array (python_list = False)
@@ -271,78 +291,82 @@ class Trajectory():
         attributes: only per_frame_attrs needs to be listed
         """
 
+        if not self.empty:
+            return
+
         if self.python_list:
-
-            if attributes is not None:
-                for k in attributes:
-                    if k not in self.per_frame_attrs:
-                        self.per_frame_attrs.append(k)
-
-            for k in self.per_frame_attrs:
-                setattr(self, k, [])
-
+            item = []
         else:
-            raise NotImplementedError("add numpy arrays")
+            item = None
+
+        for k in attributes:
+            self.add_per_frame_attr(k, item)
 
         self.natom = int(natom)
-        self.empty = False
 
-    def add_frame_from_dict(self, dictionary: dict, nframes: int,
-                            i: int = -1, attributes: list = None, idorder=None):
+
+    def append_frame_from_dict(self, dictionary: dict, nframes: int,
+                              configs: list = [], attributes: list = None, idorder=None)
         """
         add one(i) or all frames from dictionary to trajectory
         """
 
-
-        if i < 0:
-            self.add_frames_from_dict(dictionary=dictionary, nframes=nframes,
-                                      attributes=attributes, idorder=iorder)
+        if len(configs) > 0:
             return
-
-        natom = len(idorder)
-        ori_natom = dictionary['positions'].shape[1]
 
         if self.empty:
             self.add_containers(natom=natom,
                                 attributes=attributes)
 
-        if 'symbols' in dictionary:
-            species = dictionary['symbols'][i]
-            if idorder is not None and 'symbols' in dictionary:
-                species = [species[i] for i in idorder]
-
-            if len(self.species) == 0:
-                self.species = species
-            # elif:
-            #     not all(np.equal(self.species, species)):
-            #     raise RuntimeError("fail to add frame from dict, species are not the same")
+        natom = len(idorder)
+        ori_natom = dictionary['positions'].shape[1]
 
         for k in self.per_frame_attrs:
+
             if k in dictionary:
-                dim = len(dictionary[k].shape)
+
+                ori_item = getattr(self, k)
+                item = deepcopy(dictionary[k][configs])
+
+                dim = len(item.shape)
                 if dim == 1:
-                    getattr(self, k).append(dictionary[k][i])
-                elif dim >= 2:
-                    if dictionary[k].shape[1] == ori_natom:
-                        if idorder is not None:
-                            getattr(self, k).append(dictionary[k][i][idorder])
-                        else:
-                            getattr(self, k).append(dictionary[k][i])
-                    elif dictionary[k].shape[1] > ori_natom:
-                        if dictionary[k].shape[1] % ori_natom == 0:
-                            item = dictionary[k][i].reshape([ori_natom, -1])
-                            if idorder is not None:
-                                getattr(self, k).append(item[idorder])
-                            else:
-                                getattr(self, k).append(item)
-                        else:
-                            raise RuntimeError(f"{k} {dictionary[k].shape} {ori_natom} "
-                                               "cannot be handled")
+                    if self.python_list:
+                        ori_item.appen(item)
+                        item = ori_item
                     else:
-                        getattr(self, k).append(dictionary[k][i])
+                        if ori_item is None:
+                            item = np.array(item).reshape([-1])
+                        else:
+                            item = np.hstack((ori_item, item))
+                elif dim >= 2:
+                    if item.shape[1] > ori_natom:
+                        if dim == 2:
+                            if item.shape[1] % ori_natom == 0:
+                                item = item.reshape([:, ori_natom, -1])
+                            else:
+                                raise RuntimeError(f"{k} {item.shape} {ori_natom} "
+                                                   "cannot be handled")
+                        else:
+                            raise RuntimeError(f"{k} {item.shape} {ori_natom} "
+                                               "cannot be handled")
+                    elif item.shape[1] < ori_natom:
+                        raise RuntimeError(f"{k} {item.shape} {ori_natom} "
+                                           "cannot be handled")
+                    for config in configs:
+                        order = idorder[config]
+                        if order is not None:
+                            item[config] = item[config, order]
+                    if self.python_list:
+                        for config in configs:
+                            ori_item.append(item[config])
+                        item = ori_item
+                    else:
+                        item = np.vstack((ori_item, item))
+                setattr(self, k, item)
             else:
                 raise RuntimeError(f"{k} is needed")
-        self.nframes += 1
+
+        self.nframes += len(configs)
 
     def add_frames_from_dict(self, dictionary: dict, nframes: int,
                              attributes: list = None, idorder=None):
@@ -351,10 +375,9 @@ class Trajectory():
         """
 
         natom = dictionary['positions'].shape[1]
-        if self.empty:
-            self.python_list = False
-            self.add_containers(natom=natom,
-                                attributes=attributes)
+
+        self.add_containers(natom=natom,
+                            attributes=attributes)
 
         if 'symbols' in dictionary:
             species = dictionary['symbols'][0]
@@ -620,17 +643,17 @@ class PaddedTrajectory(Trajectory):
                 dim = len(item.shape)
 
                 if dim == 1:
-                    setattr(trj, k, np.copy(item))
+                    setattr(trj, k, deepcopy(item))
                 elif dim >= 2:
 
                     if item.shape[1] == otrj.natom:
-                        new_shape = np.copy(item.shape)
+                        new_shape = deepcopy(item.shape)
                         new_shape[1] = max_atom-new_shape[1]
                         pad = np.zeros(new_shape)
                         new_item = np.hstack([item, pad])
                         setattr(trj, k, new_item)
                     else:
-                        setattr(trj, k, np.copy(item))
+                        setattr(trj, k, deepcopy(item))
                 else:
                     raise RuntimeError(f"{k} is needed")
 

@@ -239,10 +239,8 @@ class Trajectories():
         """
 
         trjs = Trajectories()
-        alldata = trjs.alldata
 
         nframes = dictionary['positions'].shape[0]
-        max_atoms = dictionary['symbols'].shape[1]
         symbols = dictionary['symbols']
 
         if per_frame_attr is None:
@@ -256,44 +254,54 @@ class Trajectories():
 
         last_label = None
         label = None
+        curr_label_count = 0
         last_label_count = 0
-        for i in range(nframes):
+        alldata = {}
+        for iconfig in range(nframes):
 
             # obtain label
-            order, label = species_to_order_label(symbols[i])
-            natom = dictionary['natoms'][i]
+            order, label = species_to_order_label(symbols[iconfig])
+            natom = dictionary['natoms'][iconfig]
 
+            stored_label = label
             if preserve_order:
-                if i > 0:
-                    if label == last_label:
-                        curr_label_count = last_label_count
-                    else:
-                        curr_label_count = 0
-                        for l in alldata:
-                            if label == l.split("_")[0]:
-                                count = int(l.split("_")[1])
-                                if count >= curr_label_count:
-                                    curr_label_count = count + 1
-                else:
-                    curr_label_count = 0
 
-                last_label_count = curr_label_count
-                last_label = label
+                count = -1
+                # find all the previous trajectories
+                for l in alldata:
+                    line_split = l.split("_")
+                    if label == line_split[0]:
+                        _count = int(line_split[1])
+                        if _count > count:
+                            count = _count
+                if label != last_label:
+                    count += 1
+                    last_label = label
 
-                stored_label = f"{label}_{curr_label_count}"
-            else:
-                stored_label = label
+                stored_label = f"{label}_{count}"
 
             if stored_label not in alldata:
-                alldata[stored_label] = Trajectory()
-                alldata[stored_label].name = stored_label
-                alldata[stored_label].python_list = True
+                alldata[stored_label] = [label, [iconfig], [order]]
+            else:
+                alldata[stored_label][1].append(iconfig)
+                alldata[stored_label][2].append(order)
 
-            alldata[stored_label].add_frame_from_dict(dictionary, nframes,
-                                                      i=i, attributes=per_frame_attr,
-                                                      idorder=order)
+        for stored_label in alldata:
 
-        for label in alldata:
-            alldata[label].convert_to_np()
+            label = alldata[stored_label][0]
+            configs = alldata[stored_label][1]
+            orders = alldata[stored_label][2]
+
+            trj = Trajectory()
+            trj.species = label
+            trj.natom = len(label)
+            trj.convert_to_np()
+            trj.name = stored_label
+
+            trj.append_frames_from_dict(dictionary, nframes,
+                                        configs=configs,
+                                        attributes=per_frame_attr,
+                                        idorder=orders)
+            trjs.add_trj(trj, stored_label)
 
         return trjs
