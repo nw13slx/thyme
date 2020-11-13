@@ -1,12 +1,12 @@
+from thyme.routines.parity_plots.setup import tabcolors
+import numpy as np
 import logging
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
-import numpy as np
 
-from thyme.routines.parity_plots.setup import tabcolors
 
 def base_line_hist_axs(axs, data, label, legend, filename, lims=[None, None],
-                   scatter_skip=100):
+                       scatter_skip=100):
     """
     """
 
@@ -47,6 +47,7 @@ def base_line_hist_axs(axs, data, label, legend, filename, lims=[None, None],
 
     base_hist(axs[1], plot_d, label, lims)
 
+
 def base_line_hist(data, label, filename, lims=[None, None], legend="",
                    scatter_skip=100):
     """
@@ -61,22 +62,29 @@ def base_line_hist(data, label, filename, lims=[None, None], legend="",
     del fig
     del axs
 
+
 def base_hist(ax, data, label, lims=[None, None], legend=""):
     """
     """
 
+    if len(data) == 0:
+        return
+
+    logging.info(f"plotting basic histogram")
     newlims = np.copy(lims)
     dmin = np.min(data)
     dmax = np.max(data)
+    logging.info(f"min {dmin} max {dmax}")
     if newlims[0] is None:
         newlims[0] = dmin
     if newlims[1] is None:
         newlims[1] = dmax
     if newlims[1] > dmax:
         newlims[1] = dmax
+    logging.info(f"latest range to plot {newlims}")
 
-    outliers1 = len(np.where(data<newlims[0])[0])
-    outliers2 = len(np.where(data>newlims[1])[0])
+    outliers1 = len(np.where(data < newlims[0])[0])
+    outliers2 = len(np.where(data > newlims[1])[0])
 
     text = f"{legend} "
     if outliers1 > 0:

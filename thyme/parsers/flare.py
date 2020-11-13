@@ -11,6 +11,7 @@ from thyme.parsers.monty import read_pattern, read_table_pattern
 from thyme.trajectory import PaddedTrajectory, Trajectory
 from thyme.routines.folders import find_folders, find_folders_matching
 
+
 def write(filename, trj):
     structures = []
     if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
@@ -18,8 +19,10 @@ def write(filename, trj):
             natom = trj.natoms[i]
             structure = Structure(cell=trj.cells[i].reshape([3, 3]),
                                   species=trj.species[:natom],
-                                  positions=trj.positions[i][:natom].reshape([-1, 3]),
-                                  forces=trj.forces[i][:natom].reshape([-1, 3]),
+                                  positions=trj.positions[i][:natom].reshape(
+                                      [-1, 3]),
+                                  forces=trj.forces[i][:natom].reshape(
+                                      [-1, 3]),
                                   energy=trj.energies[i])
             structures += [structure]
     elif isinstance(trj, PaddedTrajectory):

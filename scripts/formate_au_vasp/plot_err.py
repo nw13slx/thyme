@@ -1,13 +1,13 @@
+from thyme.routines.parity_plots.force import multiple_plots
+from thyme.routines.parity_plots.energy import multiple_plots as multiple_plots_e
+from thyme.trajectories import Trajectories
+import sys
+import numpy as np
 import logging
 logging.basicConfig(filename=f'plot.log', filemode='w',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
-import numpy as np
-import sys
 
-from thyme.trajectories import Trajectories
-from thyme.routines.parity_plots.energy import multiple_plots as multiple_plots_e
-from thyme.routines.parity_plots.force import multiple_plots
 
 # dictionary = dict(np.load(sys.argv[1], allow_pickle=True))
 

@@ -1,3 +1,6 @@
+from thyme.utils.atomic_symbols import species_to_idgroups
+from thyme.routines.parity_plots.setup import tabcolors
+import numpy as np
 import colorsys
 import logging
 import matplotlib
@@ -5,10 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 plt.switch_backend('agg')
-import numpy as np
 
-from thyme.routines.parity_plots.setup import tabcolors
-from thyme.utils.atomic_symbols import species_to_idgroups
 
 def single_plot(forces, pred, prefix, symbol):
     """
@@ -52,11 +52,11 @@ def single_plot(forces, pred, prefix, symbol):
         axsf[iele].legend()
 
         axsf_hist[iele].hist(df, zorder=2,
-                           label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
-                           color=tabcolors[iele])
+                             label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
+                             color=tabcolors[iele])
         axsf_hist[iele].legend()
 
-        if iele%2 == 0:
+        if iele % 2 == 0:
             axsf[iele].set_ylabel("Predicted forces (eV)")
             axsf_hist[iele].set_ylabel("Counts")
 
@@ -77,20 +77,21 @@ def single_plot(forces, pred, prefix, symbol):
 
     return data
 
+
 def multiple_plots(trajectories, pred_label='pred', prefix=""):
 
     alldata = {}
     for trj in trajectories.alldata.values():
-        data = single_plot(trj.forces, getattr(trj, pred_label), prefix+trj.name, trj.species)
+        data = single_plot(trj.forces, getattr(
+            trj, pred_label), prefix+trj.name, trj.species)
         for element in data:
             mae, rmse, count = data[element]
             if element not in alldata:
                 alldata[element] = [0, 0, 0]
-            alldata[element][0] += mae *count
-            alldata[element][1] += rmse *count
+            alldata[element][0] += mae * count
+            alldata[element][1] += rmse * count
             alldata[element][2] += count
     for element in alldata:
         mae = alldata[element][0] / alldata[element][2]
         rmse = np.sqrt(alldata[element][1] / alldata[element][2])
         logging.info(f"overall {element} {mae} {rmse} {alldata[element][2]}")
-

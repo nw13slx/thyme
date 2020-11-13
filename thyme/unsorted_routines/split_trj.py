@@ -18,14 +18,15 @@ name = "_".join(sys.argv[2:])
 logging.basicConfig(filename=f'{folder}/split_{name}.log', filemode='w',
                     level=logging.DEBUG, format="%(message)s")
 
+
 def o_dist_filter(o_xyz, f, e, c, species):
     return True
 
     xyz = o_xyz.reshape([-1, 3])
-    atoms =  Structure(lattice=c,
-                     species=species,
-                     coords=xyz,
-                     coords_are_cartesian=True)
+    atoms = Structure(lattice=c,
+                      species=species,
+                      coords=xyz,
+                      coords_are_cartesian=True)
     dist_mat = atoms.distance_matrix
 
     C_id = np.array([index for index, ele in enumerate(species) if ele == 'C'])
@@ -35,7 +36,6 @@ def o_dist_filter(o_xyz, f, e, c, species):
     nAg = len([ele for ele in species if ele == 'Ag'])
     nCO = len([ele for ele in species if ele == 'C'])
 
-
     for Cindex in C_id:
         if xyz[Cindex, 2] < 10:
             logging.info(f"skip frame for low C {xyz[Cindex, 2]:5.1f}")
@@ -43,7 +43,8 @@ def o_dist_filter(o_xyz, f, e, c, species):
         dist_C = np.delete(dist_mat[Cindex, :], Cindex)
         dist_C = np.min(dist_C)
         if dist_C > 1.7:
-            logging.info(f"skip frame for isolated C {dist_C:5.1f} {e+411:6.2f}")
+            logging.info(
+                f"skip frame for isolated C {dist_C:5.1f} {e+411:6.2f}")
             return False
     refe = -(nPd*5.1765+nAg*2.8325+nCO*1.8526)
     de = e-refe
@@ -54,15 +55,18 @@ def o_dist_filter(o_xyz, f, e, c, species):
         dist_O = np.delete(dist_mat[Oindex, :], Oindex)
         dist_O = np.min(dist_O)
         if dist_O > 1.7:
-            logging.info(f"skip frame for isolated O {dist_O:5.1f} {e+411:6.2f}")
+            logging.info(
+                f"skip frame for isolated O {dist_O:5.1f} {e+411:6.2f}")
             return False
 
     return True
 
+
 def main():
 
-    if len(sys.argv)<3:
-        logging.info("python analysis/split_trj.py filename ntrain nvalid ntest whole md")
+    if len(sys.argv) < 3:
+        logging.info(
+            "python analysis/split_trj.py filename ntrain nvalid ntest whole md")
         return
 
     alldata = dict(np.load(sys.argv[1], allow_pickle=True))
@@ -104,14 +108,13 @@ def main():
     nframes = 0
     ntrjs = 0
 
-    if md==2:
+    if md == 2:
 
         total_frames = 0
         for i, trjname in enumerate(trjnames):
             data = alldata[trjname].item()
             frame = data['positions'].shape[0]
             total_frames += len(np.arange(0, frame, skip))
-
 
     for i, trjname in enumerate(trjnames):
 
@@ -126,7 +129,7 @@ def main():
 
             list_to = {}
 
-            if md==0:
+            if md == 0:
 
                 id_list = np.arange(0, frame, skip)
                 if do_shuffle:
@@ -143,16 +146,20 @@ def main():
                 else:
                     list_to['spare'] = np.arange(0, frame)
 
-            elif md==2:
+            elif md == 2:
 
                 id_list = np.arange(0, frame, skip)
                 skip_frame = len(id_list)
 
                 this_train = int(np.floor(ntrain/total_frames*skip_frame))
-                this_valid = np.min((int(np.ceil(nvalid/total_frames*skip_frame)), skip_frame-this_train))
-                this_test = np.min((int(np.ceil(ntest/total_frames*skip_frame)), skip_frame-this_valid-this_train))
-                this_spare = np.max((skip_frame - this_test - this_valid - this_train, 0))
-                print(trjname, skip_frame, this_train, this_valid, this_test, this_spare)
+                this_valid = np.min(
+                    (int(np.ceil(nvalid/total_frames*skip_frame)), skip_frame-this_train))
+                this_test = np.min(
+                    (int(np.ceil(ntest/total_frames*skip_frame)), skip_frame-this_valid-this_train))
+                this_spare = np.max(
+                    (skip_frame - this_test - this_valid - this_train, 0))
+                print(trjname, skip_frame, this_train,
+                      this_valid, this_test, this_spare)
 
                 if do_shuffle:
                     id_train_valid = id_list[:this_train+this_valid]
@@ -165,11 +172,12 @@ def main():
                 if this_valid > 0:
                     list_to['valid'] = id_list[this_train:this_train+this_valid]
                 if this_test > 0:
-                    list_to['test'] = id_list[this_train+this_valid:this_test+this_train+this_valid]
+                    list_to['test'] = id_list[this_train +
+                                              this_valid:this_test+this_train+this_valid]
                 if this_spare > 0:
                     list_to['spare'] = id_list[skip_frame-this_spare:]
 
-            elif md==1:
+            elif md == 1:
 
                 if count['train'] < ntrain and (frame > 1 or whole):
 
@@ -186,7 +194,8 @@ def main():
                     if end_train+end_val < frame:
                         end_test = np.min([frame-remain, ntest-count['test']])
                         if end_test > 0:
-                            list_to['test'] = np.arange(remain, end_test+remain)
+                            list_to['test'] = np.arange(
+                                remain, end_test+remain)
                         remain += end_test
                         if remain < frame:
                             list_to['spare'] = np.arange(remain, frame)
@@ -201,7 +210,8 @@ def main():
                     if end_val < frame:
                         end_test = np.min([frame-remain, ntest-count['test']])
                         if end_test > 0:
-                            list_to['test'] = np.arange(remain, end_test+remain)
+                            list_to['test'] = np.arange(
+                                remain, end_test+remain)
                         remain += end_test
                         if remain < frame:
                             list_to['spare'] = np.arange(remain, frame)
@@ -221,7 +231,6 @@ def main():
 
             for task in list_to:
 
-
                 this_frame = len(list_to[task])
 
                 logging.info(f"{trjname} {task} {this_frame}")
@@ -237,7 +246,6 @@ def main():
                 forces[task] += [data['forces'][ltt]]
                 energies[task] += [data['energies'][ltt]]
                 cells[task] += [data['cells'][ltt]]
-
 
     for task in tasks:
         if len(positions[task]) > 0:
@@ -255,6 +263,7 @@ def main():
 
     logging.info(f"{folder} {count}")
     return 0
+
 
 def sort_filenames(data):
 
@@ -297,17 +306,17 @@ def filter_trj(data, data_filter):
             energies += [e]
             cells += [c.reshape([-1])]
     nframes = len(positions)
-    if nframes >=1 :
+    if nframes >= 1:
         data['nframes'] = nframes
         data['positions'] = np.vstack(positions)
         data['forces'] = np.vstack(forces)
         data['energies'] = np.hstack(energies)
         data['cells'] = np.vstack(cells)
     else:
-        return {'nframes':nframes}
-
+        return {'nframes': nframes}
 
     return data
+
 
 if __name__ == '__main__':
     main()

@@ -9,6 +9,7 @@ from os.path import dirname, join, basename, isdir, isfile
 from pymatgen.io.vasp.outputs import Outcar, Vasprun
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
+
 def o_dist_filter(xyz, f, e, c, species):
     C_id = np.array([index for index, ele in enumerate(species) if ele == 'C'])
     for Cindex in C_id:
@@ -19,6 +20,7 @@ def o_dist_filter(xyz, f, e, c, species):
         print("skip frame for high/low e", e, flush=True)
         return False
     return True
+
 
 def main():
 
@@ -64,6 +66,7 @@ def main():
         json.dump(metadata, fout, indent=4)
     return 0
 
+
 def sort_filenames(data):
 
     filenames = []
@@ -104,7 +107,7 @@ def filter_trj(data, data_filter):
             energies += [e]
             cells += [c.reshape([-1])]
     nframes = len(positions)
-    if nframes >=1 :
+    if nframes >= 1:
         data['positions'] = np.vstack(positions)
         data['forces'] = np.vstack(forces)
         data['energies'] = np.hstack(energies)
@@ -115,6 +118,7 @@ def filter_trj(data, data_filter):
     data['nframes'] = nframes
 
     return data
+
 
 if __name__ == '__main__':
     main()

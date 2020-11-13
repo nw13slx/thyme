@@ -25,7 +25,8 @@ def main():
     for trjname in trjnames:
         data = alldata[trjname].item()
         count = dict(Counter(data['species']))
-        label = "".join([f"{k}{count[k]}" for k in np.sort(list(count.keys()))])
+        label = "".join(
+            [f"{k}{count[k]}" for k in np.sort(list(count.keys()))])
         sort_id = np.argsort(data['species'])
         if label not in merge_data:
             merge_data[label] = {}
@@ -36,7 +37,8 @@ def main():
         nframes = data['positions'].shape[0]
         if nframes > 0:
             for k in ['positions', 'forces']:
-                merge_data[label][k] += [(data[k].reshape([nframes, -1, 3])[:, sort_id, :]).reshape([nframes, -1])]
+                merge_data[label][k] += [(data[k].reshape([nframes, -1, 3])
+                                          [:, sort_id, :]).reshape([nframes, -1])]
             for k in ['energies', 'cells']:
                 merge_data[label][k] += [data[k]]
             names = [f"{trjname}_{i}" for i in range(nframes)]
@@ -54,9 +56,11 @@ def main():
                  energies=merge_data[label]['energies'],
                  cells=merge_data[label]['cells'],
                  names=merge_data[label]['history'])
-        print(label, len(merge_data[label]['energies']), len(merge_data[label]['history']))
+        print(label, len(merge_data[label]['energies']), len(
+            merge_data[label]['history']))
 
     return 0
+
 
 def sort_filenames(data):
 
@@ -98,7 +102,7 @@ def filter_trj(data, data_filter):
             energies += [e]
             cells += [c.reshape([-1])]
     nframes = len(positions)
-    if nframes >=1 :
+    if nframes >= 1:
         data['positions'] = np.vstack(positions)
         data['forces'] = np.vstack(forces)
         data['energies'] = np.hstack(energies)
@@ -109,6 +113,7 @@ def filter_trj(data, data_filter):
     data['nframes'] = nframes
 
     return data
+
 
 if __name__ == '__main__':
     main()

@@ -15,10 +15,18 @@ from thyme.trajectory import Trajectory, PaddedTrajectory
 from thyme.utils.atomic_symbols import species_to_order_label
 from thyme.utils.save import sort_format
 
+
 class Trajectories():
 
     def __init__(self):
         self.alldata = {}
+
+    @property
+    def nframes(self):
+        nframes = 0
+        for trj in self.alldata.values():
+            nframes += trj.nframes
+        return nframes
 
     def __str__(self):
 
@@ -27,7 +35,6 @@ class Trajectories():
             s += f"----{name}----\n"
             s += f"{self.alldata[name]}\n"
         return s
-
 
     def save(self, name: str, format: str = None):
 
@@ -66,20 +73,24 @@ class Trajectories():
 
     def to_padded_trajectory(self):
 
-        max_atom = 0
-        for trj in self.alldata.values():
-            if trj.natom > max_atom:
-                max_atom = trj.natom
-
         init_trj = PaddedTrajectory()
         for trj in self.alldata.values():
-            ptrj = PaddedTrajectory.from_trajectory(trj, max_atom)
-            logging.info(f"padd {trj.name} to {ptrj}")
-            init_trj.add_trj(ptrj)
+            init_trj.add_trj(trj)
         return init_trj
 
+    def add_trj(self, trj, name=None):
 
-    def save_padded_matrices(self, name:str):
+        if isinstance(trj, Trajectories):
+            self.alldata.update(trj.alldata)
+        else:
+            if name in self.alldata:
+                logging.info(f"warning, overwriting trj with name {name}")
+
+            if name is None:
+                name = trj.name
+            self.alldata[name] = trj
+
+    def save_padded_matrices(self, name: str):
 
         if ".npz" != name[-4:]:
             name += '.npz'
@@ -87,7 +98,7 @@ class Trajectories():
         init_trj = self.to_padded_trajectory()
         init_trj.save(name)
 
-    def save_npz(self, name:str):
+    def save_npz(self, name: str):
 
         if ".npz" != name[-4:]:
             name += '.npz'
@@ -96,7 +107,7 @@ class Trajectories():
         np.savez(name, **dictionary)
 
     @staticmethod
-    def from_file(name: str, format: str = None, preserve_order: bool=False):
+    def from_file(name: str, format: str = None, preserve_order: bool = False):
         """
         pickle format: previous objects saved as pickle format
         padded_mat.npz: contains matrices that can be parsed by PaddedTrajectory
@@ -105,7 +116,7 @@ class Trajectories():
                         and same order of species
         """
 
-        supported_formats = ['pickle', 'padded_mat.npz'] # npz
+        supported_formats = ['pickle', 'padded_mat.npz']  # npz
 
         format, newname = sort_format(supported_formats, format, name)
 
@@ -122,9 +133,8 @@ class Trajectories():
             raise NotImplementedError(f"Output format not supported:"
                                       f" try from {supported_formats}")
 
-
     @staticmethod
-    def from_dict(dictionary:dict, merge=True):
+    def from_dict(dictionary: dict, merge=True):
         """
         convert dictionary to a Trajectory instance
         """
@@ -138,11 +148,11 @@ class Trajectories():
 
         for trjname in trjnames:
             try:
-                 data = dictionary[trjname].item()
-                 order, label = species_to_order_label(data['species'])
+                data = dictionary[trjname].item()
+                order, label = species_to_order_label(data['species'])
             except:
-                 data = dictionary[trjname].item()
-                 order, label = species_to_order_label(data['species'])
+                data = dictionary[trjname].item()
+                order, label = species_to_order_label(data['species'])
 
             logging.info(f"read {trjname} from dict formula {label}")
 
@@ -202,7 +212,7 @@ class Trajectories():
         return nframes
 
     @staticmethod
-    def from_padded_trajectory(trj:dict,
+    def from_padded_trajectory(trj: dict,
                                preserve_order=False):
         dictionary = {}
         for k in trj.per_frame_attrs:
@@ -210,12 +220,11 @@ class Trajectories():
         for k in trj.metadata_attrs:
             dictionary[k] = getattr(trj, k)
         return Trajectories.from_padded_matrices(dictionary, trj.per_frame_attrs,
-                                                   preserve_order)
-
+                                                 preserve_order)
 
     @staticmethod
-    def from_padded_matrices(dictionary:dict,
-                             per_frame_attr:list =None,
+    def from_padded_matrices(dictionary: dict,
+                             per_frame_attr: list = None,
                              preserve_order=False):
         """
         Keys needed:
@@ -231,7 +240,6 @@ class Trajectories():
 
         trjs = Trajectories()
         alldata = trjs.alldata
-
 
         nframes = dictionary['positions'].shape[0]
         max_atoms = dictionary['symbols'].shape[1]
@@ -282,11 +290,10 @@ class Trajectories():
                 alldata[stored_label].python_list = True
 
             alldata[stored_label].add_frame_from_dict(dictionary, nframes,
-                                               i=i, attributes=per_frame_attr,
-                                               idorder=order)
+                                                      i=i, attributes=per_frame_attr,
+                                                      idorder=order)
 
         for label in alldata:
             alldata[label].convert_to_np()
 
         return trjs
-

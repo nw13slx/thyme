@@ -1,11 +1,10 @@
+from thyme.routines.parity_plots.setup import tabcolors
+from thyme.routines.parity_plots.base import base_parity
+import numpy as np
 import logging
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
-import numpy as np
 
-from thyme.routines.parity_plots.base import base_parity
-
-from thyme.routines.parity_plots.setup import tabcolors
 
 def single_plot(energies, pred, prefix, shift=[0]):
     """
@@ -13,6 +12,7 @@ def single_plot(energies, pred, prefix, shift=[0]):
     base_parity(energies, pred, prefix, "energy",
                 "Predicted energy - DFT energy (eV)",
                 "Counts", shift[:1])
+
 
 def multiple_plots(trajectories, pred_label='pe', prefix=""):
 
@@ -37,12 +37,14 @@ def multiple_plots(trajectories, pred_label='pe', prefix=""):
         prediction = getattr(trj, pred_label)
         shift = np.average(reference) - np.average(prediction)
 
-        single_plot(reference, prediction, prefix+trj.name, shift=[shift, universal_shift])
-        axs[0].scatter(reference, prediction, zorder=2, c=tabcolors[i%len(tabcolors)], label=trj.name,
-                   s=8, linewidths=0.5, edgecolors='k')
+        single_plot(reference, prediction, prefix+trj.name,
+                    shift=[shift, universal_shift])
+        axs[0].scatter(reference, prediction, zorder=2, c=tabcolors[i % len(tabcolors)], label=trj.name,
+                       s=8, linewidths=0.5, edgecolors='k')
         data += [prediction-reference]
         xlims = [np.min(reference), np.max(reference)]
-        axs[0].plot(xlims, xlims-shift, '--', zorder=1, color=tabcolors[i%len(tabcolors)])
+        axs[0].plot(xlims, xlims-shift, '--', zorder=1,
+                    color=tabcolors[i % len(tabcolors)])
     data = np.hstack(data)
     axs[0].set_xlabel("DFT energies (eV)")
     axs[0].set_ylabel("Predicted energies (eV)")
@@ -57,4 +59,3 @@ def multiple_plots(trajectories, pred_label='pe', prefix=""):
 
     fig.tight_layout()
     fig.savefig(f"{prefix}_all_energy.png", dpi=300)
-

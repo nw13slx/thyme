@@ -1,4 +1,6 @@
 from copy import deepcopy
+
+
 def sort_format(supported_formats, format, name):
 
     newformat = deepcopy(format)

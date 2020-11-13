@@ -1,17 +1,16 @@
+from thyme.filters.energy import rm_duplicate
+from thyme.routines.dist_plots.energy import single_plot as single_plot_e
+from thyme.routines.dist_plots.energy import multiple_plots as multiple_plots_e
+from thyme.parsers.cp2k import pack_folder_trj, get_childfolders
+from thyme.trajectories import Trajectories
+from thyme.parsers.extxyz import write
+from ase.atoms import Atoms
+import numpy as np
 import logging
 logging.basicConfig(filename=f'rm_fixed.log', filemode='w',
-                                          level=logging.INFO, format="%(message)s")
+                    level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 
-import numpy as np
-from ase.atoms import Atoms
-
-from thyme.parsers.extxyz import write
-from thyme.trajectories import Trajectories
-from thyme.parsers.cp2k import pack_folder_trj, get_childfolders
-from thyme.routines.dist_plots.energy import multiple_plots as multiple_plots_e
-from thyme.routines.dist_plots.energy import single_plot as single_plot_e
-from thyme.filters.energy import rm_duplicate
 
 def main():
 
@@ -48,6 +47,10 @@ def main():
     # logging.info("----FINAL TRJS----")
     # logging.info(f"{trjs}")
     # logging.info("-------END--------")
+
+    trjs = Trajectories.from_file("clean_up.padded_mat.npz",
+                                  format='padded_mat.npz',
+                                  preserve_order=False)
 
 if __name__ == '__main__':
     main()

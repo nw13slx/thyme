@@ -6,6 +6,7 @@ Lixin Sun, MIR Group, Harvard U
 import logging
 import numpy as np
 
+
 def convert_cell_format(nframes, raw_cells):
     """
     Args:
@@ -17,7 +18,7 @@ def convert_cell_format(nframes, raw_cells):
 
     if n_elements == 1:
 
-        cell = np.zeros((3,3))
+        cell = np.zeros((3, 3))
         cell[0, 0] = input_cell[0]
         cell[1, 1] = input_cell[0]
         cell[2, 2] = input_cell[0]
@@ -26,7 +27,7 @@ def convert_cell_format(nframes, raw_cells):
 
     elif n_elements == 3:
 
-        cell = np.zeros((3,3))
+        cell = np.zeros((3, 3))
         cell[0, 0] = input_cell[0]
         cell[1, 1] = input_cell[1]
         cell[2, 2] = input_cell[2]
@@ -53,10 +54,12 @@ def convert_cell_format(nframes, raw_cells):
 
     elif n_elements == 6 * nframes:
 
-        raise NotImplementedError(f"(abc alpha, beta, gamma) cell form is not implemented")
+        raise NotImplementedError(
+            f"(abc alpha, beta, gamma) cell form is not implemented")
 
     else:
 
-        raise RuntimeError(f"the input cell shape {input_cell.shape} does not work")
+        raise RuntimeError(
+            f"the input cell shape {input_cell.shape} does not work")
 
     return cells

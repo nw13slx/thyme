@@ -8,6 +8,7 @@ from os.path import isdir, isfile
 
 from thyme.trajectories import Trajectories
 
+
 def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename="", merge_level=1):
 
     folders = folders
@@ -33,28 +34,33 @@ def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filenam
 
         new_trj = pack_folder_trj(folder, data_filter)
         if new_trj.nframes >= 1:
-            logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
-            new_trj.name = casename
-            if casename not in alldata:
-                alldata[casename] = new_trj
+            logging.info(
+                f"save {folder} as {casename} : {new_trj.nframes} frames")
+            if isinstance(new_trj, Trajectories):
+                trjs.add_trj(trjs)
             else:
-                try:
-                    alldata[casename].add_trj(new_trj)
-                except:
-                    alldata[oldname]=new_trj
-            count += 1
-            if count%10 == 0 and len(npz_filename)>0:
-                trjs.save(f"{npz_filename}")
+                new_trj.name = casename
+                if casename not in alldata:
+                    trjs.add_trj(new_trj)
+                else:
+                    try:
+                        alldata[casename].add_trj(new_trj)
+                    except:
+                        alldata[oldname] = new_trj
+                count += 1
+                if count % 10 == 0 and len(npz_filename) > 0:
+                    trjs.save(f"{npz_filename}")
         else:
             logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
-    if len(npz_filename)>0:
+    if len(npz_filename) > 0:
         trjs.save(f"{npz_filename}")
         logging.info(f"save as {npz_filename}")
 
     logging.info("Complete parsing")
 
     return trjs
+
 
 def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
@@ -77,22 +83,24 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
         new_trj = pack_folder_trj(folder, data_filter)
         if new_trj.nframes >= 1:
-            logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
+            logging.info(
+                f"save {folder} as {casename} : {new_trj.nframes} frames")
             new_trj.name = casename
-            alldata[casename] = new_trj
+            trjs.add_trj(new_trj, casename)
             count += 1
-            if count%10 == 0 and len(npz_filename)>0:
+            if count % 10 == 0 and len(npz_filename) > 0:
                 trjs.save(f"{npz_filename}")
         else:
             logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
-    if len(npz_filename)>0:
+    if len(npz_filename) > 0:
         trjs.save(f"{npz_filename}")
         logging.info(f"save as {npz_filename}")
 
     logging.info("Complete parsing")
 
     return trjs
+
 
 def parse_folders(folders, pack_folder, data_filter, npz_filename):
 
@@ -114,10 +122,11 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
 
         data = pack_folder(folder, data_filter)
         if data['nframes'] >= 1:
-            logging.info(f"save {folder} as {casename} : {data['nframes']} frames")
+            logging.info(
+                f"save {folder} as {casename} : {data['nframes']} frames")
             alldata[casename] = data
             count += 1
-            if count%10 == 0:
+            if count % 10 == 0:
                 np.savez(f"{npz_filename}.npz", **alldata)
         else:
             logging.info(f"! skip whole folder {casename}, {data['nframes']}")
@@ -128,21 +137,24 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
 
     return alldata
 
+
 def find_folders_matching(filenames, path):
 
     folders = []
-    for root, dirs, files in walk("./"):
+    for root, dirs, files in walk(path):
         for filename in filenames:
             if len(glob(f"{root}/{filename}")) > 0:
                 folders += [root]
     return set(folders)
 
+
 def find_folders(filenames, path):
 
-    result = set([root \
-                  for root, dirs, files in walk(path) \
-                  if len((set(files)).intersection(filenames)) >0])
+    result = set([root
+                  for root, dirs, files in walk(path)
+                  if len((set(files)).intersection(filenames)) > 0])
     return result
+
 
 def safe_mkdir(name):
     if not isdir(name):

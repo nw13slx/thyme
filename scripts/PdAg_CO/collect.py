@@ -1,14 +1,11 @@
+from pymatgen.core.structure import Structure
+from thyme.parsers.vasp import pack_folder, get_childfolders
+from thyme.routines.folders import parse_folders
+import numpy as np
 import logging
 logging.basicConfig(filename=f'collect.log', filemode='w',
-                                          level=logging.INFO, format="%(message)s")
+                    level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
-
-import numpy as np
-
-from thyme.routines.folders import parse_folders
-from thyme.parsers.vasp import pack_folder, get_childfolders
-
-from pymatgen.core.structure import Structure
 
 
 def main():
@@ -16,13 +13,14 @@ def main():
     folders = get_childfolders("./")
     parse_folders(folders, pack_folder, o_dist_filter, "all_data")
 
+
 def o_dist_filter(o_xyz, f, e, c, species, mine=-411, ne=2):
 
     xyz = o_xyz.reshape([-1, 3])
-    atoms =  Structure(lattice=c,
-                     species=species,
-                     coords=xyz,
-                     coords_are_cartesian=True)
+    atoms = Structure(lattice=c,
+                      species=species,
+                      coords=xyz,
+                      coords_are_cartesian=True)
     dist_mat = atoms.distance_matrix
 
     C_id = np.array([index for index, ele in enumerate(species) if ele == 'C'])
@@ -62,11 +60,12 @@ def o_dist_filter(o_xyz, f, e, c, species, mine=-411, ne=2):
             return False
     if (de < -100) or (de > 100):
         logging.info(f"skip frame for high/low "
-                         f"{e-mine:6.2f}+{mine:6.2f}"
-                         f"{e-refe:6.2f}+{refe:6.2f}")
+                     f"{e-mine:6.2f}+{mine:6.2f}"
+                     f"{e-refe:6.2f}+{refe:6.2f}")
         return False
 
     return True
+
 
 if __name__ == '__main__':
     main()

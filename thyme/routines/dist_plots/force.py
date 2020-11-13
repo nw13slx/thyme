@@ -1,15 +1,16 @@
+from thyme.routines.parity_plots.setup import tabcolors
+from thyme.routines.dist_plots.base import base_line_hist
+from thyme.trajectory import PaddedTrajectory, Trajectory
+import numpy as np
 import logging
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
-import numpy as np
 
-from thyme.trajectory import PaddedTrajectory, Trajectory
-from thyme.routines.dist_plots.base import base_line_hist
-from thyme.routines.parity_plots.setup import tabcolors
 
 def multiple_plots(trajectories, prefix=""):
     for i, trj in enumerate(trajectories.alldata.values()):
         single_plot(trj, prefix)
+
 
 def single_plot(trj, prefix=""):
     if isinstance(trj, PaddedTrajectory):
@@ -23,9 +24,8 @@ def single_plot(trj, prefix=""):
     for s in specs:
         maxf = np.max(trj.forces, axis=-1)
         if isinstance(trj, PaddedTrajectory):
-            ids = np.where(trj.symbols==s)
+            ids = np.where(trj.symbols == s)
         elif isinstance(trj, Trajectory):
-            ids = np.where(trj.species==s)
+            ids = np.where(trj.species == s)
         base_line_hist(maxf[ids], "Forces (eV/$\\mathrm{\\AA}$)",
                        f"{prefix}{trj.name}_{s}_force_dist")
-

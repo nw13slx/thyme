@@ -3,7 +3,8 @@ import numpy as np
 
 from thyme.utils.atomic_symbols import species_to_idgroups
 
-def sort_by_force(trj, pred_label, chosen_species: str=None):
+
+def sort_by_force(trj, pred_label, chosen_species: str = None):
     """
     chosen_specie: str, only sort the force error among the atoms with
                         the chosen_species symbol
@@ -25,6 +26,7 @@ def sort_by_force(trj, pred_label, chosen_species: str=None):
         maxdf = np.max(np.abs(df.reshape([trj.nframes, -1])), axis=1)
         ids = np.argsort(maxdf)
         return ids, maxdf
+
 
 def sort_by_energy(trj, pred_label):
     """

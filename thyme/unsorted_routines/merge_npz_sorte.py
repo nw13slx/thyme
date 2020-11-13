@@ -16,6 +16,7 @@ if not isdir(rootfolder):
 logging.basicConfig(filename=f'{rootfolder}/merge.log', filemode='w',
                     level=logging.INFO)
 
+
 def main():
 
     npzs = glob(f"*/allmerged.npz")
@@ -35,7 +36,7 @@ def main():
     symbols = {}
     atomic_number = {}
     energies = {}
-    ele_to_N = {'Ag':46, 'Pd':47, 'C':6, 'O':8}
+    ele_to_N = {'Ag': 46, 'Pd': 47, 'C': 6, 'O': 8}
     natoms = {}
     symbols = {}
     for npz in npzs:
@@ -88,7 +89,8 @@ def main():
         forces[label] += [o_for]
         cells[label] += [o_c]
         energies[label] += [o_e]
-        atomic_number[label] += [np.hstack([o_atomic]*nframes).reshape([nframes, -1])]
+        atomic_number[label] += [np.hstack([o_atomic]
+                                           * nframes).reshape([nframes, -1])]
         symbols[label] += [np.hstack([o_spe]*nframes).reshape([nframes, -1])]
         natoms[label] += [[natom]*nframes]
 
@@ -132,10 +134,13 @@ def main():
     for task in ['lowe', 'alle']:
         for dataset in ['train', 'valid', 'test']:
             for matrix in ['positions', 'forces', 'cells', 'symbols', 'atomic_number']:
-                all_data[task][dataset][matrix] = np.vstack(all_data[task][dataset][matrix])
+                all_data[task][dataset][matrix] = np.vstack(
+                    all_data[task][dataset][matrix])
             for matrix in ['energies', 'natoms']:
-                all_data[task][dataset][matrix] = np.hstack(all_data[task][dataset][matrix])
-            logging.info(f"{task} {dataset} {all_data[task][dataset]['positions'].shape}")
+                all_data[task][dataset][matrix] = np.hstack(
+                    all_data[task][dataset][matrix])
+            logging.info(
+                f"{task} {dataset} {all_data[task][dataset]['positions'].shape}")
         save_data = {}
         for matrix in ['positions', 'forces', 'cells', 'symbols', 'atomic_number']:
             save_data[matrix] = np.vstack([all_data[task]['train'][matrix],
@@ -150,14 +155,14 @@ def main():
     fout.close()
 
 
-
 def obtain_specie_label(species):
     index_list = {}
     ele_list = {}
     for ele in set(species):
-        index_list[ele] = np.array([index for index, e in enumerate(species) if e == ele])
+        index_list[ele] = np.array(
+            [index for index, e in enumerate(species) if e == ele])
         ele_list[ele] = len(index_list[ele])
-    sort_ele = np.array(sorted(ele_list.items(), key=lambda x:x[0]))
+    sort_ele = np.array(sorted(ele_list.items(), key=lambda x: x[0]))
     label = ""
     legend = ""
     for ele in sort_ele:
@@ -165,6 +170,6 @@ def obtain_specie_label(species):
         legend += ele[0]+"$_{"+str(ele[1])+"}$"
     return label, legend
 
+
 if __name__ == '__main__':
     main()
-
