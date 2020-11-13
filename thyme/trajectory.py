@@ -37,7 +37,8 @@ class Trajectory():
         self.name = ""
 
         self.per_frame_attrs = []
-        self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty', 'species', 'natom']
+        self.metadata_attrs = ['nframes', 'name',
+                               'python_list', 'empty', 'species', 'natom']
 
     def __repr__(self):
         s = f"{self.name}: {self.nframes} frames with {self.natom} atoms"
@@ -97,7 +98,8 @@ class Trajectory():
     def add_per_frame_attr(name, item):
 
         if len(item) != self.nframes:
-            logging.error(f"{item}\'s length {len(item)} does not match {self.nframes}")
+            logging.error(
+                f"{item}\'s length {len(item)} does not match {self.nframes}")
             raise RuntimeError
 
         if name in self.per_frame_attrs:
@@ -280,18 +282,19 @@ class Trajectory():
         self.name = ""
 
         self.per_frame_attrs = []
-        self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty', 'species', 'natom']
+        self.metadata_attrs = ['nframes', 'name',
+                               'python_list', 'empty', 'species', 'natom']
 
     def add_containers(self, natom: int = 0,
                        attributes: list = [])
-        """
+      """
         initialize all attributes with empty list (python_list = True)
         or numpy array (python_list = False)
 
         attributes: only per_frame_attrs needs to be listed
         """
 
-        if not self.empty:
+       if not self.empty:
             return
 
         if self.python_list:
@@ -304,14 +307,13 @@ class Trajectory():
 
         self.natom = int(natom)
 
-
     def append_frame_from_dict(self, dictionary: dict, nframes: int,
-                              configs: list = [], attributes: list = None, idorder=None)
-        """
+                               configs: list = [], attributes: list = None, idorder=None)
+      """
         add one(i) or all frames from dictionary to trajectory
         """
 
-        if len(configs) > 0:
+       if len(configs) > 0:
             return
 
         if self.empty:
@@ -387,7 +389,8 @@ class Trajectory():
             if len(self.species) == 0:
                 self.species = species
             elif not all(np.equal(self.species, species)):
-                raise RuntimeError("fail to add frame from dict, species are not the same")
+                raise RuntimeError(
+                    "fail to add frame from dict, species are not the same")
 
         self.convert_to_np()
 
@@ -526,7 +529,6 @@ class Trajectory():
 
     def copy(self, otrj):
 
-
         self.clean_containers()
 
         for k in otrj.per_frame_attrs:
@@ -559,7 +561,7 @@ class Trajectory():
             species = otrj.symbols[0][:self.natom]
             reorder = False
             for i in range(otrj.nframes):
-                if not all(species==otrj.symbols[i][:self.natom]):
+                if not all(species == otrj.symbols[i][:self.natom]):
                     c1 = dict(Counter(species))
                     c2 = dict(Counter(otrj.symbols[i][:self.natom]))
                     if set(list(c1.keys())) != set(list(c2.keys())):

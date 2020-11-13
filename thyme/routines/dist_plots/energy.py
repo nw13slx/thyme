@@ -10,9 +10,11 @@ def multiple_plots(trajectories, label='energies', prefix="", xlabel="Energy (eV
     for i, trj in enumerate(trajectories.alldata.values()):
         single_plot(trj, label, prefix, xlabel)
 
+
 def single_plot_energy(trj, prefix=""):
     base_line_hist(trj.energies, "Energy (eV)",
                    f"{prefix}{trj.name}_energy_dist")
+
 
 def single_plot(trj, label='energies', prefix="", xlabel="Energy (eV)"):
     item = getattr(trj, label, None)
