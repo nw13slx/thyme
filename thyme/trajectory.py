@@ -286,15 +286,15 @@ class Trajectory():
                                'python_list', 'empty', 'species', 'natom']
 
     def add_containers(self, natom: int = 0,
-                       attributes: list = [])
-      """
+                       attributes: list = []):
+        """
         initialize all attributes with empty list (python_list = True)
         or numpy array (python_list = False)
 
         attributes: only per_frame_attrs needs to be listed
         """
 
-       if not self.empty:
+        if not self.empty:
             return
 
         if self.python_list:
@@ -308,12 +308,12 @@ class Trajectory():
         self.natom = int(natom)
 
     def append_frame_from_dict(self, dictionary: dict, nframes: int,
-                               configs: list = [], attributes: list = None, idorder=None)
-      """
+                               configs: list = [], attributes: list = None, idorder=None):
+        """
         add one(i) or all frames from dictionary to trajectory
         """
 
-       if len(configs) > 0:
+        if len(configs) > 0:
             return
 
         if self.empty:
@@ -344,7 +344,7 @@ class Trajectory():
                     if item.shape[1] > ori_natom:
                         if dim == 2:
                             if item.shape[1] % ori_natom == 0:
-                                item = item.reshape([:, ori_natom, -1])
+                                item = item.reshape([-1, ori_natom, -1])
                             else:
                                 raise RuntimeError(f"{k} {item.shape} {ori_natom} "
                                                    "cannot be handled")
