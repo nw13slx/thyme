@@ -39,26 +39,15 @@ def main():
     trjs = trjs.to_padded_trajectory()
     trjs = Trajectories.from_padded_trajectory(trjs,
                                                preserve_order=False)
-    # for i, trj in trjs.alldata.items():
-    #     ids = rm_duplicate(trj)
-    #     trj.filter_frames(accept_id=ids)
-    #     write(f"vmd{i}.xyz", trj)
+    for i, trj in trjs.alldata.items():
+        ids = rm_duplicate(trj)
+        trj.filter_frames(accept_id=ids)
+        write(f"vmd{i}.xyz", trj)
 
     trjs.save("clean_up.padded_mat.npz")
     # logging.info("----FINAL TRJS----")
     # logging.info(f"{trjs}")
     # logging.info("-------END--------")
-
-
-    trjs = Trajectories.from_file("clean_up.padded_mat.npz",
-                                  format='padded_mat.npz',
-                                  preserve_order=False)
-    for i, trj in trjs.alldata.items():
-        ids = rm_duplicate(trj)
-        trj.filter_frames(accept_id=ids)
-        write(f"new_vmd{i}.xyz", trj)
-
-
 
 if __name__ == '__main__':
     main()

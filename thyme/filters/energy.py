@@ -41,7 +41,7 @@ def lowe(trj, chosen_specie=None, chosen_count=0):
 
 def rm_duplicate(trj):
     """
-    remove top 2 energy, and then remove duplicated
+    remove top 3 energy, and then remove duplicated
     """
 
     sorted_id = np.argsort(trj.energies)[:-3]
