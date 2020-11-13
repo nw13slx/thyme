@@ -1,6 +1,7 @@
 from thyme.routines.dist_plots.energy import single_plot as single_plot_e
 from thyme.parsers.pysampling import pack_folder_trj, get_childfolders
 from thyme.routines.folders import parse_folders_trjs
+from thyme.trajectory import Trajectory
 from ase.atoms import Atoms
 from collections import Counter
 import numpy as np
@@ -21,6 +22,8 @@ def main():
 
         trj.species = ['H', 'C', 'O', 'O']+['Cu']*48
         trj.cells = np.hstack([cell]*trj.nframes).reshape([trj.nframes, 3, 3])
+        trj.per_frame_attrs += ['cells']
+        trj.metadata_attrs += ['species']
 
         labeling(trj)
         shifting(trj)
@@ -82,6 +85,32 @@ def labeling(trj):
     else:
         logging.info(f"find {label} {dist_CH:5.2f} "
                      f"OCu {dist_OCu_max:5.2f} {dist_OCu_min:5.2f} HCu {dist_HCu:5.2f}")
+
+    trjs = []
+    augment = 9
+    for i in range(augment):
+        trjs += [Trajectory()]
+        trjs[-1].add_trj(trj)
+
+    # Cuid = np.array([i for i, s in enumerate(trj.species) if s == 'Cu'])
+
+    # for iconfig in range(trj.nframes):
+
+    #     sortid = np.argsort(trj.positions[iconfig][Cuid, 2])
+
+    #     C1 = Cuid[sortid[:12]]
+    #     C2 = Cuid[sortid[12:]]
+
+    #     order = np.hstack([0, 1, 2, 3, C1, C2])
+    #     trj.positions[iconfig] = trj.positions[iconfig][order]
+    #     for i in range(augment):
+    #         np.random.shuffle(C1)
+    #         order = np.hstack([0, 1, 2, 3, C1, C2])
+    #         trjs[i].positions[iconfig] = trjs[i].positions[iconfig][order]
+
+    # for i in range(augment):
+    #     trj.add_trj(trjs[i])
+
 
 def shifting(trj):
 

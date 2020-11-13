@@ -1,5 +1,7 @@
 import logging
 import numpy as np
+import pickle
+
 from copy import deepcopy
 
 from ase.atoms import Atoms
@@ -98,6 +100,7 @@ class Trajectory():
             return
 
         for k in self.per_frame_attrs:
+            new_mat = getattr(self, k)
             new_mat = getattr(self, k)[accept_id]
             setattr(self, k, new_mat)
         self.nframes = len(accept_id)
@@ -108,6 +111,9 @@ class Trajectory():
         if ".npz" == filename[-4:]:
             dictionary = dict(np.load(filename, allow_pickle=True))
             trj.copy_dict(dictionary)
+        elif '.pickle' == filename[-7:]:
+            with open(filename, "rb") as fin:
+                trj = pickle.load(fin)
         else:
             raise NotImplementedError(f"{filename} format not supported")
         return trj
@@ -170,7 +176,13 @@ class Trajectory():
                 setattr(self, k, deepcopy(dictionary[k]))
 
                 logging.debug(f"undefined attributes {k}, set to metadata")
-                self.metadata_attrs += [k]
+                try:
+                    if dictionary[k].shape[0] == nframes:
+                        self.per_frame_attrs += [k]
+                    else:
+                        self.metadata_attrs += [k]
+                except:
+                    self.metadata_attrs += [k]
 
             else:
                 raise RuntimeError(f"?? {k}")
@@ -281,13 +293,14 @@ class Trajectory():
         add one(i) or all frames from dictionary to trajectory
         """
 
+
         if i < 0:
             self.add_frames_from_dict(dictionary=dictionary, nframes=nframes,
                                       attributes=attributes, idorder=iorder)
             return
 
         natom = len(idorder)
-        ori_natom = len(dictionary['positions'])
+        ori_natom = dictionary['positions'].shape[1]
 
         if self.empty:
             self.add_containers(natom=natom,

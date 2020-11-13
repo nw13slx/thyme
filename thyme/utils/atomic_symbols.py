@@ -30,6 +30,7 @@ def species_to_order_label(symbol):
         order += [[i for i, s in enumerate(symbol) if s == k]]
     order = np.hstack(order)
     label = "".join([f"{k}{count[k]}" for k in symbol_list])
+
     return order, label
 
 
