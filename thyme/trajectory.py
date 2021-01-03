@@ -454,27 +454,20 @@ class Trajectory():
 
         return trj
 
-    def reorder(self, orders, uniform=False):
+    def reorder(self, orders):
 
-
-        logging.info(f"{len(orders)} orders vs {self.nframes} frames")
+        if len(orders) != self.natom:
+            logging.error(f"{len(orders)} order vs {self.natom} atoms")
+            raise RuntimeError()
 
         for k in self.per_frame_attrs:
             ori_item = getattr(self, k)
             if len(ori_item.shape) > 1:
                 if ori_item.shape[1] == self.natom:
-                    if uniform:
-                        item = ori_item[:, orders]
-                    else:
-                        item = []
-                        for iconfig in range(self.nframes):
-                            order = orders[iconfig]
-                            if order is not None:
-                                item += [[ori_item[iconfig, order]]]
-                            else:
-                                item += [[ori_item[iconfig, :]]]
-                        item = np.vstack(item)
+                    item = ori_item[:, orders]
                     setattr(self, k, item)
+
+        self.species = np.array(self.species)[orders]
 
         natom = self.positions.shape[1]
 
@@ -750,3 +743,31 @@ class PaddedTrajectory(Trajectory):
         trj = Trajectory()
         trj.copy(self)
         return trj
+
+    def reorder(self, orders):
+
+        if len(orders) != self.nframes:
+            logging.error(f"{len(orders)} orders vs {self.nframes} frames")
+            raise RuntimeError()
+
+        for k in self.per_frame_attrs:
+            ori_item = getattr(self, k)
+            if len(ori_item.shape) > 1:
+                if ori_item.shape[1] == self.natom:
+                    item = []
+                    for iconfig in range(self.nframes):
+                        order = orders[iconfig]
+                        if order is not None:
+                            item += [[ori_item[iconfig, order]]]
+                        else:
+                            item += [[ori_item[iconfig, :]]]
+                    item = np.vstack(item)
+                    setattr(self, k, item)
+
+        natom = self.positions.shape[1]
+
+        if natom != self.natom:
+            logging.info(f"skim {self.natom} atoms to {natom} atoms")
+
+        self.natom = natom
+        self.sanity_check()
