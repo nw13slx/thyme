@@ -10,6 +10,7 @@ logging.basicConfig(filename=f'collect.log', filemode='w',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 
+
 def main():
 
     folders = get_childfolders("./", include_xyz=True)
@@ -44,7 +45,7 @@ def main():
     logging.info(f"overall label {c}")
 
     for label in [-1, 0, 1, 2]:
-        sort_id = np.where(trj.label==label)[0]
+        sort_id = np.where(trj.label == label)[0]
         new_trj = trj.skim(sort_id)
         new_trj.save(f"l{label}results_padded_mat.npz")
         new_trj.name = f'{label}'
@@ -124,7 +125,8 @@ def shifting(trj):
         for idir in range(2):
             trj.positions[iconfig][:, idir] += trj.cells[iconfig][idir, idir]
             trj.positions[iconfig][:, idir] = \
-                trj.positions[iconfig][:, idir]%trj.cells[iconfig][idir, idir]
+                trj.positions[iconfig][:,
+                                       idir] % trj.cells[iconfig][idir, idir]
 
 
 if __name__ == '__main__':

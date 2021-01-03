@@ -9,6 +9,7 @@ logging.basicConfig(filename=f'collect.log', filemode='w',
                     level=logging.INFO, format="%(message)s")
 logging.getLogger().addHandler(logging.StreamHandler())
 
+
 def main():
 
     folders = get_childfolders("./", include_xyz=True)
@@ -27,9 +28,11 @@ def main():
 
             # wrap around
             for idir in range(2):
-                trj.positions[iconfig][:, idir] += trj.cells[iconfig][idir, idir]
+                trj.positions[iconfig][:,
+                                       idir] += trj.cells[iconfig][idir, idir]
                 trj.positions[iconfig][:, idir] = \
-                    trj.positions[iconfig][:, idir]%trj.cells[iconfig][idir, idir]
+                    trj.positions[iconfig][:,
+                                           idir] % trj.cells[iconfig][idir, idir]
 
     trj = trjs.to_padded_trajectory()
     c = Counter(trj.labels)
@@ -40,7 +43,7 @@ def main():
     logging.info(f"overall label {c}")
 
     for label in [-1, 0, 1]:
-        sort_id = np.where(trj.labels==label)[0]
+        sort_id = np.where(trj.labels == label)[0]
         new_trj = trj.skim(sort_id)
         new_trj.save(f"l{label}results_padded_mat.npz")
         new_trj.name = f'l{label}'
@@ -81,6 +84,7 @@ def labeling(trj):
     if label == -1:
         logging.info(f"fail to find basin CH {dist_CH:5.2f} "
                      f"OCu {dist_OCu_max:5.2f} {dist_OCu_min:5.2f} HCu {dist_HCu:5.2f}")
+
 
 if __name__ == '__main__':
     main()

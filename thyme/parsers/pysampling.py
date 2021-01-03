@@ -14,6 +14,7 @@ def get_childfolders(path, include_xyz=True):
 
     return find_folders_matching(['assm_pth*_*.npz'], path)
 
+
 def pack_folder_trj(folder, data_filter, include_xyz=True):
 
     trjs = Trajectories()
