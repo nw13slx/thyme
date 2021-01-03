@@ -464,7 +464,9 @@ class Trajectory():
             ori_item = getattr(self, k)
             if len(ori_item.shape) > 1:
                 if ori_item.shape[1] == self.natom:
-                    item = ori_item[:, orders]
+                    item = np.swapaxes(ori_item, 0, 1)
+                    item = item[orders]
+                    item = np.swapaxes(item, 0, 1)
                     setattr(self, k, item)
 
         self.species = np.array(self.species)[orders]

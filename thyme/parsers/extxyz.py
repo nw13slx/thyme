@@ -209,25 +209,21 @@ def posforce_regex(filename):
 def write(name, trj):
     if not trj.is_padded:
         for i in range(trj.nframes):
-            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
+            structure = Atoms(cell=trj.cells[i],
                               symbols=trj.species,
-                              positions=trj.positions[i].reshape([-1, 3]),
+                              positions=trj.positions[i],
                               pbc=True)
             write_extxyz(name, structure, append=True)
     else:
         for i in range(trj.nframes):
-            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
+            structure = Atoms(cell=trj.cells[i],
                               symbols=trj.symbols[i],
-                              positions=trj.positions[i].reshape([-1, 3]),
+                              positions=trj.positions[i],
                               pbc=True)
             write_extxyz(name, structure, append=True)
 
 
 def write_trjs(name, trjs):
     for i, trj in trjs.alldata.items():
-        for i in range(trj.nframes):
-            structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
-                              symbols=trj.species,
-                              positions=trj.positions[i].reshape([-1, 3]),
-                              pbc=True)
-            write_extxyz(f"{trj.name}_{name}", structure, append=True)
+        write(f"{trj.name}_{name}", trj)
+        logging.info(f"write {trj.name}_{name}")
