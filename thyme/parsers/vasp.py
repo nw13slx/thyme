@@ -82,9 +82,10 @@ def parse_outcar_trj(folder, data_filter):
         return Trajectory()
     energies = np.hstack(d_energies['energies'])
 
+    logging.debug(f" parsing {filename} for positions")
     pos_force = read_table_pattern(filename,
                                    header_pattern=r"\sPOSITION\s+TOTAL-FORCE \(eV/Angst\)\n\s-+",
-                                   row_pattern=r"\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)",
+                                   row_pattern=r"^\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)$",
                                    footer_pattern=r"\s--+",
                                    postprocess=lambda x: float(x),
                                    last_one_only=False
@@ -92,6 +93,7 @@ def parse_outcar_trj(folder, data_filter):
                                    )
     pos_force = np.array(pos_force, dtype=np.float64)
 
+    logging.debug(f" parsing {filename} for cells")
     cells = read_table_pattern(filename,
                                header_pattern=r"\sdirect lattice vectors\s+reciprocal lattice vectors",
                                row_pattern=r"\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)"
@@ -132,11 +134,14 @@ def parse_outcar_trj(folder, data_filter):
     nframes = pos_force.shape[0]
     converged_steps = np.array([i for i, s in enumerate(n_electronic_steps)
                                 if (s < nelm and i < nframes)])
+
+    # log and return tempty trajectory if needed
     if len(converged_steps) < nframes:
-        logging.info("skip unconverged step", [i for i, s in enumerate(n_electronic_steps)
-                                               if (s >= nelm or i >= nframes)])
-    if len(converged_steps) == 0:
-        return Trajectory.from_dict(data)
+        logging.info("skip unconverged step {}".format(
+            [i for i, s in enumerate(n_electronic_steps)
+             if (s >= nelm or i >= nframes)]))
+    elif len(converged_steps) == 0:
+        return Trajectory()
 
     natom = pos_force.shape[1]
     data['natom'] = natom

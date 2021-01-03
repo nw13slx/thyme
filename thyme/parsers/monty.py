@@ -3,7 +3,6 @@ code copy from Pymatgen that use the Monty library
 """
 
 import re
-
 import numpy as np
 from monty.io import zopen
 from monty.re import regrep
@@ -43,12 +42,15 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
         row_pattern, or a dict in case that named capturing groups are defined by
         row_pattern.
     """
+
     with zopen(filename, 'rt') as f:
         text = f.read()
+
     table_pattern_text = header_pattern + \
         r"\s*^(?P<table_body>(?:\s*" + row_pattern + r")+)\s+" + footer_pattern
     table_pattern = re.compile(table_pattern_text, re.MULTILINE | re.DOTALL)
     rp = re.compile(row_pattern)
+
     tables = []
     for mt in table_pattern.finditer(text):
         table_body_text = mt.group("table_body")
@@ -65,6 +67,7 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
                 processed_line = [postprocess(v) for v in ml.groups()]
             table_contents.append(processed_line)
         tables.append(table_contents)
+
     if last_one_only:
         retained_data = tables[-1]
     else:

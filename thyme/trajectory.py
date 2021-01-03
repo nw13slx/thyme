@@ -94,10 +94,10 @@ class Trajectory():
         if 'natom' not in self.metadata_attrs:
             self.metadata_attrs += ['natom']
 
-    def add_per_frame_attr(name, item):
+    def add_per_frame_attr(self, name, item):
 
         if len(item) != self.nframes:
-            logging.error(f"{item}\'s length {len(item)} does not match {self.nframes}")
+            logging.error(f"{repr(item)}\'s length {len(item)} does not match {self.nframes}")
             raise RuntimeError
 
         if name in self.per_frame_attrs:
@@ -108,7 +108,7 @@ class Trajectory():
         setattr(self, name, item)
         logging.info(f"add {name} to the system")
 
-    def add_metadata(name, item):
+    def add_metadata(self, name, item):
 
         if name in self.metadata_attrs:
             logging.warning(f"try to add {name}, but it already exists")
@@ -173,6 +173,7 @@ class Trajectory():
         self.clean_containers()
 
         nframes = dictionary['positions'].shape[0]
+        self.nframes = nframes
 
         if 'cells' in dictionary:
             dictionary['cells'] = convert_cell_format(
@@ -197,13 +198,13 @@ class Trajectory():
 
                 logging.debug(f"undefined attributes {k}, set to metadata")
                 try:
-                    if dictionary[k].shape[0] == nframes:
-                        self.add_per_frame_attr(k, deepcopy(dictionary[k]))
-                    else:
-                        self.add_metadata(k, deepcopy(dictionary[k]))
+                    dim0 = dictionary[k].shape[0]
                 except:
+                    dim0 = -1
+                if dim0 == nframes:
+                    self.add_per_frame_attr(k, deepcopy(dictionary[k]))
+                else:
                     self.add_metadata(k, deepcopy(dictionary[k]))
-
             else:
                 raise RuntimeError(f"?? {k}")
         self.sanity_check()
@@ -283,7 +284,7 @@ class Trajectory():
         self.metadata_attrs = ['nframes', 'name', 'python_list', 'empty', 'species', 'natom']
 
     def add_containers(self, natom: int = 0,
-                       attributes: list = [])
+                       attributes: list = []):
         """
         initialize all attributes with empty list (python_list = True)
         or numpy array (python_list = False)
@@ -305,8 +306,8 @@ class Trajectory():
         self.natom = int(natom)
 
 
-    def append_frame_from_dict(self, dictionary: dict, nframes: int,
-                              configs: list = [], attributes: list = None, idorder=None)
+    def append_frames_from_dict(self, dictionary: dict, nframes: int,
+                               configs: list = [], attributes: list = None, idorder=None):
         """
         add one(i) or all frames from dictionary to trajectory
         """
@@ -342,7 +343,7 @@ class Trajectory():
                     if item.shape[1] > ori_natom:
                         if dim == 2:
                             if item.shape[1] % ori_natom == 0:
-                                item = item.reshape([:, ori_natom, -1])
+                                item = item.reshape([item.shape[0], ori_natom, -1])
                             else:
                                 raise RuntimeError(f"{k} {item.shape} {ori_natom} "
                                                    "cannot be handled")
