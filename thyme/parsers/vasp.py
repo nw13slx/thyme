@@ -136,12 +136,13 @@ def parse_outcar_trj(folder, data_filter):
                                 if (s < nelm and i < nframes)])
 
     # log and return tempty trajectory if needed
-    if len(converged_steps) < nframes:
+    if len(converged_steps) == 0:
+        return Trajectory()
+
+    elif len(converged_steps) < nframes:
         logging.info("skip unconverged step {}".format(
             [i for i, s in enumerate(n_electronic_steps)
              if (s >= nelm or i >= nframes)]))
-    elif len(converged_steps) == 0:
-        return Trajectory()
 
     natom = pos_force.shape[1]
     data['natom'] = natom

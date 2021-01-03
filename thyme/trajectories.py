@@ -240,6 +240,16 @@ class Trajectories():
 
         trjs = Trajectories()
 
+        if 'positions' not in dictionary:
+            logging.warning("the input dictionary does not have a positions array")
+            logging.warning("return an tempty container")
+            return trjs
+
+        if 'symbols' not in dictionary:
+            logging.warning("the input dictionary does not have a symbols array")
+            logging.warning("return an tempty container")
+            return trjs
+
         nframes = dictionary['positions'].shape[0]
         symbols = dictionary['symbols']
 
