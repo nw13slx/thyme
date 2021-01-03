@@ -15,17 +15,16 @@ logging.getLogger().addHandler(logging.StreamHandler())
 
 def main():
 
-    folders = get_childfolders("./")
-    # folders = [f"{i+1}" for i in range(59)]
-    trjs = parse_merged_folders_trjs(folders, pack_folder_trj,
-                              e_filter, "all_data.pickle")
-    # trjs = Trajectories.from_file('all_data.pickle')
+    # folders = get_childfolders("./")
+    # # folders = [f"{i+1}" for i in range(59)]
+    # trjs = parse_merged_folders_trjs(folders, pack_folder_trj,
+    #                           e_filter, "all_data.pickle")
+    trjs = Trajectories.from_file('all_data.pickle')
     # merge the one with the same composition
     trjs = Trajectories.from_padded_trajectory(trjs.to_padded_trajectory())
     for trj in trjs.alldata.values():
         accept_id = sort_e(trj)
         trj.filter_frames(accept_id)
-        print(trj)
         write_trjs("all.xyz", trjs)
 
     multiple_plots_e(trjs, prefix='alldata')

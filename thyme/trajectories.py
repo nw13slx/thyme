@@ -261,7 +261,10 @@ class Trajectories():
             configs = alldata[stored_label][1]
             orders = alldata[stored_label][2]
 
-            newtrj = (ptrj.skim(configs, orders)).to_Trajectory()
+            trj = ptrj.skim(configs)
+            trj.reorder(orders)
+
+            newtrj = trj.to_Trajectory()
             newtrj.name = label
 
             trjs.add_trj(newtrj, stored_label)
