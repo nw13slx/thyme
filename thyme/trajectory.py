@@ -336,17 +336,28 @@ class Trajectory():
 
             self.convert_to_np()
 
-            if trj.is_padded:
+            if trj.is_padded and not self.is_padded:
+                logging.error(f"type {type(self)} != type {type(trj)}")
+                raise RuntimeError("")
 
-                if type(self) != type(trj):
-                    logging.error(f"type {type(self)} != type {type(trj)}")
-                    raise RuntimeError("")
-
-            if self.natom != trj.natom:
+            if self.natom != trj.natom and not self.is_padded:
                 logging.info(
                     f"adding trajectory with different number of atoms {trj.natom}")
                 raise RuntimeError(f"Trajectory cannot be padded during adding."
                                    " Please initialize as a PaddedTrajectory")
+            elif self.natom != trj.natom:
+
+                max_atoms = np.max([self.natom, trj.natom])
+
+                if self.natom < max_atoms:
+                    self.increase_maxatom(max_atom)
+                else:
+                    padded_trj = PaddedTrajectory.from_trajectory(
+                        trj, max_atoms)
+                    trj = padded_trj
+
+                if not trj.is_padded:
+                    trj = PaddedTrajectory.from_trajectory(trj, trj.natom)
 
             for k in self.per_frame_attrs:
                 item = getattr(trj, k)
@@ -361,6 +372,7 @@ class Trajectory():
                 trj, exception=['name', 'nframes', 'natom', 'filenames'])
 
             self.nframes += trj.nframes
+
 
     def convert_to_np(self):
         """
@@ -442,7 +454,8 @@ class Trajectory():
 
         return trj
 
-    def reorder(self, orders):
+    def reorder(self, orders, uniform=False):
+
 
         logging.info(f"{len(orders)} orders vs {self.nframes} frames")
 
@@ -450,14 +463,17 @@ class Trajectory():
             ori_item = getattr(self, k)
             if len(ori_item.shape) > 1:
                 if ori_item.shape[1] == self.natom:
-                    item = []
-                    for iconfig in range(self.nframes):
-                        order = orders[iconfig]
-                        if order is not None:
-                            item += [[ori_item[iconfig, order]]]
-                        else:
-                            item += [[ori_item[iconfig, :]]]
-                    item = np.vstack(item)
+                    if uniform:
+                        item = ori_item[:, orders]
+                    else:
+                        item = []
+                        for iconfig in range(self.nframes):
+                            order = orders[iconfig]
+                            if order is not None:
+                                item += [[ori_item[iconfig, order]]]
+                            else:
+                                item += [[ori_item[iconfig, :]]]
+                        item = np.vstack(item)
                     setattr(self, k, item)
 
         natom = self.positions.shape[1]
