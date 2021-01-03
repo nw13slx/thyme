@@ -70,6 +70,7 @@ def parse_outcar_trj(folder, data_filter):
         logging.info("cannot find species in either POSCAR or CONTCAR")
         return Trajectory()
 
+    # start parsing outcar
     filename = "/".join([folder, "OUTCAR"])
 
     t = time.time()
@@ -115,16 +116,16 @@ def parse_outcar_trj(folder, data_filter):
     t = time.time()
     try:
         incar = Incar.from_file(filename)
+        data['nelm'] = incar['NELM']
+        data['cutoff'] = incar['ENCUT']
+        data['dipole_correction'] = bool(incar['LDIPOL'].split()[0])
+        data.update(incar)
+        logging.info(f"Incar grep time {time.time()-t}")
     except Exception as e:
-        logging.info(f"fail to load outcar {e}")
+        logging.info(f"fail to load incar {e}")
         return Trajectory()
-    logging.info(f"Incar grep time {time.time()-t}")
 
-    nelm = incar['NELM']
-    data['nelm'] = nelm
-    data['cutoff'] = incar['ENCUT']
-    data['dipole_correction'] = bool(incar['LDIPOL'].split()[0])
-    data.update(incar)
+    nelm = data['nelm']
 
     cs = cells[:, :, :3].reshape([-1, 3, 3])
 
