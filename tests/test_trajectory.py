@@ -8,28 +8,58 @@ from copy import deepcopy
 from thyme.trajectory import Trajectory
 
 
-@pytest.fixture(scope='class')
-def dictionary():
-    d = dict(
-    positions=np.zeros([4, 5, 3]),
-    symbols=np.array([['C']*5]*4),
-    )
-    yield d
-    del d
+def pytest_generate_tests(metafunc):
+    idlist = []
+    argvalues = []
+    for scenario in metafunc.cls.scenarios:
+        idlist.append(scenario[0])
+        items = scenario[1].items()
+        argnames = [x[0] for x in items]
+        argvalues.append([x[1] for x in items])
+    metafunc.parametrize(argnames, argvalues, ids=idlist, scope="class")
 
-class TestInit():
 
-    def test_init(self):
+scenario1 = ("empty", {"trj": Trajectory()})
+scenario2 = ("prefilled", {"trj": None})
 
-        trj = Trajectory()
+class TestEmpty():
 
-# class TestFromDict()
-#
-#     def test_from_
+    scenarios = [scenario1, scenario2]
+    trj = None
 
-# def __init__(self)
-# def __repr__(self)
-# def __str__(self)
+    def test_init(self, trj):
+        self.trj = "aaa"
+        if trj is None:
+            self.trj = "1"
+            print("hello", self.trj)
+        pass
+
+    def test_repr(self, trj):
+        print(repr(trj))
+
+    def test_str(self, trj):
+        print(trj)
+        print("hello", self.trj)
+        self.trj = "2"
+
+    def test_sanity_check(self, trj):
+        print("hello", self.trj)
+        self.trj = "3"
+        pass
+        # trj.sanity_check()
+
+    def test_add_p_attr(self, trj):
+        print("hello", self.trj)
+        pass
+        # trj.add_per_frame_attr("hello", [])
+
+    def test_add_m_attr(self, trj):
+        pass
+        # trj.add_per_frame_attr("hello", [])
+
+
+
+
 # def sanity_check(self)
 # def add_per_frame_attr(name, item)
 # def add_metadata(name, item)
