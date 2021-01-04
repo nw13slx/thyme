@@ -21,6 +21,28 @@ def rm_sudden_drop(trj, thredshold):
     return np.arange(upper_bound)
 
 
+def sort_e(trj, chosen_specie=None, chosen_count=0):
+    """
+    """
+
+    sorted_id = np.argsort(trj.energies)
+    if chosen_specie is not None:
+        if isinstance(trj, PaddedTrajectory):
+            for i in sorted_id:
+                ncount = len([idx for idx in range(trj.natoms[i])
+                              if trj.symbols[i][idx] == chosen_specie])
+                if ncount == chosen_count:
+                    return i
+        else:
+            ncount = len([idx for idx in range(trj.natom)
+                          if trj.species[idx] == chosen_specie])
+            if ncount <= chosen_count:
+                return -1
+            else:
+                return sorted_id
+    else:
+        return sorted_id
+
 def lowe(trj, chosen_specie=None, chosen_count=0):
     """
     """

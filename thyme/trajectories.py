@@ -61,6 +61,7 @@ class Trajectories():
         else:
             raise NotImplementedError(f"Output format {format} not supported:"
                                       f" try from {supported_formats}")
+        logging.info(f"save as {name}")
 
     def to_dict(self):
 
@@ -212,45 +213,13 @@ class Trajectories():
         return nframes
 
     @staticmethod
-    def from_padded_trajectory(trj: dict,
+    def from_padded_trajectory(ptrj: dict,
                                preserve_order=False):
-        dictionary = {}
-        for k in trj.per_frame_attrs:
-            dictionary[k] = getattr(trj, k)
-        for k in trj.metadata_attrs:
-            dictionary[k] = getattr(trj, k)
-        return Trajectories.from_padded_matrices(dictionary, trj.per_frame_attrs,
-                                                 preserve_order)
-
-    @staticmethod
-    def from_padded_matrices(dictionary: dict,
-                             per_frame_attr: list = None,
-                             preserve_order=False):
-        """
-        Keys needed:
-
-        positions  (n, m, 3)
-        symbols    (n, m)
-        natoms     (n, m)
-
-        if preserve_order is off (default)
-            all the configures that has the same number of species
-
-        """
 
         trjs = Trajectories()
 
-        nframes = dictionary['positions'].shape[0]
-        symbols = dictionary['symbols']
-
-        if per_frame_attr is None:
-            per_frame_attr = []
-            for k in dictionary:
-                try:
-                    if dictionary[k].shape[0] == nframes:
-                        per_frame_attr += [k]
-                except Exception as e:
-                    logging.debug(f"skip {k} because of {e}")
+        nframes = ptrj.nframes
+        symbols = ptrj.symbols
 
         last_label = None
         label = None
@@ -261,7 +230,7 @@ class Trajectories():
 
             # obtain label
             order, label = species_to_order_label(symbols[iconfig])
-            natom = dictionary['natoms'][iconfig]
+            natom = ptrj.natoms[iconfig]
 
             stored_label = label
             if preserve_order:
@@ -292,16 +261,35 @@ class Trajectories():
             configs = alldata[stored_label][1]
             orders = alldata[stored_label][2]
 
-            trj = Trajectory()
-            trj.species = label
-            trj.natom = len(label)
-            trj.convert_to_np()
-            trj.name = stored_label
+            trj = ptrj.skim(configs)
+            trj.reorder(orders)
 
-            trj.append_frames_from_dict(dictionary, nframes,
-                                        configs=configs,
-                                        attributes=per_frame_attr,
-                                        idorder=orders)
-            trjs.add_trj(trj, stored_label)
+            newtrj = trj.to_Trajectory()
+            newtrj.name = label
+
+            trjs.add_trj(newtrj, stored_label)
+            logging.info(f"{label} {configs}")
+            logging.info(f"found one type of formula {label}")
+            logging.info(f"add {repr(newtrj)}")
 
         return trjs
+
+    @staticmethod
+    def from_padded_matrices(dictionary: dict,
+                             per_frame_attrs: list = None,
+                             preserve_order=False):
+        """
+        Keys needed:
+
+        positions  (n, m, 3)
+        symbols    (n, m)
+        natoms     (n, m)
+
+        if preserve_order is off (default)
+            all the configures that has the same number of species
+
+        """
+
+        ptrj = PaddedTrajectory.from_dict(dictionary, per_frame_attrs)
+
+        return Trajectories.from_padded_trajectory(ptrj, preserve_order)

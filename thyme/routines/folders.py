@@ -21,16 +21,17 @@ def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filenam
 
         if folder == "./":
             casename = "current_folder"
-        if folder[:2] == "./":
-            maxl = np.min((len(folder[2:].split("/")), merge_level))
-            casename = "_".join(folder[2:].split("/")[:-maxl])
-            oldname = "_".join(folder[2:].split("/"))
         else:
-            maxl = np.min((len(folder.split("/")), merge_level))
-            casename = "_".join(folder.split("/")[:-maxl])
-            oldname = "_".join(folder.split("/"))
-
-        logging.info(casename)
+            if folder[:2] == "./":
+                split = folder[2:].split("/")
+                oldname = "current_folder"
+            else:
+                split = folder.split("/")
+                oldname = "_".join(split)
+            if len(split) <= merge_level:
+                casename = oldname
+            else:
+                casename = "_".join(split[:-merge_level])
 
         new_trj = pack_folder_trj(folder, data_filter)
         if new_trj.nframes >= 1:
@@ -55,7 +56,6 @@ def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filenam
 
     if len(npz_filename) > 0:
         trjs.save(f"{npz_filename}")
-        logging.info(f"save as {npz_filename}")
 
     logging.info("Complete parsing")
 
@@ -95,7 +95,6 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
     if len(npz_filename) > 0:
         trjs.save(f"{npz_filename}")
-        logging.info(f"save as {npz_filename}")
 
     logging.info("Complete parsing")
 
