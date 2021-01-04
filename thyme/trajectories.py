@@ -15,6 +15,9 @@ from thyme.trajectory import Trajectory, PaddedTrajectory
 from thyme.utils.atomic_symbols import species_to_order_label
 from thyme.utils.save import sort_format
 
+def dummy_comp(trj1, trj2):
+    return True
+
 
 class Trajectories():
 
@@ -179,7 +182,7 @@ class Trajectories():
             nframes += trj.nframes
         return nframes
 
-    def remerge(self, preserve_order=False):
+    def remerge(self, preserve_order=False, metadata_compare=dummy_comp):
 
         trjs = Trajectories()
 
@@ -202,11 +205,19 @@ class Trajectories():
 
             stored_label, last_label = obtain_store_label(last_label, label, alldata, preserve_order)
 
+
             if stored_label not in alldata:
-                newtrj.name = label
+                newtrj.name = np.copy(stored_label)
                 alldata[stored_label] = newtrj
             else:
-                alldata[stored_label].add_trj(newtrj)
+                if metadata_compare(trj, newtrj):
+                    logging.info("! True merge")
+                    alldata[stored_label].add_trj(newtrj)
+                else:
+                    logging.info("! False merge")
+                    newtrj.name = stored_label
+                    stored_label, last_label = obtain_store_label("NA0", label, alldata, True)
+                    alldata[stored_label] = newtrj
 
         for i in alldata:
             trj = alldata[i]
@@ -289,7 +300,10 @@ def obtain_store_label(last_label, label, alldata, preserve_order):
         count = -1
         # find all the previous trajectories
         for l in alldata:
-            line_split = l.split("_")
+            if "_" in l:
+                line_split = l.split("_")
+            else:
+                line_split = l
             if label == line_split[0]:
                 _count = int(line_split[1])
                 if _count > count:
@@ -300,3 +314,4 @@ def obtain_store_label(last_label, label, alldata, preserve_order):
 
         stored_label = f"{label}_{count}"
     return stored_label, last_label
+

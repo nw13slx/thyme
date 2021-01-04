@@ -210,7 +210,11 @@ class Trajectory():
 
         for k in dictionary:
 
-            if k in type(self).per_frame_keys:
+            if k in type(self).stat_keys:
+
+                setattr(self, k, dictionary[k])
+
+            elif k in type(self).per_frame_keys:
 
                 self.add_per_frame_attr(k, deepcopy(dictionary[k]))
 
@@ -231,6 +235,7 @@ class Trajectory():
                 else:
                     self.add_metadata(k, deepcopy(dictionary[k]))
 
+        self.empty = False
         self.sanity_check()
 
     def copy_metadata(self, trj, exception):

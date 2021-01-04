@@ -83,7 +83,7 @@ def parse_outcar_trj(folder, data_filter):
         return Trajectory()
     energies = np.hstack(d_energies['energies'])
 
-    logging.debug(f" parsing {filename} for positions")
+    logging.info(f" parsing {filename} for positions")
     pos_force = read_table_pattern(filename,
                                    header_pattern=r"\sPOSITION\s+TOTAL-FORCE \(eV/Angst\)\n\s-+",
                                    row_pattern=r"^\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)$",
@@ -94,7 +94,7 @@ def parse_outcar_trj(folder, data_filter):
                                    )
     pos_force = np.array(pos_force, dtype=np.float64)
 
-    logging.debug(f" parsing {filename} for cells")
+    logging.info(f" parsing {filename} for cells")
     cells = read_table_pattern(filename,
                                header_pattern=r"\sdirect lattice vectors\s+reciprocal lattice vectors",
                                row_pattern=r"\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)"
@@ -135,7 +135,6 @@ def parse_outcar_trj(folder, data_filter):
     nframes = pos_force.shape[0]
     converged_steps = np.array([i for i, s in enumerate(n_electronic_steps)
                                 if (s < nelm and i < nframes)])
-
     # log and return tempty trajectory if needed
     if len(converged_steps) == 0:
         return Trajectory()
@@ -144,7 +143,6 @@ def parse_outcar_trj(folder, data_filter):
         logging.info("skip unconverged step {}".format(
             [i for i, s in enumerate(n_electronic_steps)
              if (s >= nelm or i >= nframes)]))
-
     natom = pos_force.shape[1]
     data['natom'] = natom
 
@@ -154,6 +152,7 @@ def parse_outcar_trj(folder, data_filter):
                      energies=energies[converged_steps],
                      species=species
                      ))
+
     trj = Trajectory.from_dict(data)
 
     try:
@@ -168,7 +167,7 @@ def parse_outcar_trj(folder, data_filter):
     trj.name = filename
 
     logging.info(f"convert {filename} to {repr(trj)}")
-    logging.debug(f"{trj}")
+    logging.info(f"{trj}")
 
     return trj
 
@@ -216,8 +215,6 @@ def parse_vasprun_trj(folder, data_filter):
                      ))
     trj = Trajectory.from_dict(data)
 
-    # print(electronic_steps)
-    # print(energies)
     electronic_steps = np.hstack(electronic_steps)
     accept_id = np.where(electronic_steps < nelm)[0]
     reject_id = np.where(electronic_steps >= nelm)[0]
@@ -261,5 +258,25 @@ def write(name, trj):
     else:
         raise NotImplementedError("")
 
-def compare_metadata(meta1, meta2):
+def compare_metadata(trj1, trj2):
+    keys = ["DEG_THRESHOLD", "DFIELD", "EDIFF", "EDIFFG", "ENAUG", "ENCUT", "EPSILON",
+            "GGA", "GGA_COMPAT", "IALGO", "IDIPOL", "IRESTART", "ISMEAR", "ISPIN",
+            "IVDW", "KBLOCK", "kpoints", "LASPH", "LCHIMAG", "LCORR", "LDIAG", "LDIPOL",
+            "LDOWNSAMPLE", "LHFCALC", "LINTERFAST", "LMONO", "LRPA", "LSORBIT", "LVDW_EWALD",
+            "LVDW_ONECELL", "LVEL", "LVHAR", "LWAVE", "METAGGA", "PREC", "PSTRESS", "SCALEE",
+            "SIGMA", "TEEND", "VDW_D", "VDW_IDAMPF", "VDW_RADIUS", "VDW_S6", "VDW_SR", "VOSKOWN"]
+    meta1 = trj1.metadata_attrs
+    meta2 = trj2.metadata_attrs
+    for key in keys:
+        if key in meta1 and key in meta2:
+            item1 = getattr(trj1, key)
+            item2 = getattr(trj2, key)
+            if item1 != item2:
+                logging.debug(f"{key} does not match, thus not merging")
+                return False
+        elif key not in meta1 and key not in meta2:
+            pass
+        else:
+            logging.info(f"{key}")
+            return False
     return True
