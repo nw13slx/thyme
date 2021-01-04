@@ -172,45 +172,48 @@ class Trajectories():
 
         return trjs
 
-        #     label = "".join([f"{k}{count[k]}" for k in np.sort(list(count.keys()))])
-        #     sort_id = np.argsort(data['species'])
-        #     if label not in merge_data:
-        #         merge_data[label] = {}
-        #         for k in ['positions', 'forces', 'energies', 'cells', 'history']:
-        #             merge_data[label][k] = []
-        #         merge_data[label]['species'] = np.sort(data['species'])
-
-        #     nframes = data['positions'].shape[0]
-        #     if nframes > 0:
-        #         for k in ['positions', 'forces']:
-        #             merge_data[label][k] += [(data[k].reshape([nframes, -1, 3])[:, sort_id, :]).reshape([nframes, -1])]
-        #         for k in ['energies', 'cells']:
-        #             merge_data[label][k] += [data[k]]
-        #         names = [f"{trjname}_{i}" for i in range(nframes)]
-        #         merge_data[label]['history'] += names
-        #     ntrjs += 1
-
-        # for label in merge_data:
-        #     for k in ['positions', 'forces', 'cells']:
-        #         merge_data[label][k] = np.vstack(merge_data[label][k])
-        #     for k in ['energies']:
-        #         merge_data[label][k] = np.hstack(merge_data[label][k])
-        #     np.savez(f"all_{label}.npz", species=merge_data[label]['species'],
-        #              positions=merge_data[label]['positions'],
-        #              forces=merge_data[label]['forces'],
-        #              energies=merge_data[label]['energies'],
-        #              cells=merge_data[label]['cells'],
-        #              names=merge_data[label]['history'])
-        #     print(label, len(merge_data[label]['energies']), len(merge_data[label]['history']))
-
-        # return 0
-
     @property
     def nframes(self):
         nframes = 0
         for trj in self.alldata.values():
             nframes += trj.nframes
         return nframes
+
+    def remerge(self, preserve_order=False):
+
+        trjs = Trajectories()
+
+        # trj.nframes = ptrj.nframes
+        # trj.symbols = ptrj.symbols
+
+        last_label = None
+        label = None
+        curr_label_count = 0
+        last_label_count = 0
+        alldata = trjs.alldata
+        for trj in self.alldata.values():
+
+            # obtain label
+            order, label = species_to_order_label(trj.species)
+            natom = trj.natom
+            newtrj = Trajectory()
+            newtrj.copy(trj)
+            newtrj.reorder(order)
+
+            stored_label, last_label = obtain_store_label(last_label, label, alldata, preserve_order)
+
+            if stored_label not in alldata:
+                newtrj.name = label
+                alldata[stored_label] = newtrj
+            else:
+                alldata[stored_label].add_trj(newtrj)
+
+        for i in alldata:
+            trj = alldata[i]
+            logging.info(f"found one type of formula {trj.name} with key {i}")
+            logging.info(f"add {repr(trj)}")
+
+        return trjs
 
     @staticmethod
     def from_padded_trajectory(ptrj: dict,
@@ -232,22 +235,7 @@ class Trajectories():
             order, label = species_to_order_label(symbols[iconfig])
             natom = ptrj.natoms[iconfig]
 
-            stored_label = label
-            if preserve_order:
-
-                count = -1
-                # find all the previous trajectories
-                for l in alldata:
-                    line_split = l.split("_")
-                    if label == line_split[0]:
-                        _count = int(line_split[1])
-                        if _count > count:
-                            count = _count
-                if label != last_label:
-                    count += 1
-                    last_label = label
-
-                stored_label = f"{label}_{count}"
+            stored_label, last_label = obtain_store_label(last_label, label, alldata, preserve_order)
 
             if stored_label not in alldata:
                 alldata[stored_label] = [label, [iconfig], [order]]
@@ -293,3 +281,22 @@ class Trajectories():
         ptrj = PaddedTrajectory.from_dict(dictionary, per_frame_attrs)
 
         return Trajectories.from_padded_trajectory(ptrj, preserve_order)
+
+def obtain_store_label(last_label, label, alldata, preserve_order):
+    stored_label = label
+    if preserve_order:
+
+        count = -1
+        # find all the previous trajectories
+        for l in alldata:
+            line_split = l.split("_")
+            if label == line_split[0]:
+                _count = int(line_split[1])
+                if _count > count:
+                    count = _count
+        if label != last_label:
+            count += 1
+            last_label = label
+
+        stored_label = f"{label}_{count}"
+    return stored_label, last_label

@@ -260,3 +260,6 @@ def write(name, trj):
             write_vasp(f"{i}_{name}", structure, vasp5=True)
     else:
         raise NotImplementedError("")
+
+def compare_metadata(meta1, meta2):
+    return True
