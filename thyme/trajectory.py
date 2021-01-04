@@ -8,6 +8,7 @@ from ase.atoms import Atoms
 
 from thyme.utils.cell import convert_cell_format
 from thyme.utils.save import sort_format
+from thyme.utils.atomic_symbols import species_to_order_label
 
 
 class Trajectory():
@@ -15,9 +16,10 @@ class Trajectory():
     per_frame_keys = ["positions", "forces", "energies",
                       "cells", 'pe', 'label', 'labels']
     metadata_keys = ["dipole_correction", "species",
-                     "nelm", "nframes", "cutoff",
-                     "natom", "kpoints", "empty",
-                     "python_list", "name"]
+                     "nelm", "cutoff", "kpoints"]
+    switch_keys = ['python_list', 'empty']
+    stat_keys = ['natom', 'nframes', 'name', 'formula']
+
     is_padded = False
 
     def __init__(self):
@@ -25,27 +27,38 @@ class Trajectory():
         dummy init. do nothing
         """
 
-        allkeys = type(self).per_frame_keys + type(self).metadata_keys
+        allkeys = type(self).metadata_keys
         for k in allkeys:
             setattr(self, k, None)
 
+        # unique name that can be used for printing
+        self.name = "default"
         self.nframes = 0
         self.natom = 0
-        self.species = []
+        self.formula = ""
+
         self.python_list = False
         self.empty = True
-        self.name = ""
 
         self.per_frame_attrs = []
-        self.metadata_attrs = ['nframes', 'name',
-                               'python_list', 'empty', 'species', 'natom']
+        self.metadata_attrs = []
 
     def __repr__(self):
-        s = f"{self.name}: {self.nframes} frames with {self.natom} atoms"
+        s = f"{self.name}: {self.nframes} frames with {self.natom} atoms, {self.formula}"
         return s
 
     def __str__(self):
-        s = f"{self.name}: {self.nframes} frames with {self.natom} atoms\n"
+        """
+        string method to list all details or shape of the trajectory
+        """
+
+        s = f"{self.name}: {self.nframes} frames with {self.natom} atoms\n("
+
+        for k in self.switch_keys:
+            item = getattr(self, k)
+            s += f"{k}: {item} "
+        s += ')\n'
+
         for k in self.per_frame_attrs:
             item = getattr(self, k)
             s += f"  {k} {item.shape}\n"
@@ -61,41 +74,28 @@ class Trajectory():
         return s
 
     def sanity_check(self):
+        
+        if self.empty and (self.natom > 0 or self.nframes > 0):
+            raise RuntimeError("atom error")
 
-        if len(self.per_frame_attrs) != 0:
+        frames = []
+        for k in self.per_frame_attrs:
+            frames += [len(getattr(self, k))]
 
-            self.empty = False
+        if len(set(frames)) > 1:
+            raise RuntimeError(f"Data inconsistent")
 
-            frames = []
-            for k in self.per_frame_attrs:
-                frames += [len(getattr(self, k))]
+        if 'positions' in self.per_frame_attrs:
+            self.nframes = len(self.positions)
+            if self.nframes > 0:
+                self.natom = len(self.positions[0])
+        if 'cells' in self.per_frame_attrs:
+            assert np.equal(self.cells[0].shape, [3, 3])
 
-            if len(set(frames)) > 1:
-                raise RuntimeError(f"Data inconsistent")
-
-            self.nframes = self.positions.shape[0]
-            self.per_frame_attrs = list(set(self.per_frame_attrs))
-
-            for k in self.per_frame_attrs:
-                item = getattr(self, k)
-                try:
-                    if item.shape[1] % self.natom == 0:
-                        item = item.reshape([self.nframes, ori_natom, -1])
-                        setattr(self, k, item)
-                except:
-                    pass
-
-            if 'cells' in self.per_frame_attrs:
-                self.cells = convert_cell_format(self.nframes, self.cells)
-
+        self.per_frame_attrs = list(set(self.per_frame_attrs))
         self.metadata_attrs = list(set(self.metadata_attrs))
 
-        self.natom = self.positions.shape[1]
-
-        if 'natom' not in self.metadata_attrs:
-            self.metadata_attrs += ['natom']
-
-    def add_per_frame_attr(name, item):
+    def add_per_frame_attr(self, name, item):
 
         if len(item) != self.nframes:
             logging.error(
@@ -104,6 +104,7 @@ class Trajectory():
 
         if name in self.per_frame_attrs:
             logging.warning(f"try to add {name}, but it already exists")
+            logging.warning(f"it is going to be rewritten")
         else:
             self.per_frame_attrs += [name]
 
@@ -297,13 +298,8 @@ class Trajectory():
         if not self.empty:
             return
 
-        if self.python_list:
-            item = []
-        else:
-            item = None
-
         for k in attributes:
-            self.add_per_frame_attr(k, item)
+            self.add_per_frame_attr(k, [])
 
         self.natom = int(natom)
 
