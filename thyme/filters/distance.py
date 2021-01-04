@@ -4,7 +4,7 @@ import numpy as np
 from ase.atoms import Atoms
 
 
-def e_filter(trj, maxE=-200, minE=-1e4):
+def e_filter(trj, maxE=0, minE=-1e6):
     """
     filter away non-negative energies
     """

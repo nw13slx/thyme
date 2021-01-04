@@ -4,8 +4,9 @@ from thyme.filters.distance import e_filter
 from thyme.filters.energy import sort_e
 from thyme.routines.dist_plots.energy import multiple_plots as multiple_plots_e
 from thyme.parsers.extxyz import write_trjs
-from thyme.parsers.vasp import pack_folder_trj, get_childfolders
+from thyme.parsers.vasp import pack_folder_trj, get_childfolders, compare_metadata
 from thyme.routines.folders import parse_merged_folders_trjs
+from thyme.routines.folders import parse_folders_trjs
 from thyme.trajectories import Trajectories
 from ase.atoms import Atoms
 import numpy as np
@@ -20,11 +21,12 @@ def main():
     if not isfile("all_data.pickle"):
         folders = get_childfolders("./")
         trjs = parse_merged_folders_trjs(folders, pack_folder_trj,
-                                  e_filter, npz_filename="all_data.pickle", merge_level=1)
+                                  e_filter, npz_filename="all_data.pickle",
+                                  , merge_level=0)
     else:
         trjs = Trajectories.from_file('all_data.pickle')
 
-    trjs = trjs.remerge()
+    trjs = trjs.remerge(metadata_compare=compare_metadata, preserve_order=False)
     for name, trj in trjs.alldata.items():
         frames = sort_e(trj)
         trj.filter_frames(frames)
