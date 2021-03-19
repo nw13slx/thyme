@@ -14,6 +14,9 @@ def e_filter(trj, maxE=0, minE=-1e6):
     energy_id1 = np.where(trj.energies < maxE)[0]
     energy_id2 = np.where(trj.energies > minE)[0]
     energy_id = list(set(energy_id1).intersection(set(energy_id2)))
+    skip_id = list(set(np.arange(len(trj.energies)))-set(energy_id))
+    if len(skip_id) > 0:
+        logging.info(f"skip frames for out of energy range [{minE},{maxE}] {skip_id}")
 
     for i in energy_id:
         xyz = trj.positions[i]
