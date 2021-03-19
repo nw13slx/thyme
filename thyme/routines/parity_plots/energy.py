@@ -37,7 +37,7 @@ def multiple_plots(trajectories, pred_label='pe', prefix=""):
         prediction = getattr(trj, pred_label)
         shift = np.average(reference) - np.average(prediction)
 
-        single_plot(reference, prediction, prefix+trj.name,
+        single_plot(reference, prediction, f"{prefix}_{trj.name}",
                     shift=[shift, universal_shift])
         axs[0].scatter(reference, prediction, zorder=2, c=tabcolors[i % len(tabcolors)], label=trj.name,
                        s=8, linewidths=0.5, edgecolors='k')
