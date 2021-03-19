@@ -18,7 +18,9 @@ logging.getLogger().addHandler(logging.StreamHandler())
 
 def main():
 
-    folders = get_childfolders("./")
+    folders = list(get_childfolders("../../../vasp/Au-formate"))
+    for ch in ["recompute2", "recompute", "formate_Au110", "two_formate", "cross_edge", "melt_VASP", "pure_Au" ]:
+        folders = folders + list(get_childfolders("../"+ch))
 
     if not isfile("all_data.pickle"):
         trjs = parse_merged_folders_trjs(folders, pack_folder_trj,
@@ -38,7 +40,7 @@ def main():
         mine = trj.energies[0]
         keep_id = np.where(trj.energies < (mine+40))[0]
         trj.filter_frames(keep_id)
-    trjs.save('trjs_remove_10up_padded_mat.npz')
+    trjs.save('trjs_remove_40up_padded_mat.npz')
     multiple_plots_e(trjs, prefix='40eV')
     write_trjs("all.xyz", trjs)
 
