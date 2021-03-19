@@ -183,7 +183,7 @@ def parse_vasprun_trj(folder, data_filter):
         vasprun = Vasprun(filename, ionic_step_skip=0,
                           exception_on_bad_xml=False)
     except Exception as e:
-        logging.info("fail to load vasprun {e}")
+        logging.info(f"fail to load vasprun {e}")
         return Trajectory()
 
     nelm = vasprun.incar['NELM']
