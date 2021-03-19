@@ -43,6 +43,11 @@ class Trajectory():
         self.per_frame_attrs = []
         self.metadata_attrs = []
 
+        self._iter_index = 0
+
+    def __len__(self):
+        return self.nframes
+
     def __repr__(self):
         s = f"{self.name}: {self.nframes} frames with {self.natom} atoms, {self.formula}"
         return s
@@ -72,6 +77,25 @@ class Trajectory():
             else:
                 s += f"  {k} value {item}\n"
         return s
+
+    def __getitem__(self, key):
+        if key in self.per_atom_attrs or key in self.metadata_attrs:
+            return getattr(self, key, None)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        n_attrs = len(self.per_frame_attrs)
+        if self._iter_index >= n_attrs:
+            raise StopIteration
+        key = self.per_frame_attrs[self._iter_index]
+        self._iter_index += 1
+        return getattr(self, key, None)
+
+    def key(self):
+        return self.per_atom_attrs
 
     def sanity_check(self):
 
@@ -121,6 +145,13 @@ class Trajectory():
 
         setattr(self, name, item)
         logging.debug(f"add {name} to the system")
+
+        if 'positions' in self.per_frame_attrs:
+            idx = self.per_frame_attrs.index('positions')
+            if idx != 0:
+                temp = self.per_frame_attrs[0]
+                self.per_frame_attrs[0] = 'positions'
+                self.per_frame_attrs[idx] = temp
 
     def add_metadata(self, name, item):
 
