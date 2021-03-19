@@ -31,6 +31,9 @@ class Trajectories():
             nframes += trj.nframes
         return nframes
 
+    def __len__(self):
+        return len(self.alldata)
+
     def __str__(self):
 
         s = f"{len(self.alldata)} trajectories\n"
@@ -221,6 +224,7 @@ class Trajectories():
 
         for i in alldata:
             trj = alldata[i]
+            alldata[i].name = i
             logging.info(f"found one type of formula {trj.name} with key {i}")
             logging.info(f"add {repr(trj)}")
 
