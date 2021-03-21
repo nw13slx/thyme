@@ -251,7 +251,7 @@ def parse_vasprun_trj(folder, data_filter):
 
 
 def write(name, trj):
-    if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
+    if trj.is_padded:
         for i in range(trj.nframes):
             natom = trj.natom[i]
             structure = Atoms(
@@ -261,7 +261,7 @@ def write(name, trj):
                 pbc=True,
             )
             write_vasp(f"{i}_{name}", structure, vasp5=True)
-    elif isinstance(trj, PaddedTrajectory):
+    else:
         for i in range(trj.nframes):
             structure = Atoms(
                 cell=trj.cells[i].reshape([3, 3]),
@@ -270,8 +270,6 @@ def write(name, trj):
                 pbc=True,
             )
             write_vasp(f"{i}_{name}", structure, vasp5=True)
-    else:
-        raise NotImplementedError("")
 
 
 def compare_metadata(trj1, trj2):
