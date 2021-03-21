@@ -13,6 +13,7 @@ from os.path import isfile
 from pymatgen.io.vasp.outputs import Outcar, Vasprun
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 from ase.io.vasp import write_vasp
+from ase.atoms import Atoms
 
 
 def get_childfolders(path):
@@ -253,23 +254,23 @@ def parse_vasprun_trj(folder, data_filter):
 def write(name, trj):
     if trj.is_padded:
         for i in range(trj.nframes):
-            natom = trj.natom[i]
+            natom = trj.natoms[i]
             structure = Atoms(
                 cell=trj.cells[i].reshape([3, 3]),
-                symbols=trj.species[:natom],
+                symbols=trj.symbols[:natom],
                 positions=trj.positions[i][:natom].reshape([-1, 3]),
                 pbc=True,
             )
-            write_vasp(f"{i}_{name}", structure, vasp5=True)
+            write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
     else:
         for i in range(trj.nframes):
             structure = Atoms(
                 cell=trj.cells[i].reshape([3, 3]),
-                symbols=trj.symbols[i],
+                symbols=trj.species,
                 positions=trj.positions[i].reshape([-1, 3]),
                 pbc=True,
             )
-            write_vasp(f"{i}_{name}", structure, vasp5=True)
+            write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
 
 
 def compare_metadata(trj1, trj2):
