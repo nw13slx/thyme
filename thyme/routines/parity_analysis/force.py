@@ -7,19 +7,19 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
-plt.switch_backend('agg')
+
+plt.switch_backend("agg")
 
 
 def large_force_energy(forces, energies, pred, prefix, symbol):
-    """
-    """
+    """"""
 
     logging.info(f"plot {prefix}")
     species, idgroups = species_to_idgroups(symbol)
 
-    layer = int(np.ceil(len(species)/2))
-    fig, axs = plt.subplots(layer, 2, figsize=(6.8, 2.5*layer))
-    fig_hist, axs_hist = plt.subplots(layer, 2, figsize=(6.8, 2.5*layer))
+    layer = int(np.ceil(len(species) / 2))
+    fig, axs = plt.subplots(layer, 2, figsize=(6.8, 2.5 * layer))
+    fig_hist, axs_hist = plt.subplots(layer, 2, figsize=(6.8, 2.5 * layer))
     if layer == 1:
         axsf = axs
         axsf_hist = axs_hist
@@ -37,23 +37,32 @@ def large_force_energy(forces, energies, pred, prefix, symbol):
         reference = forces[:, idgroups[iele], :]
         prediction = pred[:, idgroups[iele], :]
 
-        df = np.max(np.abs(reference-prediction).reshape([-1, 3]), axis=-1)
+        df = np.max(np.abs(reference - prediction).reshape([-1, 3]), axis=-1)
         mae = np.average(np.abs(df))
-        rmse = np.sqrt(np.average(df*df))
+        rmse = np.sqrt(np.average(df * df))
 
-        data[element] = (mae, rmse**2, len(df))
+        data[element] = (mae, rmse ** 2, len(df))
 
-        axsf[iele].scatter(reference.reshape([-1]), prediction.reshape([-1]), zorder=2, linewidths=0.5, edgecolors='k',
-                           label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
-                           c=tabcolors[iele])
+        axsf[iele].scatter(
+            reference.reshape([-1]),
+            prediction.reshape([-1]),
+            zorder=2,
+            linewidths=0.5,
+            edgecolors="k",
+            label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
+            c=tabcolors[iele],
+        )
         logging.info(f"    {element:2s} mae {mae:5.2f} rmse {rmse:5.2f}")
         xlims = axsf[iele].get_xlim()
-        axsf[iele].plot(xlims, xlims, '--', zorder=1, color=tabcolors[iele])
+        axsf[iele].plot(xlims, xlims, "--", zorder=1, color=tabcolors[iele])
         axsf[iele].legend()
 
-        axsf_hist[iele].hist(df, zorder=2,
-                             label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
-                             color=tabcolors[iele])
+        axsf_hist[iele].hist(
+            df,
+            zorder=2,
+            label=f"{element} mae {mae:.2f} rmse {rmse:.2f}",
+            color=tabcolors[iele],
+        )
         axsf_hist[iele].legend()
 
         if iele % 2 == 0:
@@ -78,12 +87,13 @@ def large_force_energy(forces, energies, pred, prefix, symbol):
     return data
 
 
-def multiple_plots(trajectories, pred_label='pred', prefix=""):
+def multiple_plots(trajectories, pred_label="pred", prefix=""):
 
     alldata = {}
     for trj in trajectories.alldata.values():
-        data = single_plot(trj.forces, getattr(
-            trj, pred_label), prefix+trj.name, trj.species)
+        data = single_plot(
+            trj.forces, getattr(trj, pred_label), prefix + trj.name, trj.species
+        )
         for element in data:
             mae, rmse, count = data[element]
             if element not in alldata:

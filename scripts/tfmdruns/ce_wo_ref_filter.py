@@ -10,11 +10,13 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
-logging.basicConfig(filename=f'plot.log', filemode='w',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"plot.log", filemode="w", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
-plt.switch_backend('agg')
+plt.switch_backend("agg")
 
 
 # dictionary = dict(np.load(sys.argv[1], allow_pickle=True))
@@ -23,7 +25,8 @@ all_trjs = []
 min_length = -1
 for filename in glob("result*.npz"):
     trjs = Trajectories.from_file(
-        filename, format="padded_mat.npz", preserve_order=True)
+        filename, format="padded_mat.npz", preserve_order=True
+    )
     all_trjs += [trjs]
 
 
@@ -43,7 +46,7 @@ for spe_list in all_trjs[0].alldata:
 
     trj = all_trjs[0].alldata[spe_list]
     trj.pred_var = pred_var
-    trj.per_frame_attrs += ['pred_var']
-    sort_id, maxf = sort_by_force(trj, 'pred_var', 'Au')
+    trj.per_frame_attrs += ["pred_var"]
+    sort_id, maxf = sort_by_force(trj, "pred_var", "Au")
     trj.filter_frames(sort_id[-200:])
     write(f"filter_{spe_list}.xyz", trj)

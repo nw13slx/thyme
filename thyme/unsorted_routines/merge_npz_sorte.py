@@ -13,20 +13,21 @@ from os.path import dirname, join, basename, isdir, isfile
 rootfolder = sys.argv[1]
 if not isdir(rootfolder):
     mkdir(rootfolder)
-logging.basicConfig(filename=f'{rootfolder}/merge.log', filemode='w',
-                    level=logging.INFO)
+logging.basicConfig(
+    filename=f"{rootfolder}/merge.log", filemode="w", level=logging.INFO
+)
 
 
 def main():
 
     npzs = glob(f"*/allmerged.npz")
 
-    fout = open(rootfolder+"/everything.xyz", "w+")
+    fout = open(rootfolder + "/everything.xyz", "w+")
 
     max_atom = 0
     for npz in npzs:
         data = np.load(npz)
-        natom = data['positions'].shape[1] // 3
+        natom = data["positions"].shape[1] // 3
         if natom > max_atom:
             max_atom = natom
 
@@ -36,7 +37,7 @@ def main():
     symbols = {}
     atomic_number = {}
     energies = {}
-    ele_to_N = {'Ag': 46, 'Pd': 47, 'C': 6, 'O': 8}
+    ele_to_N = {"Ag": 46, "Pd": 47, "C": 6, "O": 8}
     natoms = {}
     symbols = {}
     for npz in npzs:
@@ -49,33 +50,32 @@ def main():
         npzname = "_".join(npz.split("/"))
         # move(npz, f"{rootfolder}/{npzname}")
 
-        o_pos = data['positions']
-        o_for = data['forces']
-        o_e = data['energies']
-        o_c = data['cells']
-        o_spe = metadata['species']
+        o_pos = data["positions"]
+        o_for = data["forces"]
+        o_e = data["energies"]
+        o_c = data["cells"]
+        o_spe = metadata["species"]
         o_atomic = []
         for ele in o_spe:
             o_atomic += [ele_to_N[ele]]
         logging.info(f"{npz}, {natom}")
 
-        label, legend = obtain_specie_label(metadata['species'])
+        label, legend = obtain_specie_label(metadata["species"])
 
-        natom = data['positions'].shape[1] // 3
-        nframes = data['positions'].shape[0]
+        natom = data["positions"].shape[1] // 3
+        nframes = data["positions"].shape[0]
         if natom < max_atom:
-            o_pos = np.hstack([o_pos, np.zeros([nframes, (max_atom-natom)*3])])
-            o_for = np.hstack([o_for, np.zeros([nframes, (max_atom-natom)*3])])
-            o_atomic = np.hstack([o_atomic, [0]*(max_atom-natom)])
-            o_spe = np.hstack([o_spe, ['NA']*(max_atom-natom)])
+            o_pos = np.hstack([o_pos, np.zeros([nframes, (max_atom - natom) * 3])])
+            o_for = np.hstack([o_for, np.zeros([nframes, (max_atom - natom) * 3])])
+            o_atomic = np.hstack([o_atomic, [0] * (max_atom - natom)])
+            o_spe = np.hstack([o_spe, ["NA"] * (max_atom - natom)])
 
         for n in range(nframes):
             print(max_atom, file=fout)
             print(o_e[n], file=fout)
             xyz = o_pos[n].reshape([-1, 3])
             for idx in range(max_atom):
-                print(o_spe[idx], xyz[idx, 0], xyz[idx, 1],
-                      xyz[idx, 2], file=fout)
+                print(o_spe[idx], xyz[idx, 0], xyz[idx, 1], xyz[idx, 2], file=fout)
         if label not in positions:
             positions[label] = []
             forces[label] = []
@@ -89,18 +89,24 @@ def main():
         forces[label] += [o_for]
         cells[label] += [o_c]
         energies[label] += [o_e]
-        atomic_number[label] += [np.hstack([o_atomic]
-                                           * nframes).reshape([nframes, -1])]
-        symbols[label] += [np.hstack([o_spe]*nframes).reshape([nframes, -1])]
-        natoms[label] += [[natom]*nframes]
+        atomic_number[label] += [np.hstack([o_atomic] * nframes).reshape([nframes, -1])]
+        symbols[label] += [np.hstack([o_spe] * nframes).reshape([nframes, -1])]
+        natoms[label] += [[natom] * nframes]
 
     all_data = {}
-    for task in ['lowe', 'alle']:
+    for task in ["lowe", "alle"]:
         all_data[task] = {}
-        for dataset in ['train', 'valid', 'test']:
+        for dataset in ["train", "valid", "test"]:
             all_data[task][dataset] = {}
-            for matrix in ['positions', 'forces', 'energies',
-                           'natoms', 'cells', 'symbols', 'atomic_number']:
+            for matrix in [
+                "positions",
+                "forces",
+                "energies",
+                "natoms",
+                "cells",
+                "symbols",
+                "atomic_number",
+            ]:
                 all_data[task][dataset][matrix] = []
 
     for label in positions:
@@ -115,41 +121,70 @@ def main():
 
         sort_id = np.argsort(energies[label])
 
-        task = 'lowe'
-        for matrix in ['positions', 'forces', 'cells', 'symbols', 'atomic_number', 'energies', 'natoms']:
+        task = "lowe"
+        for matrix in [
+            "positions",
+            "forces",
+            "cells",
+            "symbols",
+            "atomic_number",
+            "energies",
+            "natoms",
+        ]:
             d = locals()[matrix][label]
-            for i, dataset in enumerate(['train', 'valid', 'test']):
+            for i, dataset in enumerate(["train", "valid", "test"]):
                 all_data[task][dataset][matrix] += [d[sort_id[i:42:3]]]
 
         stride = len(sort_id) // 42
-        task = 'alle'
-        for matrix in ['positions', 'forces', 'cells', 'symbols', 'atomic_number', 'energies', 'natoms']:
+        task = "alle"
+        for matrix in [
+            "positions",
+            "forces",
+            "cells",
+            "symbols",
+            "atomic_number",
+            "energies",
+            "natoms",
+        ]:
             d = locals()[matrix][label]
-            for i, dataset in enumerate(['train', 'valid', 'test']):
-                all_data[task][dataset][matrix] += [d[sort_id[i::stride*3]]]
+            for i, dataset in enumerate(["train", "valid", "test"]):
+                all_data[task][dataset][matrix] += [d[sort_id[i :: stride * 3]]]
 
-        logging.info(f"{label}: {positions[label].shape}, {energies[label][sort_id[0]]}"
-                     f"{energies[label][sort_id[-1]]}")
+        logging.info(
+            f"{label}: {positions[label].shape}, {energies[label][sort_id[0]]}"
+            f"{energies[label][sort_id[-1]]}"
+        )
 
-    for task in ['lowe', 'alle']:
-        for dataset in ['train', 'valid', 'test']:
-            for matrix in ['positions', 'forces', 'cells', 'symbols', 'atomic_number']:
+    for task in ["lowe", "alle"]:
+        for dataset in ["train", "valid", "test"]:
+            for matrix in ["positions", "forces", "cells", "symbols", "atomic_number"]:
                 all_data[task][dataset][matrix] = np.vstack(
-                    all_data[task][dataset][matrix])
-            for matrix in ['energies', 'natoms']:
+                    all_data[task][dataset][matrix]
+                )
+            for matrix in ["energies", "natoms"]:
                 all_data[task][dataset][matrix] = np.hstack(
-                    all_data[task][dataset][matrix])
+                    all_data[task][dataset][matrix]
+                )
             logging.info(
-                f"{task} {dataset} {all_data[task][dataset]['positions'].shape}")
+                f"{task} {dataset} {all_data[task][dataset]['positions'].shape}"
+            )
         save_data = {}
-        for matrix in ['positions', 'forces', 'cells', 'symbols', 'atomic_number']:
-            save_data[matrix] = np.vstack([all_data[task]['train'][matrix],
-                                           all_data[task]['valid'][matrix],
-                                           all_data[task]['test'][matrix]])
-        for matrix in ['energies', 'natoms']:
-            save_data[matrix] = np.hstack([all_data[task]['train'][matrix],
-                                           all_data[task]['valid'][matrix],
-                                           all_data[task]['test'][matrix]])
+        for matrix in ["positions", "forces", "cells", "symbols", "atomic_number"]:
+            save_data[matrix] = np.vstack(
+                [
+                    all_data[task]["train"][matrix],
+                    all_data[task]["valid"][matrix],
+                    all_data[task]["test"][matrix],
+                ]
+            )
+        for matrix in ["energies", "natoms"]:
+            save_data[matrix] = np.hstack(
+                [
+                    all_data[task]["train"][matrix],
+                    all_data[task]["valid"][matrix],
+                    all_data[task]["test"][matrix],
+                ]
+            )
 
         np.savez(f"{rootfolder}/{task}.npz", **save_data)
     fout.close()
@@ -160,16 +195,17 @@ def obtain_specie_label(species):
     ele_list = {}
     for ele in set(species):
         index_list[ele] = np.array(
-            [index for index, e in enumerate(species) if e == ele])
+            [index for index, e in enumerate(species) if e == ele]
+        )
         ele_list[ele] = len(index_list[ele])
     sort_ele = np.array(sorted(ele_list.items(), key=lambda x: x[0]))
     label = ""
     legend = ""
     for ele in sort_ele:
         label += f"{ele[0]}{ele[1]}"
-        legend += ele[0]+"$_{"+str(ele[1])+"}$"
+        legend += ele[0] + "$_{" + str(ele[1]) + "}$"
     return label, legend
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

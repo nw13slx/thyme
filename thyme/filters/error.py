@@ -12,7 +12,7 @@ def sort_by_force(trj, pred_label, chosen_species: str = None):
 
     forces = trj.forces
     pred = getattr(trj, pred_label)
-    dfs = forces-pred
+    dfs = forces - pred
 
     if chosen_species is None:
         maxdfs = np.max(np.abs(dfs.reshape([trj.nframes, -1])), axis=1)
@@ -29,12 +29,11 @@ def sort_by_force(trj, pred_label, chosen_species: str = None):
 
 
 def sort_by_energy(trj, pred_label):
-    """
-    """
+    """"""
 
     energies = trj.energies
     pred = getattr(trj, pred_label)
-    de = energies-pred
+    de = energies - pred
 
     maxdfs = np.max(np.abs(de))
     return np.argsort(maxdfs)

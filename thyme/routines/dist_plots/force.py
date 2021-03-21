@@ -4,7 +4,8 @@ from thyme.trajectory import PaddedTrajectory, Trajectory
 import numpy as np
 import logging
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
+
+plt.switch_backend("agg")
 
 
 def multiple_plots(trajectories, prefix=""):
@@ -18,7 +19,7 @@ def single_plot(trj, prefix=""):
     elif isinstance(trj, Trajectory):
         specs = set(list(trj.species))
     specs = list(specs)
-    for s in ['NA', 0, '0']:
+    for s in ["NA", 0, "0"]:
         if s in specs:
             specs.pop(s)
     for s in specs:
@@ -27,5 +28,8 @@ def single_plot(trj, prefix=""):
             ids = np.where(trj.symbols == s)
         elif isinstance(trj, Trajectory):
             ids = np.where(trj.species == s)
-        base_line_hist(maxf[ids], "Forces (eV/$\\mathrm{\\AA}$)",
-                       f"{prefix}{trj.name}_{s}_force_dist")
+        base_line_hist(
+            maxf[ids],
+            "Forces (eV/$\\mathrm{\\AA}$)",
+            f"{prefix}{trj.name}_{s}_force_dist",
+        )

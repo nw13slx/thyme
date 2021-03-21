@@ -8,9 +8,14 @@ from monty.io import zopen
 from monty.re import regrep
 
 
-def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
-                       postprocess=str,
-                       last_one_only=True):
+def read_table_pattern(
+    filename,
+    header_pattern,
+    row_pattern,
+    footer_pattern,
+    postprocess=str,
+    last_one_only=True,
+):
     r"""
     Parse table-like data. A table composes of three parts: header,
     main body, footer. All the data matches "row pattern" in the main body
@@ -43,11 +48,16 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
         row_pattern.
     """
 
-    with zopen(filename, 'rt') as f:
+    with zopen(filename, "rt") as f:
         text = f.read()
 
-    table_pattern_text = header_pattern + \
-        r"\s*^(?P<table_body>(?:\s*" + row_pattern + r")+)\s+" + footer_pattern
+    table_pattern_text = (
+        header_pattern
+        + r"\s*^(?P<table_body>(?:\s*"
+        + row_pattern
+        + r")+)\s+"
+        + footer_pattern
+    )
     table_pattern = re.compile(table_pattern_text, re.MULTILINE | re.DOTALL)
     rp = re.compile(row_pattern)
 
@@ -75,8 +85,9 @@ def read_table_pattern(filename, header_pattern, row_pattern, footer_pattern,
     return retained_data
 
 
-def read_pattern(filename, patterns, reverse=False, terminate_on_match=False,
-                 postprocess=str):
+def read_pattern(
+    filename, patterns, reverse=False, terminate_on_match=False, postprocess=str
+):
     r"""
     General pattern reading. Uses monty's regrep method. Takes the same
     arguments.
@@ -99,9 +110,13 @@ def read_pattern(filename, patterns, reverse=False, terminate_on_match=False,
         results from regex and postprocess. Note that the returned values
         are lists of lists, because you can grep multiple items on one line.
     """
-    matches = regrep(filename, patterns, reverse=reverse,
-                     terminate_on_match=terminate_on_match,
-                     postprocess=postprocess)
+    matches = regrep(
+        filename,
+        patterns,
+        reverse=reverse,
+        terminate_on_match=terminate_on_match,
+        postprocess=postprocess,
+    )
     data = {}
     for k in patterns:
         data[k] = [i[0] for i in matches.get(k, [])]

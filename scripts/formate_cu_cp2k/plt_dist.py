@@ -7,8 +7,10 @@ from thyme.parsers.extxyz import write
 from ase.atoms import Atoms
 import numpy as np
 import logging
-logging.basicConfig(filename=f'plot_dist.log', filemode='w',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"plot_dist.log", filemode="w", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -22,13 +24,12 @@ def main():
     # multiple_plots_e(trjs, prefix='folder')
 
     trjs = trjs.to_padded_trajectory()
-    single_plot_e(trjs, prefix='merge')
-    trjs = Trajectories.from_padded_trajectory(trjs,
-                                               preserve_order=False)
+    single_plot_e(trjs, prefix="merge")
+    trjs = Trajectories.from_padded_trajectory(trjs, preserve_order=False)
     for i, trj in trjs.alldata.items():
         write(f"vmd{i}.xyz", trj)
 
-    multiple_plots_e(trjs, prefix='elemenet')
+    multiple_plots_e(trjs, prefix="elemenet")
 
     trjs.save("alldata_padded_mat.npz")
 
@@ -37,5 +38,5 @@ def e_filter(xyz, f, e, c, species):
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

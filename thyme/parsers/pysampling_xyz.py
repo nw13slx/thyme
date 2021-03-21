@@ -16,7 +16,7 @@ from ase.atoms import Atoms
 
 def get_childfolders(path, include_xyz=True):
 
-    return find_folders_matching(['*_*.xyz'], path)
+    return find_folders_matching(["*_*.xyz"], path)
 
 
 def pack_folder_trj(folder, data_filter, include_xyz=True):

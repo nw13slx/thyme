@@ -9,23 +9,24 @@ from thyme.routines.folders import parse_folders_trjs
 from ase.atoms import Atoms
 import numpy as np
 import logging
-logging.basicConfig(filename=f'collect.log', filemode='w',
-                    level=logging.DEBUG, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"collect.log", filemode="w", level=logging.DEBUG, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
 def main():
 
     folders = get_childfolders("./")
-    trjs = parse_folders_trjs(
-        folders, pack_folder_trj, e_filter, "all_data.pickle")
+    trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data.pickle")
 
     mineT = Trajectory()
     for name, trj in trjs.alldata.items():
         frames = sort_e(trj)
         trj.filter_frames(frames)
         mine = trj.energies[0]
-        keep_id = np.where(trj.energies < (mine+10))[0]
+        keep_id = np.where(trj.energies < (mine + 10))[0]
         trj.filter_frames(keep_id)
         mineT.add_trj(trj.skim([-1]))
     # multiple_plots_e(trjs, prefix='alldata')
@@ -35,5 +36,5 @@ def main():
     write_trjs("all.xyz", trjs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

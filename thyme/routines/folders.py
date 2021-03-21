@@ -9,7 +9,9 @@ from os.path import isdir, isfile
 from thyme.trajectories import Trajectories
 
 
-def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename="", merge_level=1):
+def parse_merged_folders_trjs(
+    folders, pack_folder_trj, data_filter, npz_filename="", merge_level=1
+):
 
     folders = folders
     logging.info(f"all folders: {folders}")
@@ -35,8 +37,7 @@ def parse_merged_folders_trjs(folders, pack_folder_trj, data_filter, npz_filenam
 
         new_trj = pack_folder_trj(folder, data_filter)
         if new_trj.nframes >= 1:
-            logging.info(
-                f"save {folder} as {casename} : {new_trj.nframes} frames")
+            logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
             if isinstance(new_trj, Trajectories):
                 trjs.add_trj(trjs)
             else:
@@ -83,8 +84,7 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
 
         new_trj = pack_folder_trj(folder, data_filter)
         if new_trj.nframes >= 1:
-            logging.info(
-                f"save {folder} as {casename} : {new_trj.nframes} frames")
+            logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
             new_trj.name = casename
             trjs.add_trj(new_trj, casename)
             count += 1
@@ -120,9 +120,8 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
         logging.info(casename)
 
         data = pack_folder(folder, data_filter)
-        if data['nframes'] >= 1:
-            logging.info(
-                f"save {folder} as {casename} : {data['nframes']} frames")
+        if data["nframes"] >= 1:
+            logging.info(f"save {folder} as {casename} : {data['nframes']} frames")
             alldata[casename] = data
             count += 1
             if count % 10 == 0:
@@ -149,9 +148,13 @@ def find_folders_matching(filenames, path):
 
 def find_folders(filenames, path):
 
-    result = set([root
-                  for root, dirs, files in walk(path)
-                  if len((set(files)).intersection(filenames)) > 0])
+    result = set(
+        [
+            root
+            for root, dirs, files in walk(path)
+            if len((set(files)).intersection(filenames)) > 0
+        ]
+    )
     return result
 
 

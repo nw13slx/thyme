@@ -22,7 +22,8 @@ def pytest_generate_tests(metafunc):
 scenario1 = ("empty", {"trj": Trajectory()})
 scenario2 = ("prefilled", {"trj": None})
 
-class TestEmpty():
+
+class TestEmpty:
 
     scenarios = [scenario1, scenario2]
     trj = None
@@ -56,8 +57,6 @@ class TestEmpty():
     def test_add_m_attr(self, trj):
         pass
         # trj.add_per_frame_attr("hello", [])
-
-
 
 
 # def sanity_check(self)

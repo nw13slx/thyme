@@ -3,8 +3,10 @@ from thyme.routines.parity_plots.energy import multiple_plots as multiple_plots_
 from thyme.trajectories import Trajectories
 import numpy as np
 import logging
-logging.basicConfig(filename=f'convert.log', filemode='w',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"convert.log", filemode="w", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 dictionary = dict(np.load("alldata.npz", allow_pickle=True))

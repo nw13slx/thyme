@@ -4,17 +4,13 @@ from ase.data import atomic_numbers
 import logging
 
 atomic_numbers_dict = atomic_numbers
-atomic_numbers_dict.update(
-    {'0': 0,
-     'NA': 0,
-     0: 0}
-)
+atomic_numbers_dict.update({"0": 0, "NA": 0, 0: 0})
 
 
 def species_to_order_label(symbol):
 
     count = dict(Counter(symbol))
-    for i in ['0', 0, 'NA']:
+    for i in ["0", 0, "NA"]:
         if i in count:
             del count[i]
 
@@ -69,24 +65,23 @@ def convert_species(nframes, raw_n_atoms, raw_data):
     if n_elements == 1:
         first_element = raw_atoms_pattern.reshape([-1])[0]
         first_number = raw_atomic_number.reshape([-1])[0]
-        atoms_pattern = np.array([[first_number]*n_atoms]*nframes,
-                                 dtype=np.int)
-        list_of_symbols = np.array([[first_element]*n_atoms]*nframes,
-                                   dtype=np.int)
+        atoms_pattern = np.array([[first_number] * n_atoms] * nframes, dtype=np.int)
+        list_of_symbols = np.array([[first_element] * n_atoms] * nframes, dtype=np.int)
 
     elif n_elements == n_atoms:
-        atoms_pattern = np.array([raw_atomic_number.reshape([n_atoms])]*nframes,
-                                 dtype=np.int)
-        list_of_symbols = np.array([raw_atoms_pattern.reshape([n_atoms])]*nframes,
-                                   dtype=np.int)
+        atoms_pattern = np.array(
+            [raw_atomic_number.reshape([n_atoms])] * nframes, dtype=np.int
+        )
+        list_of_symbols = np.array(
+            [raw_atoms_pattern.reshape([n_atoms])] * nframes, dtype=np.int
+        )
 
-    elif n_elements == nframes*n_atoms:
+    elif n_elements == nframes * n_atoms:
         atoms_pattern = raw_atomic_number.reshape([nframes, n_atoms])
         list_of_symbols = raw_atoms_pattern.reshape([nframes, n_atoms])
 
     else:
 
-        raise RuntimeError(
-            f"the input cell shape {input_cell.shape} does not work")
+        raise RuntimeError(f"the input cell shape {input_cell.shape} does not work")
 
     return atoms_pattern, list_of_symbols

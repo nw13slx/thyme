@@ -24,40 +24,46 @@ def main():
     merge_data = {}
     for trjname in trjnames:
         data = alldata[trjname].item()
-        count = dict(Counter(data['species']))
-        label = "".join(
-            [f"{k}{count[k]}" for k in np.sort(list(count.keys()))])
-        sort_id = np.argsort(data['species'])
+        count = dict(Counter(data["species"]))
+        label = "".join([f"{k}{count[k]}" for k in np.sort(list(count.keys()))])
+        sort_id = np.argsort(data["species"])
         if label not in merge_data:
             merge_data[label] = {}
-            for k in ['positions', 'forces', 'energies', 'cells', 'history']:
+            for k in ["positions", "forces", "energies", "cells", "history"]:
                 merge_data[label][k] = []
-            merge_data[label]['species'] = np.sort(data['species'])
+            merge_data[label]["species"] = np.sort(data["species"])
 
-        nframes = data['positions'].shape[0]
+        nframes = data["positions"].shape[0]
         if nframes > 0:
-            for k in ['positions', 'forces']:
-                merge_data[label][k] += [(data[k].reshape([nframes, -1, 3])
-                                          [:, sort_id, :]).reshape([nframes, -1])]
-            for k in ['energies', 'cells']:
+            for k in ["positions", "forces"]:
+                merge_data[label][k] += [
+                    (data[k].reshape([nframes, -1, 3])[:, sort_id, :]).reshape(
+                        [nframes, -1]
+                    )
+                ]
+            for k in ["energies", "cells"]:
                 merge_data[label][k] += [data[k]]
             names = [f"{trjname}_{i}" for i in range(nframes)]
-            merge_data[label]['history'] += names
+            merge_data[label]["history"] += names
         ntrjs += 1
 
     for label in merge_data:
-        for k in ['positions', 'forces', 'cells']:
+        for k in ["positions", "forces", "cells"]:
             merge_data[label][k] = np.vstack(merge_data[label][k])
-        for k in ['energies']:
+        for k in ["energies"]:
             merge_data[label][k] = np.hstack(merge_data[label][k])
-        np.savez(f"all_{label}.npz", species=merge_data[label]['species'],
-                 positions=merge_data[label]['positions'],
-                 forces=merge_data[label]['forces'],
-                 energies=merge_data[label]['energies'],
-                 cells=merge_data[label]['cells'],
-                 names=merge_data[label]['history'])
-        print(label, len(merge_data[label]['energies']), len(
-            merge_data[label]['history']))
+        np.savez(
+            f"all_{label}.npz",
+            species=merge_data[label]["species"],
+            positions=merge_data[label]["positions"],
+            forces=merge_data[label]["forces"],
+            energies=merge_data[label]["energies"],
+            cells=merge_data[label]["cells"],
+            names=merge_data[label]["history"],
+        )
+        print(
+            label, len(merge_data[label]["energies"]), len(merge_data[label]["history"])
+        )
 
     return 0
 
@@ -68,7 +74,7 @@ def sort_filenames(data):
     file_indices = []
     for trjname in data:
         try:
-            trj_index = int(re.sub('[^\d]', '', trjname))
+            trj_index = int(re.sub("[^\d]", "", trjname))
         except Exception as e:
             # print("failed", e)
             trj_index = -1
@@ -81,10 +87,10 @@ def sort_filenames(data):
 
 def filter_trj(data, data_filter):
 
-    xyzs = data['positions']
-    fs = data['forces']
-    es = data['energies']
-    cs = data['cells']
+    xyzs = data["positions"]
+    fs = data["forces"]
+    es = data["energies"]
+    cs = data["cells"]
     nframes = xyzs.shape[0]
 
     positions = []
@@ -103,17 +109,17 @@ def filter_trj(data, data_filter):
             cells += [c.reshape([-1])]
     nframes = len(positions)
     if nframes >= 1:
-        data['positions'] = np.vstack(positions)
-        data['forces'] = np.vstack(forces)
-        data['energies'] = np.hstack(energies)
-        data['cells'] = np.vstack(cells)
+        data["positions"] = np.vstack(positions)
+        data["forces"] = np.vstack(forces)
+        data["energies"] = np.hstack(energies)
+        data["cells"] = np.vstack(cells)
     else:
         return {}
 
-    data['nframes'] = nframes
+    data["nframes"] = nframes
 
     return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

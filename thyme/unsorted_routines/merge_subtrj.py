@@ -11,12 +11,12 @@ from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
 
 def o_dist_filter(xyz, f, e, c, species):
-    C_id = np.array([index for index, ele in enumerate(species) if ele == 'C'])
+    C_id = np.array([index for index, ele in enumerate(species) if ele == "C"])
     for Cindex in C_id:
         if xyz[Cindex, 2] < 10:
             print("skip frame for low C", flush=True)
             return False
-    if (e+411 < -100) or (e+411 > 40):
+    if (e + 411 < -100) or (e + 411 > 40):
         print("skip frame for high/low e", e, flush=True)
         return False
     return True
@@ -38,11 +38,11 @@ def main():
     for trjname in trjnames:
         data = alldata[trjname].item()
         # alldata['trjname'] = filter_trj(data, data_filter)
-        positions += [data['positions']]
-        forces += [data['forces']]
-        energies += [data['energies']]
-        cells += [data['cells']]
-        nframes += data['positions'].shape[0]
+        positions += [data["positions"]]
+        forces += [data["forces"]]
+        energies += [data["energies"]]
+        cells += [data["cells"]]
+        nframes += data["positions"].shape[0]
         # print(trjname, nframes)
         ntrjs += 1
         metadata.update(data)
@@ -52,16 +52,20 @@ def main():
     cells = np.vstack(cells)
     # print(positions.shape, forces.shape,
     #       energies.shape, cells.shape)
-    np.savez("allmerged.npz", positions=positions,
-             forces=forces, energies=energies,
-             cells=cells)
-    del metadata['positions']
-    del metadata['forces']
-    del metadata['energies']
-    del metadata['cells']
-    metadata['ntrjs'] = ntrjs
-    metadata['nframes'] = nframes
-    metadata['natoms'] = positions.shape[1]//3
+    np.savez(
+        "allmerged.npz",
+        positions=positions,
+        forces=forces,
+        energies=energies,
+        cells=cells,
+    )
+    del metadata["positions"]
+    del metadata["forces"]
+    del metadata["energies"]
+    del metadata["cells"]
+    metadata["ntrjs"] = ntrjs
+    metadata["nframes"] = nframes
+    metadata["natoms"] = positions.shape[1] // 3
     with open("metadata.json", "w+") as fout:
         json.dump(metadata, fout, indent=4)
     return 0
@@ -73,7 +77,7 @@ def sort_filenames(data):
     file_indices = []
     for trjname in data:
         try:
-            trj_index = int(re.sub('[^\d]', '', trjname))
+            trj_index = int(re.sub("[^\d]", "", trjname))
         except Exception as e:
             # print("failed", e)
             trj_index = -1
@@ -86,10 +90,10 @@ def sort_filenames(data):
 
 def filter_trj(data, data_filter):
 
-    xyzs = data['positions']
-    fs = data['forces']
-    es = data['energies']
-    cs = data['cells']
+    xyzs = data["positions"]
+    fs = data["forces"]
+    es = data["energies"]
+    cs = data["cells"]
     nframes = xyzs.shape[0]
 
     positions = []
@@ -108,17 +112,17 @@ def filter_trj(data, data_filter):
             cells += [c.reshape([-1])]
     nframes = len(positions)
     if nframes >= 1:
-        data['positions'] = np.vstack(positions)
-        data['forces'] = np.vstack(forces)
-        data['energies'] = np.hstack(energies)
-        data['cells'] = np.vstack(cells)
+        data["positions"] = np.vstack(positions)
+        data["forces"] = np.vstack(forces)
+        data["energies"] = np.hstack(energies)
+        data["cells"] = np.vstack(cells)
     else:
         return {}
 
-    data['nframes'] = nframes
+    data["nframes"] = nframes
 
     return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

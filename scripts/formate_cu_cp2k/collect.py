@@ -5,8 +5,10 @@ from thyme.routines.folders import parse_merged_folders_trjs
 from ase.atoms import Atoms
 import numpy as np
 import logging
-logging.basicConfig(filename=f'collect.log', filemode='w',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"collect.log", filemode="w", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -14,18 +16,19 @@ def main():
 
     folders = get_childfolders("./")
     trjs = parse_merged_folders_trjs(
-        folders, pack_folder_trj, e_filter, "all_data.pickle")
+        folders, pack_folder_trj, e_filter, "all_data.pickle"
+    )
     logging.info("----FINAL TRJS----")
     logging.info(f"{trjs}")
     logging.info("-------END--------")
     trjs.save("alldata_padded_mat.npz")
 
-    multiple_plots_e(trjs, prefix='folder')
+    multiple_plots_e(trjs, prefix="folder")
 
 
 def e_filter(xyz, f, e, c, species):
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

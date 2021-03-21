@@ -12,7 +12,7 @@ from thyme.routines.folders import find_folders_matching
 
 def get_childfolders(path, include_xyz=True):
 
-    return find_folders_matching(['assm_pth*_*.npz'], path)
+    return find_folders_matching(["assm_pth*_*.npz"], path)
 
 
 def pack_folder_trj(folder, data_filter, include_xyz=True):
@@ -31,16 +31,16 @@ def parse_npz(filename, data_filter):
     trj = Trajectory()
     logging.info(f"parsing {filename} as npz")
     dictionary = dict(np.load(filename))
-    for k in ['alle', 'x', 'intc', 'n']:
+    for k in ["alle", "x", "intc", "n"]:
         if k not in dictionary:
             return Trajectory()
 
-    nframes = len(dictionary['x'])
-    trj.positions = dictionary['x'].reshape([nframes, -1, 3])
-    trj.energies = dictionary['alle'][:, 1]
-    trj.pe = dictionary['intc'][:, -1]
-    trj.intc = dictionary['intc'][:, :-1]
-    trj.per_frame_attrs = ['positions', 'energies', 'pe', 'intc']
+    nframes = len(dictionary["x"])
+    trj.positions = dictionary["x"].reshape([nframes, -1, 3])
+    trj.energies = dictionary["alle"][:, 1]
+    trj.pe = dictionary["intc"][:, -1]
+    trj.intc = dictionary["intc"][:, :-1]
+    trj.per_frame_attrs = ["positions", "energies", "pe", "intc"]
     trj.empty = False
     trj.sanity_check()
 

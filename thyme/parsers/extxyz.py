@@ -22,9 +22,9 @@ nc_fl_num = r"[+-]?\d+.\d+[eE]?[+-]?\d*"
 def get_childfolders(path, include_xyz=True):
 
     if include_xyz:
-        return find_folders_matching(['*.xyz', '*.extxyz'], path)
+        return find_folders_matching(["*.xyz", "*.extxyz"], path)
     else:
-        return find_folders_matching(['*.extxyz'], path)
+        return find_folders_matching(["*.extxyz"], path)
 
 
 def pack_folder_trj(folder, data_filter=None, include_xyz=True):
@@ -62,40 +62,50 @@ def extxyz_to_padded_dict(filename):
     logging.debug(f"posindex {index}")
 
     logging.info(f"converting {filename}")
-    d = \
-        read_pattern(filename,
-                     {'natoms': r"^([0-9]+)$",
-                      'cells': r"Lattice=\""+fl_num+sfl_num+sfl_num
-                      + sfl_num+sfl_num+sfl_num
-                      + sfl_num+sfl_num+sfl_num+r"\"",
-                      'free_energies': r"free_energy="+fl_num,
-                      'energies': r"energy="+fl_num,
-                      'posforce': string,
-                      'symbols': r"^([a-zA-Z]+)\s"
-                      })
+    d = read_pattern(
+        filename,
+        {
+            "natoms": r"^([0-9]+)$",
+            "cells": r"Lattice=\""
+            + fl_num
+            + sfl_num
+            + sfl_num
+            + sfl_num
+            + sfl_num
+            + sfl_num
+            + sfl_num
+            + sfl_num
+            + sfl_num
+            + r"\"",
+            "free_energies": r"free_energy=" + fl_num,
+            "energies": r"energy=" + fl_num,
+            "posforce": string,
+            "symbols": r"^([a-zA-Z]+)\s",
+        },
+    )
 
-    natoms = np.array(d['natoms'], dtype=int).reshape([-1])
+    natoms = np.array(d["natoms"], dtype=int).reshape([-1])
     # logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
 
-    if len(d['free_energies']) > 0:
-        energies = np.array(d['free_energies'], dtype=float).reshape([-1])
+    if len(d["free_energies"]) > 0:
+        energies = np.array(d["free_energies"], dtype=float).reshape([-1])
         logging.debug("use free_energies tag for energies")
     else:
-        energies = np.array(d['energies'], dtype=float).reshape([-1])
+        energies = np.array(d["energies"], dtype=float).reshape([-1])
         logging.debug("use energies tag for energies")
 
-    cells = np.array(d['cells'], dtype=float).reshape([-1, 3, 3])
+    cells = np.array(d["cells"], dtype=float).reshape([-1, 3, 3])
 
-    posforce = np.array(d['posforce'], dtype=float).reshape([-1, 6])
-    positions = posforce[:, index['pos']:index['pos']+3]
-    forces = posforce[:, index['forces']:index['forces']+3]
+    posforce = np.array(d["posforce"], dtype=float).reshape([-1, 6])
+    positions = posforce[:, index["pos"] : index["pos"] + 3]
+    forces = posforce[:, index["forces"] : index["forces"] + 3]
     # logging.debug(f"pos.shape {positions.shape} force.shape {forces.shape}")
     # logging.debug(f"first couple lines of posforce")
     # logging.debug(f"{posforce[0]}")
     # logging.debug(f"{posforce[1]}")
     # logging.debug(f"{posforce[2]}")
 
-    symbols = np.array(d['symbols'], dtype=str).reshape([-1])
+    symbols = np.array(d["symbols"], dtype=str).reshape([-1])
 
     max_atoms = np.max(natoms)
     newpos = []
@@ -104,13 +114,14 @@ def extxyz_to_padded_dict(filename):
     counter = 0
     for i, natom in enumerate(natoms):
         pos = np.zeros((max_atoms, 3))
-        pos[:natom] += positions[counter:counter+natom]
+        pos[:natom] += positions[counter : counter + natom]
         newpos += [[pos]]
         fo = np.zeros((max_atoms, 3))
-        fo[:natom] += forces[counter:counter+natom]
+        fo[:natom] += forces[counter : counter + natom]
         newforce += [[fo]]
-        newsymbols += [np.hstack((symbols[counter:counter+natom],
-                                  ['0']*(max_atoms-natom)))]
+        newsymbols += [
+            np.hstack((symbols[counter : counter + natom], ["0"] * (max_atoms - natom)))
+        ]
         counter += natom
     positions = np.vstack(newpos)
     forces = np.vstack(newforce)
@@ -129,13 +140,13 @@ def extxyz_to_padded_dict(filename):
         cells=cells,
         symbols=symbols,
         natoms=natoms,
-        natom=max_atoms
+        natom=max_atoms,
     )
 
     # double check all arrays have the same number of frames
     nframes = []
     for k in dictionary:
-        if k != 'natom':
+        if k != "natom":
             nframes += [dictionary[k].shape[0]]
     assert len(set(nframes)) == 1
 
@@ -154,8 +165,7 @@ def extxyz_to_padded_trj(filename, data_filter=None):
             trj.filter_frames(accept_id)
         except Exception as e:
             logging.error(f"{e}")
-            logging.error(
-                "extxyz only accept batch filter work on paddedtrajectory")
+            logging.error("extxyz only accept batch filter work on paddedtrajectory")
             raise RuntimeError("")
 
     trj.name = filename
@@ -172,39 +182,41 @@ def posforce_regex(filename):
         fin.readline()
         line = fin.readline()
         info = key_val_str_to_dict(line)
-    properties, properties_list, dtype, convertesr \
-        = parse_properties(info['Properties'])
+    properties, properties_list, dtype, convertesr = parse_properties(
+        info["Properties"]
+    )
 
     string = ""
     pos_id = -1
     forces_id = -1
-    index = {'pos': 0, 'forces': 0}
+    index = {"pos": 0, "forces": 0}
     item_count = 0
     for k, v in properties.items():
         length = v[1]
         if len(string) > 0:
             string += r"\s+"
-        if k in ['pos', 'forces']:
-            string += fl_num+r"\s+"+fl_num+r"\s+"+fl_num
+        if k in ["pos", "forces"]:
+            string += fl_num + r"\s+" + fl_num + r"\s+" + fl_num
             index[k] = item_count
         else:
             for i in range(length):
                 if i > 0:
-                    string += r'\s+'
-                if convertesr[item_count+i] == str:
-                    string += r'\w+'
-                elif convertesr[item_count+i] == float:
+                    string += r"\s+"
+                if convertesr[item_count + i] == str:
+                    string += r"\w+"
+                elif convertesr[item_count + i] == float:
                     string += nc_fl_num
                 else:
                     logging.info(
-                        f"parser is not implemented for type {convertesr[item_count+i]}")
+                        f"parser is not implemented for type {convertesr[item_count+i]}"
+                    )
         item_count += length
-    if index['pos'] > index['forces']:
-        index['pos'] = 3
-        index['forces'] = 0
+    if index["pos"] > index["forces"]:
+        index["pos"] = 3
+        index["forces"] = 0
     else:
-        index['pos'] = 0
-        index['forces'] = 3
+        index["pos"] = 0
+        index["forces"] = 3
     return string, index
 
 
@@ -213,19 +225,23 @@ def write(name, trj):
         remove(name)
     if not trj.is_padded:
         for i in range(trj.nframes):
-            structure = Atoms(cell=trj.cells[i],
-                              symbols=trj.species,
-                              positions=trj.positions[i],
-                              pbc=True)
+            structure = Atoms(
+                cell=trj.cells[i],
+                symbols=trj.species,
+                positions=trj.positions[i],
+                pbc=True,
+            )
             calc = SinglePointCalculator(structure, energy=trj.energies[i])
             structure.calc = calc
             write_extxyz(name, structure, append=True)
     else:
         for i in range(trj.nframes):
-            structure = Atoms(cell=trj.cells[i],
-                              symbols=trj.symbols[i],
-                              positions=trj.positions[i],
-                              pbc=True)
+            structure = Atoms(
+                cell=trj.cells[i],
+                symbols=trj.symbols[i],
+                positions=trj.positions[i],
+                pbc=True,
+            )
             calc = SinglePointCalculator(structure, energy=trj.energies[i])
             structure.calc = calc
             write_extxyz(name, structure, append=True)

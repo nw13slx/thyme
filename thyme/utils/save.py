@@ -16,7 +16,7 @@ def sort_format(supported_formats, format, name):
 
     newformat = newformat.lower()
     newname = f"{name}"
-    if f'{newformat}' != name[-len(newformat):]:
-        newname += f'.{newformat}'
+    if f"{newformat}" != name[-len(newformat) :]:
+        newname += f".{newformat}"
 
     return newformat, newname

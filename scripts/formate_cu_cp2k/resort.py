@@ -3,8 +3,10 @@ from thyme.filters.error import sort_by_force
 from thyme.trajectories import Trajectories
 import numpy as np
 import logging
-logging.basicConfig(filename=f'filter.log', filemode='w',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"filter.log", filemode="w", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -15,7 +17,7 @@ test = Trajectories()
 testdata = test.alldata
 
 for i, trj in enumerate(trjs.alldata.values()):
-    sorted_id = sort_by_force(trj, 'pred', 'O')
+    sorted_id = sort_by_force(trj, "pred", "O")
     if i == 0:
         new_trj = trj.skim(sorted_id[:-20:3])
         new_trj2 = trj.skim(sorted_id[1:-20:3])

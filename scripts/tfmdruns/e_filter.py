@@ -11,8 +11,10 @@ from glob import glob
 import sys
 import numpy as np
 import logging
-logging.basicConfig(filename=f'filter.log', filemode='a',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"filter.log", filemode="a", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -27,7 +29,8 @@ nsamples = [100, 20, 20]
 threshold = 0.05
 
 original = Trajectories.from_file(
-    "827_frames.npz", format="padded_mat.npz", preserve_order=False)
+    "827_frames.npz", format="padded_mat.npz", preserve_order=False
+)
 ori_train = 827
 ori_test = 99
 new_files = ["ref2/result_1.npz", "ref1/result_1.npz", "ref3/result_1.npz"]
@@ -42,7 +45,7 @@ count_test = 0
 alle = []
 for i, trj in enumerate(original.alldata.values()):
     if count < ori_train:
-        select_id = np.arange(np.min([trj.nframes, ori_train-count]))
+        select_id = np.arange(np.min([trj.nframes, ori_train - count]))
         e_id = np.where(trj.energies > 0)[0]
         if len(e_id) > 0:
             logging.info(f" pop non-negative elements {e_id}")
@@ -50,11 +53,12 @@ for i, trj in enumerate(original.alldata.values()):
         # for idx in e_id:
         #     if idx in select_id:
         #         select_id.remove(idx)
-        if trj.nframes > (ori_train-count):
+        if trj.nframes > (ori_train - count):
             if count_test < ori_test:
-                test_id = np.arange(ori_train-count,
-                                    np.min([trj.nframes,
-                                            ori_test+ori_train-count_test-count]))
+                test_id = np.arange(
+                    ori_train - count,
+                    np.min([trj.nframes, ori_test + ori_train - count_test - count]),
+                )
                 e_id = np.where(trj.energies > 0)[0]
                 if len(e_id) > 0:
                     logging.info(f" pop non-negative elements {e_id}")
@@ -72,8 +76,7 @@ for i, trj in enumerate(original.alldata.values()):
         alle += [new_trj.energies]
         count += len(select_id)
     elif count_test < ori_test:
-        test_id = np.arange(np.min([trj.nframes,
-                                    ori_test-count_test]))
+        test_id = np.arange(np.min([trj.nframes, ori_test - count_test]))
         new_trj = trj.skim(test_id)
         testdata[trj.name] = new_trj
         alle += [new_trj.energies]
@@ -84,15 +87,16 @@ alle = np.hstack(alle)
 for idf, filename in enumerate(new_files):
 
     trjs = Trajectories.from_file(
-        filename, format="padded_mat.npz", preserve_order=False)
+        filename, format="padded_mat.npz", preserve_order=False
+    )
     nsample = nsamples[idf]
 
     for i, trj in enumerate(trjs.alldata.values()):
-        if 'O' in trj.species:
+        if "O" in trj.species:
 
             logging.info(f"{i} {trj}")
 
-            sorted_id, err = sort_by_force(trj, 'pred', 'O')
+            sorted_id, err = sort_by_force(trj, "pred", "O")
 
             # # remove top 3 highest energy configuration
             # e_id = np.argsort(trj.energies)[-3:]
@@ -100,7 +104,7 @@ for idf, filename in enumerate(new_files):
             pop_id = [np.where(trj.energies > 0)[0]]
             pop_info = ["non-negative energies"]
 
-            pop_id += [np.where(trj.energies > (np.min(trj.energies)+60))[0]]
+            pop_id += [np.where(trj.energies > (np.min(trj.energies) + 60))[0]]
             pop_info += ["energy > 60 eV + min"]
 
             pop_id += [np.where(err < threshold)[0]]
@@ -125,26 +129,25 @@ for idf, filename in enumerate(new_files):
             sorted_id = np.array(new_list, dtype=int)
             lower_bound = np.min([nsample, len(sorted_id)])
             train_id = sorted_id[-lower_bound::2]
-            test_id = sorted_id[-lower_bound+1::2]
+            test_id = sorted_id[-lower_bound + 1 :: 2]
 
             new_trj = trj.skim(train_id)
             if len(train_id) > 0:
-                traindata[trj.name+"new"] = new_trj
+                traindata[trj.name + "new"] = new_trj
+                logging.info(f"add to train: configs with err {err[train_id]}")
                 logging.info(
-                    f"add to train: configs with err {err[train_id]}")
-                logging.info(
-                    f"add to train: configs with energy {trj.energies[train_id]}")
+                    f"add to train: configs with energy {trj.energies[train_id]}"
+                )
 
             new_trj2 = trj.skim(test_id)
             if len(test_id) > 0:
-                testdata[trj.name+"new"] = new_trj2
+                testdata[trj.name + "new"] = new_trj2
+                logging.info(f"add to test: configs with err {err[test_id]}")
                 logging.info(
-                    f"add to test: configs with err {err[test_id]}")
-                logging.info(
-                    f"add to test: configs with energy {trj.energies[test_id]}")
+                    f"add to test: configs with energy {trj.energies[test_id]}"
+                )
 
-            logging.info(
-                f"{trj.name} select {new_trj.nframes} and {new_trj2.nframes}")
+            logging.info(f"{trj.name} select {new_trj.nframes} and {new_trj2.nframes}")
 
 join_train = train.to_padded_trajectory()
 join_train.shuffle()

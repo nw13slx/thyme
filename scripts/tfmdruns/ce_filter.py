@@ -9,8 +9,10 @@ from glob import glob
 import sys
 import numpy as np
 import logging
-logging.basicConfig(filename=f'filter.log', filemode='a',
-                    level=logging.INFO, format="%(message)s")
+
+logging.basicConfig(
+    filename=f"filter.log", filemode="a", level=logging.INFO, format="%(message)s"
+)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -31,7 +33,7 @@ for spe_list in all_trjs[0].alldata:
 
     trj = all_trjs[0].alldata[spe_list]
     nframe = trj.pred.shape[0]
-    Au_id = np.where(np.array(trj.species, dtype=str) == 'Au')[0]
+    Au_id = np.where(np.array(trj.species, dtype=str) == "Au")[0]
 
     pred = np.vstack(pred)
     pred_var = np.sqrt(np.var(pred, axis=0))
@@ -50,13 +52,14 @@ for spe_list in all_trjs[0].alldata:
     sort_id = np.argsort(pred_var)
     for i in sort_id[-100:]:
         new_species = np.copy(trj.species)
-        new_species[pred_Au_maxid[i]] = 'Cu'
+        new_species[pred_Au_maxid[i]] = "Cu"
         sort_spe = np.argsort(new_species)
-        structure = Atoms(cell=trj.cells[i].reshape([3, 3]),
-                          symbols=new_species[sort_spe],
-                          positions=trj.positions[i].reshape(
-                              [-1, 3])[sort_spe],
-                          pbc=True)
+        structure = Atoms(
+            cell=trj.cells[i].reshape([3, 3]),
+            symbols=new_species[sort_spe],
+            positions=trj.positions[i].reshape([-1, 3])[sort_spe],
+            pbc=True,
+        )
         write_extxyz(f"highlight_{spe_list}.xyz", structure, append=True)
 
     trj.filter_frames(sort_id[-100:])

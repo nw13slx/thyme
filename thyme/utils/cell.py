@@ -36,11 +36,11 @@ def convert_cell_format(nframes, raw_cells):
 
     elif n_elements == 9:
 
-        cells = np.tile(np.expand_dims(input_cell.reshape([3, 3]),
-                                       axis=0),
-                        (nframes, 1, 1))
+        cells = np.tile(
+            np.expand_dims(input_cell.reshape([3, 3]), axis=0), (nframes, 1, 1)
+        )
 
-    elif n_elements == 3*nframes:
+    elif n_elements == 3 * nframes:
 
         cells = np.zeros((nframes, 3, 3))
         for idx, cell in enumerate(input_cell):
@@ -55,11 +55,11 @@ def convert_cell_format(nframes, raw_cells):
     elif n_elements == 6 * nframes:
 
         raise NotImplementedError(
-            f"(abc alpha, beta, gamma) cell form is not implemented")
+            f"(abc alpha, beta, gamma) cell form is not implemented"
+        )
 
     else:
 
-        raise RuntimeError(
-            f"the input cell shape {input_cell.shape} does not work")
+        raise RuntimeError(f"the input cell shape {input_cell.shape} does not work")
 
     return cells
