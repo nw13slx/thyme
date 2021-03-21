@@ -79,7 +79,7 @@ class Trajectory():
         return s
 
     def __getitem__(self, key):
-        if key in self.per_atom_attrs or key in self.metadata_attrs:
+        if key in self.per_frame_attrs or key in self.metadata_attrs:
             return getattr(self, key, None)
 
     def __iter__(self):
@@ -94,8 +94,9 @@ class Trajectory():
         self._iter_index += 1
         return getattr(self, key, None)
 
-    def key(self):
-        return self.per_atom_attrs
+    @property
+    def keys(self):
+        return self.per_frame_attrs
 
     def sanity_check(self):
 
