@@ -25,10 +25,12 @@ def main():
     for name, trj in trjs.alldata.items():
         mine = np.min(trj.energies)
         keep_id = np.where(trj.energies < (mine + 20))[0]
+        remove = np.where(trj.energies >= (mine + 20))[0]
+        print("ditch", trj.energies[remove])
         trj.filter_frames(keep_id)
-        write("result_pos/"+name, trj)
+        print("keep", trj.energies)
+        write("result_pos/" + name, trj)
 
-        print(name, trj.energies)
         # trj.filter_frames(keep_id)
 
 

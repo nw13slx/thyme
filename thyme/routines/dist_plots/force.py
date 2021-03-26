@@ -23,13 +23,13 @@ def single_plot(trj, prefix=""):
         if s in specs:
             specs.pop(s)
     for s in specs:
-        maxf = np.max(trj.forces, axis=-1)
+        f = np.linalg.norm(trj.forces, axis=-1)
         if isinstance(trj, PaddedTrajectory):
             ids = np.where(trj.symbols == s)
         elif isinstance(trj, Trajectory):
             ids = np.where(trj.species == s)
         base_line_hist(
-            maxf[ids],
+            f[:, ids].reshape([-1]),
             "Forces (eV/$\\mathrm{\\AA}$)",
             f"{prefix}{trj.name}_{s}_force_dist",
         )

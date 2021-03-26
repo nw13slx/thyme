@@ -42,28 +42,37 @@ def write(filename, trj):
 
     return structures
 
-mapping = dict(energy="energies",
-               forces="forces",
-               nat="natom",
-               species_labels="species",
-               _positions="positions",
-               stress="stresses",
-               )
+
 def from_file(filename, as_trajectory=True):
+    per_frame_attrs = ["energies", "forces", "positions", "stresses"]
+    mapping = dict(
+        energy="energies",
+        forces="forces",
+        nat="natom",
+        species_labels="species",
+        _positions="positions",
+        stress="stresses",
+        _cell="cells",
+    )
     structure_list = Structure.from_file(filename, as_trajectory=as_trajectory)
     trjs = Trajectories()
-    for struc in structure_list:
+    for count, struc in enumerate(structure_list):
         d = struc.as_dict()
-        new_dict = { mapping.get(k): d[k] for k in mapping}
-        trjs.add_trj(Trajectory.from_dict(new_dict))
-    trjs.remerge()
-    return trjs
-
-if __name__ == "__main__":
-    import sys
-    trjs = from_file(sys.argv[1])
-    trjs.save("all.pickle")
-    trjs.save("all_padded_mat.npz")
-
-
-
+        new_dict = {mapping.get(k): np.array(d[k]) for k in mapping}
+        new_dict["nframes"] = 1
+        for key in per_frame_attrs:
+            new_dict[key] = new_dict[key].reshape((1,) + new_dict[key].shape)
+        trjs.add_trj(
+            Trajectory.from_dict(
+                new_dict,
+                per_frame_attrs=[
+                    "energies",
+                    "forces",
+                    "positions",
+                    "stresses",
+                    "cells",
+                ],
+            ),
+            name = count
+        )
+    return trjs.remerge()
