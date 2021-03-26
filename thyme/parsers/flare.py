@@ -42,28 +42,31 @@ def write(filename, trj):
 
     return structures
 
-mapping = dict(energy="energies",
-               forces="forces",
-               nat="natom",
-               species_labels="species",
-               _positions="positions",
-               stress="stresses",
-               )
+
+mapping = dict(
+    energy="energies",
+    forces="forces",
+    nat="natom",
+    species_labels="species",
+    _positions="positions",
+    stress="stresses",
+)
+
+
 def from_file(filename, as_trajectory=True):
     structure_list = Structure.from_file(filename, as_trajectory=as_trajectory)
     trjs = Trajectories()
     for struc in structure_list:
         d = struc.as_dict()
-        new_dict = { mapping.get(k): d[k] for k in mapping}
+        new_dict = {mapping.get(k): d[k] for k in mapping}
         trjs.add_trj(Trajectory.from_dict(new_dict))
     trjs.remerge()
     return trjs
 
+
 if __name__ == "__main__":
     import sys
+
     trjs = from_file(sys.argv[1])
     trjs.save("all.pickle")
     trjs.save("all_padded_mat.npz")
-
-
-

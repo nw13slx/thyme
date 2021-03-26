@@ -26,7 +26,7 @@ def main():
         mine = np.min(trj.energies)
         keep_id = np.where(trj.energies < (mine + 20))[0]
         trj.filter_frames(keep_id)
-        write("result_pos/"+name, trj)
+        write("result_pos/" + name, trj)
 
         print(name, trj.energies)
         # trj.filter_frames(keep_id)
