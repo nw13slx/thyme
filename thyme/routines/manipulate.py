@@ -1,15 +1,13 @@
 from thyme.trajectory import Trajectory
+import numpy as np
 
 
 def replicate(trj, expand: tuple = (1, 1, 1)):
 
     new_trj = Trajectory()
     for idf in range(len(trj)):
-        pos = trj.positions[idf]
-        d = {k: trj[k][idf] for k in trj.per_frame_attrs}
-        d.update({k: v for k in trj.metadata_attrs})
-        d["nframes"] = 1
-        _trj = Trajectory.from_dict(d, per_frame_attrs=trj.per_frame_attrs)
+        _trj = trj.skim([idf])
+        cell = _trj.cells[0]
         new_positions = []
         new_cells = []
         new_forces = []
@@ -19,9 +17,9 @@ def replicate(trj, expand: tuple = (1, 1, 1)):
                 for k in range(expand[2]):
                     new_positions.append(
                         _trj.positions[0]
-                        + _trj.cells[0, 0] * i
-                        + _trj.cells[0, 1] * j
-                        + _trj.cells[0, 2] * _k
+                        + cell[0] * i
+                        + cell[1] * j
+                        + cell[2] * k
                     )
                     new_forces.append(np.copy(_trj.forces[0]))
                     symbols.append(np.copy(_trj.species))
