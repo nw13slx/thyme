@@ -73,6 +73,6 @@ def from_file(filename, as_trajectory=True):
                     "cells",
                 ],
             ),
-            name = count
+            name=count,
         )
     return trjs.remerge()

@@ -8,6 +8,6 @@ if __name__ == "__main__":
     trjs = Trajectories.from_file("all.pickle")
     trj = list(trjs.all_data.values())[0]
     from thyme.routines.manipulate import replicate
-    trj = replicate(trj, (2, 2, 2))
-    trj.save(sys.argv[2]+"re_padded_mat.npz")
 
+    trj = replicate(trj, (2, 2, 2))
+    trj.save(sys.argv[2] + "re_padded_mat.npz")

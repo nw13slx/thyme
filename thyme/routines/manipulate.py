@@ -16,10 +16,7 @@ def replicate(trj, expand: tuple = (1, 1, 1)):
             for j in range(expand[1]):
                 for k in range(expand[2]):
                     new_positions.append(
-                        _trj.positions[0]
-                        + cell[0] * i
-                        + cell[1] * j
-                        + cell[2] * k
+                        _trj.positions[0] + cell[0] * i + cell[1] * j + cell[2] * k
                     )
                     new_forces.append(np.copy(_trj.forces[0]))
                     symbols.append(np.copy(_trj.species))

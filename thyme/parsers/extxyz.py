@@ -231,18 +231,23 @@ def write(name, trj):
                 positions=trj.positions[i],
                 pbc=True,
             )
-            calc = SinglePointCalculator(structure, energy=trj.energies[i])
+            calc = SinglePointCalculator(
+                structure, energy=trj.energies[i], forces=trj.forces[i]
+            )
             structure.calc = calc
             write_extxyz(name, structure, append=True)
     else:
         for i in range(trj.nframes):
+            natom = trj.natoms[i]
             structure = Atoms(
                 cell=trj.cells[i],
-                symbols=trj.symbols[i],
-                positions=trj.positions[i],
+                symbols=trj.symbols[i][:natom],
+                positions=trj.positions[i][:natom],
                 pbc=True,
             )
-            calc = SinglePointCalculator(structure, energy=trj.energies[i])
+            calc = SinglePointCalculator(
+                structure, energy=trj.energies[i], forces=trj.forces[i][:natom]
+            )
             structure.calc = calc
             write_extxyz(name, structure, append=True)
     logging.info(f"write {name}")
