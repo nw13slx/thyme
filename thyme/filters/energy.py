@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 
-from thyme.utils.atomic_symbols import species_to_idgroups
+from thyme.utils.atomic_symbols import species_to_idgroups, species_to_dict
 from thyme.trajectory import PaddedTrajectory
 
 
@@ -97,5 +97,22 @@ def rm_duplicate(trj):
 
 def fit_energy_shift(trjs):
 
+    print("hello")
     sorted_trjs = trjs.remerge()
 
+    x = []
+    y = []
+    species = set()
+    for trj in sorted_trjs:
+        symbol_dict = species_to_dict(sorted_trj.species)
+        x += [symbol_dict]
+        species = species.union(set(list(symbol_dict.keys())))
+        y += [np.min(trj.energies)]
+
+    allx = []
+    for _x, _y in zip(x, y):
+
+        order_x = [ _x.get(ele, 0)  for ele in species]
+        allx += [order_x]
+
+    return np.vstack(allx), np.array(y).reshape([-1, 1]), sorted_trjs

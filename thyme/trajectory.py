@@ -93,6 +93,8 @@ class Trajectory:
 
     def __next__(self):
 
+        self._iter_index = getattr(self, "_iter_index", 0)
+
         n_attrs = len(self.per_frame_attrs)
         if self._iter_index >= n_attrs:
             raise StopIteration

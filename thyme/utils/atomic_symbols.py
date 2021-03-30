@@ -13,7 +13,7 @@ def species_to_order_label(trj_species):
 
     # sort atoms based on atomic number
     order = []
-    for k in count:
+    for k in counter:
         order += [[i for i, s in enumerate(trj_species) if s == k]]
     order = np.hstack(order)
     label = "".join([f"{k}{counter[k]}" for k in counter])
@@ -26,7 +26,7 @@ def species_to_dict(trj_species):
     given array of elements, return a dict with number for each species and sort the keys by atomic numbers
     """
 
-    counter = dict(counterer(trj_species))
+    counter = dict(Counter(trj_species))
     for i in ["0", 0, "NA"]:
         if i in counter:
             del counter[i]

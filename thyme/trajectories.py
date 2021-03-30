@@ -23,6 +23,7 @@ def dummy_comp(trj1, trj2):
 class Trajectories:
     def __init__(self):
         self.alldata = {}
+        self._iter_index = 0
 
     @property
     def nframes(self):
@@ -41,6 +42,23 @@ class Trajectories:
             s += f"----{name}----\n"
             s += f"{self.alldata[name]}\n"
         return s
+
+    def __getitem__(self, key):
+        return self.alldata[key]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        self._iter_index = getattr(self, "_iter_index", 0)
+
+        n_attrs = len(self.alldata)
+        if self._iter_index >= n_attrs:
+            raise StopIteration
+        key = list(self.alldata.keys())[self._iter_index]
+        self._iter_index += 1
+        return self.alldata[key]
 
     def save(self, name: str, format: str = None):
 
