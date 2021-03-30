@@ -19,20 +19,25 @@ logging.getLogger().addHandler(logging.StreamHandler())
 def main():
 
     folders = get_childfolders("./")
-    trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data.pickle")
+    trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.pickle")
 
-    mineT = Trajectory()
+    trjs = trjs.remerge()
+    trjs.save("all_data_merge.pickle")
+
+    mineT = Trajectories()
     for name, trj in trjs.alldata.items():
+        # sort by energy
         frames = sort_e(trj)
         trj.filter_frames(frames)
         mine = trj.energies[0]
-        # keep_id = np.where(trj.energies < (mine + 10))[0]
+        keep_id = np.where(trj.energies < (mine + 20))[0]
         mineT.add_trj(trj.skim([-1]))
     # multiple_plots_e(trjs, prefix='alldata')
-    frames = sort_e(mineT)
-    mineT.filter_frames(frames)
-    write("mine.xyz", mineT)
-    write_trjs("all.xyz", trjs)
+    # frames = sort_e(mineT)
+    # mineT.filter_frames(frames)
+    mineT.save("20eV.pickle")
+    # write("mine.xyz", mineT)
+    # write_trjs("all.xyz", trjs)
 
 
 if __name__ == "__main__":

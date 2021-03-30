@@ -728,7 +728,7 @@ class PaddedTrajectory(Trajectory):
                 max_atoms = np.max([self.natom, trj.natom])
 
                 if self.natom < max_atoms:
-                    self.increase_maxatom(max_atom)
+                    self.increase_maxatom(max_atoms)
                 else:
                     padded_trj = PaddedTrajectory.from_trajectory(trj, max_atoms)
                     trj = padded_trj
