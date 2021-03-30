@@ -95,16 +95,31 @@ def rm_duplicate(trj):
 
     return keep_id
 
-def fit_energy_shift(trjs):
+def fit_energy_shift(trjs, mode="min"):
 
     x = []
     y = []
     species = set()
     for trj in trjs:
         symbol_dict = species_to_dict(trjs.species)
-        x += [symbol_dict]
         species = species.union(set(list(symbol_dict.keys())))
-        y += [np.min(trj.energies)]
+        if mode == "min":
+            x += [symbol_dict]
+            y += [np.min(trj.energies)]
+        elif mode == "max":
+            x += [symbol_dict]
+            y += [np.max(trj.energies)]
+        elif mode.endswith("%"):
+
+            percentage = float(mode[:-1])
+
+            sort_e = np.argsort(trj.energies)
+
+            up_idx = int(np.ceil(len(sort_e)*percentage/100.))
+
+            for idx in sort_e[:up_idx]:
+                x += [symbol_dict]
+                y += [trj.energies[sort_e[idx]]]
 
     allx = []
     for _x, _y in zip(x, y):
