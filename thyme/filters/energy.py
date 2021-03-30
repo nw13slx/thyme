@@ -94,3 +94,8 @@ def rm_duplicate(trj):
             logging.info(f"remove duplicate energy {trj.energies[last_id]}")
 
     return keep_id
+
+def fit_energy_shift(trjs):
+
+    sorted_trjs = trjs.remerge()
+
