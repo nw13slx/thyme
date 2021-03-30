@@ -97,14 +97,11 @@ def rm_duplicate(trj):
 
 def fit_energy_shift(trjs):
 
-    print("hello")
-    sorted_trjs = trjs.remerge()
-
     x = []
     y = []
     species = set()
-    for trj in sorted_trjs:
-        symbol_dict = species_to_dict(sorted_trj.species)
+    for trj in trjs:
+        symbol_dict = species_to_dict(trjs.species)
         x += [symbol_dict]
         species = species.union(set(list(symbol_dict.keys())))
         y += [np.min(trj.energies)]
@@ -115,4 +112,4 @@ def fit_energy_shift(trjs):
         order_x = [ _x.get(ele, 0)  for ele in species]
         allx += [order_x]
 
-    return np.vstack(allx), np.array(y).reshape([-1, 1]), sorted_trjs
+    return np.vstack(allx), np.array(y).reshape([-1, 1])
