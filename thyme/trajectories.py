@@ -111,18 +111,6 @@ class Trajectories:
             init_trj.add_trj(trj)
         return init_trj
 
-    def add_trj(self, trj, name=None):
-
-        if isinstance(trj, Trajectories):
-            self.alldata.update(trj.alldata)
-        else:
-            if name in self.alldata:
-                logging.info(f"warning, overwriting trj with name {name}")
-
-            if name is None:
-                name = trj.name
-            self.alldata[name] = trj
-
     def save_padded_matrices(self, name: str):
 
         if ".npz" != name[-4:]:
@@ -212,49 +200,69 @@ class Trajectories:
             nframes += trj.nframes
         return nframes
 
+    def add_trj(
+        self,
+        trj,
+        name=None,
+        merge=False,
+        preserve_order=False,
+        metadata_compare=dummy_comp,
+    ):
+
+        if not merge:
+            if isinstance(trj, Trajectories):
+                self.alldata.update(trj.alldata)
+            else:
+                if name in self.alldata:
+                    logging.info(f"warning, overwriting trj with name {name}")
+
+                if name is None:
+                    name = trj.name
+                self.alldata[name] = trj
+            return
+
+        # order trj by element
+        order, label = species_to_order_label(trj.species)
+        newtrj = Trajectory()
+        newtrj.copy(trj)
+        newtrj.reorder(order)
+
+        stored_label, last_label = obtain_store_label(
+            last_label=None,
+            label=label,
+            alldata=self.alldata,
+            preserve_order=preserve_order,
+        )
+
+        if stored_label not in self.alldata:
+            newtrj.name = np.copy(stored_label)
+            self.alldata[stored_label] = newtrj
+        else:
+            if metadata_compare(trj, newtrj):
+                logging.info("! True merge")
+                self.alldata[stored_label].add_trj(newtrj)
+            else:
+                logging.info("! False merge")
+                newtrj.name = stored_label
+                stored_label, last_label = obtain_store_label(
+                    "NA0", label, self.alldata, True
+                )
+                self.alldata[stored_label] = newtrj
+
     def remerge(self, preserve_order=False, metadata_compare=dummy_comp):
 
         trjs = Trajectories()
 
-        # trj.nframes = ptrj.nframes
-        # trj.symbols = ptrj.symbols
-
-        last_label = None
-        label = None
-        curr_label_count = 0
-        last_label_count = 0
-        alldata = trjs.alldata
         for trj in self.alldata.values():
-
-            # obtain label
-            order, label = species_to_order_label(trj.species)
-            natom = trj.natom
-            newtrj = Trajectory()
-            newtrj.copy(trj)
-            newtrj.reorder(order)
-
-            stored_label, last_label = obtain_store_label(
-                last_label, label, alldata, preserve_order
+            trjs.add_trj(
+                trj,
+                merge=True,
+                preserve_order=preserve_order,
+                metadata_compare=metadata_compare,
             )
 
-            if stored_label not in alldata:
-                newtrj.name = np.copy(stored_label)
-                alldata[stored_label] = newtrj
-            else:
-                if metadata_compare(trj, newtrj):
-                    logging.info("! True merge")
-                    alldata[stored_label].add_trj(newtrj)
-                else:
-                    logging.info("! False merge")
-                    newtrj.name = stored_label
-                    stored_label, last_label = obtain_store_label(
-                        "NA0", label, alldata, True
-                    )
-                    alldata[stored_label] = newtrj
-
-        for i in alldata:
-            trj = alldata[i]
-            alldata[i].name = i
+        for i, trj in trjs.alldata.items():
+            trj.name = i
             logging.info(f"found one type of formula {trj.name} with key {i}")
             logging.info(f"add {repr(trj)}")
 

@@ -54,7 +54,7 @@ def species_to_idgroups(symbol):
     """
 
     idgroups = []
-    symbols = species_to_dict
+    symbols = species_to_dict(symbol)
     for k in symbols:
         idgroups += [[i for i, s in enumerate(symbol) if s == k]]
     return list(symbols.keys()), idgroups
@@ -71,7 +71,9 @@ def convert_species(nframes, raw_n_atoms, raw_data):
     if not isinstance(raw_atoms_pattern.reshape([-1])[0], int):
         raw_atomic_number = np.zeros_like(raw_atoms_pattern, dtype=np.int)
         for idx in itertools.product(*[range(s) for s in raw_atoms_pattern.shape]):
-            raw_atomic_number[idx] = atomic_numbers_dict.get(raw_atoms_pattern[idx], default_atomic_number)
+            raw_atomic_number[idx] = atomic_numbers_dict.get(
+                raw_atoms_pattern[idx], default_atomic_number
+            )
     else:
         raw_atomic_number = raw_atoms_pattern
 

@@ -20,6 +20,7 @@ def main():
 
     folders = get_childfolders("./")
     trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.pickle")
+    # trjs.save("raw.pickle")
 
     trjs = trjs.remerge()
     trjs.save("all_data_merge.pickle")
@@ -37,7 +38,7 @@ def main():
     # mineT.filter_frames(frames)
     mineT.save("20eV.pickle")
     # write("mine.xyz", mineT)
-    # write_trjs("all.xyz", trjs)
+    write_trjs("all.xyz", trjs)
 
 
 if __name__ == "__main__":

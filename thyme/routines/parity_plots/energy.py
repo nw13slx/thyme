@@ -14,8 +14,8 @@ def single_plot(energies, pred, prefix, shift=[0]):
         pred,
         prefix,
         "energy",
-        "Predicted energy - DFT energy (eV)",
-        "Counts",
+        "DFT energy (eV)",
+        "Predicted energy (eV)",
         shift[:1],
     )
 
@@ -39,14 +39,14 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
     data = []
     for i, trj in enumerate(trajectories.alldata.values()):
 
-        reference = trj.energies
-        prediction = getattr(trj, pred_label)
+        reference = trj.energies.reshape([-1])
+        prediction = getattr(trj, pred_label).reshape([-1])
         shift = np.average(reference) - np.average(prediction)
 
         single_plot(
             reference,
             prediction,
-            f"{prefix}_{trj.name}",
+            f"{prefix}{trj.name}",
             shift=[shift, universal_shift],
         )
         axs[0].scatter(
@@ -77,4 +77,6 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
     axs[1].axvline(x=-universal_shift, linestyle="--", color="k", zorder=0)
 
     fig.tight_layout()
-    fig.savefig(f"{prefix}_all_energy.png", dpi=300)
+    fig.savefig(prefix + "all_energy.png", dpi=300)
+    del axs
+    del fig
