@@ -101,7 +101,7 @@ def fit_energy_shift(trjs, mode="min"):
     y = []
     species = set()
     for trj in trjs:
-        symbol_dict = species_to_dict(trjs.species)
+        symbol_dict = species_to_dict(trj.species)
         species = species.union(set(list(symbol_dict.keys())))
         if mode == "min":
             x += [symbol_dict]
