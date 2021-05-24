@@ -200,6 +200,46 @@ class Trajectories:
             nframes += trj.nframes
         return nframes
 
+    def add_trj(self, trj, name=None, merge=False, preserve_order=False, metadata_compare=dummy_comp):
+
+        if not merge:
+            if isinstance(trj, Trajectories):
+                self.alldata.update(trj.alldata)
+            else:
+                if name in self.alldata:
+                    logging.info(f"warning, overwriting trj with name {name}")
+
+                if name is None:
+                    name = trj.name
+                self.alldata[name] = trj
+            return
+
+        # order trj by element
+        order, label = species_to_order_label(trj.species)
+        newtrj = Trajectory()
+        newtrj.copy(trj)
+        newtrj.reorder(order)
+
+        stored_label, last_label = obtain_store_label(
+            last_label=None, label=label, alldata=self.alldata, preserve_order=preserve_order
+        )
+
+        if stored_label not in self.alldata:
+            newtrj.name = np.copy(stored_label)
+            self.alldata[stored_label] = newtrj
+        else:
+            if metadata_compare(trj, newtrj):
+                logging.info("! True merge")
+                self.alldata[stored_label].add_trj(newtrj)
+            else:
+                logging.info("! False merge")
+                newtrj.name = stored_label
+                stored_label, last_label = obtain_store_label(
+                    "NA0", label, self.alldata, True
+                )
+                self.alldata[stored_label] = newtrj
+
+
     def add_trj(
         self,
         trj,
