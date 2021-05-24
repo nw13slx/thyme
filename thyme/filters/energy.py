@@ -39,7 +39,7 @@ def even_hist(trj, max_count, bin_width, max_apperance=2, max_e=None):
             skip_idx += [idx]
             print(left, right, n, len(draw))
 
-    c_each_bin = (max_count - len(np.hstack(keep_ids))) // (len(hist)-len(skip_idx))
+    c_each_bin = (max_count - len(np.hstack(keep_ids))) // (len(hist) - len(skip_idx))
     for idx, h in enumerate(hist):
         if idx in skip_idx:
             continue

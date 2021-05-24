@@ -189,11 +189,11 @@ class Trajectory:
         self.nframes = len(accept_id)
 
     @staticmethod
-    def from_file(filename, per_frame_attrs=None):
+    def from_file(filename, per_frame_attrs=None, mapping=None):
         trj = Trajectory()
         if ".npz" == filename[-4:]:
             dictionary = dict(np.load(filename, allow_pickle=True))
-            trj.copy_dict(dictionary, per_frame_attrs)
+            trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         elif ".pickle" == filename[-7:]:
             with open(filename, "rb") as fin:
                 trj = pickle.load(fin)
@@ -202,9 +202,9 @@ class Trajectory:
         return trj
 
     @staticmethod
-    def from_dict(dictionary, per_frame_attrs=None):
+    def from_dict(dictionary, per_frame_attrs=None, mapping=None):
         trj = Trajectory()
-        trj.copy_dict(dictionary, per_frame_attrs)
+        trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         return trj
 
     def to_dict(self):
@@ -215,7 +215,7 @@ class Trajectory:
             data[k] = getattr(self, k)
         return data
 
-    def copy_dict(self, dictionary, per_frame_attrs=None):
+    def copy_dict(self, dictionary, per_frame_attrs=None, mapping=None):
         """
 
         requirement
@@ -231,6 +231,10 @@ class Trajectory:
         """
 
         self.clean_containers()
+
+        if mapping is not None:
+            for new_name, original_name in mapping.items():
+                dictionary[new_name] = dictionary.pop(original_name)
 
         nframes = dictionary["positions"].shape[0]
         self.nframes = nframes
@@ -683,17 +687,17 @@ class PaddedTrajectory(Trajectory):
         return trj
 
     @staticmethod
-    def from_dict(dictionary, per_frame_attrs=None):
+    def from_dict(dictionary, per_frame_attrs=None, mapping=None):
         trj = PaddedTrajectory()
-        trj.copy_dict(dictionary, per_frame_attrs)
+        trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         return trj
 
     @staticmethod
-    def from_file(filename, per_frame_attrs=None):
+    def from_file(filename, per_frame_attrs=None, mapping=None):
         trj = PaddedTrajectory()
         if ".npz" == filename[-4:]:
             dictionary = dict(np.load(filename, allow_pickle=True))
-            trj.copy_dict(dictionary, per_frame_attrs)
+            trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         else:
             raise NotImplementedError(f"{filename} format not supported")
         return trj
