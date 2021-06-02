@@ -225,14 +225,18 @@ def write(name, trj):
         remove(name)
     if not trj.is_padded:
         for i in range(trj.nframes):
+            definition = {'pbc':False}
+            if 'cells' in trj.per_frame_attrs:
+                definition['cell']=trj.cells[i]
+                definition['pbc']=True
             structure = Atoms(
-                cell=trj.cells[i],
                 symbols=trj.species,
                 positions=trj.positions[i],
-                pbc=True,
+                **definition
             )
+            definition = {'forces':trj.forces[i]} if 'forces' in trj.per_frame_attrs else {}
             calc = SinglePointCalculator(
-                structure, energy=trj.energies[i], forces=trj.forces[i]
+                structure, energy=trj.energies[i], **definition
             )
             structure.calc = calc
             write_extxyz(name, structure, append=True)
