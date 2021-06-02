@@ -5,6 +5,67 @@ from thyme.utils.atomic_symbols import species_to_idgroups, species_to_dict
 from thyme.trajectory import PaddedTrajectory
 
 
+def even_hist(trj, max_count, bin_width, max_apperance=2, max_e=None):
+
+    if len(trj) < max_count:
+        logging.info(f"trajectory frames {trj.nframes} < {max_count}")
+        return np.arange(trj.nframes)
+
+    e = trj.energies
+    if max_e is None:
+        max_e = np.max(e)
+
+    bins = np.arange(np.min(e), max_e + bin_width, bin_width)
+
+    hist, bins = np.histogram(trj.energies, bins=bins)
+    n_bins = len(np.where(hist > 0)[0])
+    c_each_bin = max_count // n_bins
+    keep_ids = []
+    skip_idx = []
+    for idx, h in enumerate(hist):
+        if h == 0:
+            skip_idx += [idx]
+            continue
+
+        left = bins[idx]
+        right = bins[idx + 1]
+        id1 = set(np.where(trj.energies > left)[0])
+        id2 = set(np.where(trj.energies < right)[0])
+        ids = np.array(list(id1.intersection(id2)))
+        n = len(ids)
+        if n < c_each_bin / max_apperance:
+            draw = np.arange(n * max_apperance) // max_apperance
+            keep_ids += [ids[draw]]
+            skip_idx += [idx]
+            print(left, right, n, len(draw))
+
+    c_each_bin = (max_count - len(np.hstack(keep_ids))) // (len(hist) - len(skip_idx))
+    for idx, h in enumerate(hist):
+        if idx in skip_idx:
+            continue
+
+        left = bins[idx]
+        right = bins[idx + 1]
+        id1 = set(np.where(trj.energies > left)[0])
+        id2 = set(np.where(trj.energies < right)[0])
+        ids = np.array(list(id1.intersection(id2)))
+        n = len(ids)
+        draw = np.random.randint(n, size=c_each_bin)
+        keep_ids += [ids[draw]]
+
+        print(left, right, n, len(draw))
+
+    keep_ids = np.hstack(keep_ids)
+    return keep_ids
+
+
+def remove_max_force(trj, max_force=20):
+    """
+    remove frames with forces larger than max_force
+    """
+    return [i for i in range(trj.nframes) if np.max(np.abs(trj.forces[i])) < max_force]
+
+
 def rm_sudden_drop(trj, thredshold):
     """"""
 
@@ -95,6 +156,7 @@ def rm_duplicate(trj):
 
     return keep_id
 
+
 def fit_energy_shift(trjs, mode="min"):
 
     x = []
@@ -115,7 +177,7 @@ def fit_energy_shift(trjs, mode="min"):
 
             sort_e = np.argsort(trj.energies)
 
-            up_idx = int(np.ceil(len(sort_e)*percentage/100.))
+            up_idx = int(np.ceil(len(sort_e) * percentage / 100.0))
 
             for idx in sort_e[:up_idx]:
                 x += [symbol_dict]
@@ -124,7 +186,7 @@ def fit_energy_shift(trjs, mode="min"):
     allx = []
     for _x, _y in zip(x, y):
 
-        order_x = [ _x.get(ele, 0)  for ele in species]
+        order_x = [_x.get(ele, 0) for ele in species]
         allx += [order_x]
 
     return np.vstack(allx), np.array(y).reshape([-1, 1])

@@ -74,6 +74,10 @@ def single_plot(forces, pred, prefix, symbol):
     axsf_hist[-1].set_xlabel("Predicted force - DFT force (eV)")
     axsf_hist[-2].set_xlabel("Predicted force - DFT force (eV)")
 
+    if len(species) % 2 != 0:
+        axsf[-1].axis("off")
+        axsf_hist[-1].axis("off")
+
     fig.tight_layout()
     fig.savefig(f"{prefix}force.png", dpi=300)
     fig_hist.tight_layout()
@@ -92,7 +96,7 @@ def multiple_plots(trajectories, pred_label="pred", prefix=""):
     alldata = {}
     for trj in trajectories.alldata.values():
         data = single_plot(
-            trj.forces, getattr(trj, pred_label), prefix + trj.name, trj.species
+            trj.forces, getattr(trj, pred_label), f"{prefix}{trj.name}", trj.species
         )
         for element in data:
             mae, rmse, count = data[element]

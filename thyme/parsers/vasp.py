@@ -73,6 +73,8 @@ def parse_outcar_trj(folder, data_filter):
 
     # start parsing outcar
     filename = "/".join([folder, "OUTCAR"])
+    if not isfile(filename):
+        return Trajectory()
 
     t = time.time()
     d_energies = read_pattern(

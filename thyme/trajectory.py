@@ -15,13 +15,14 @@ from ._key import *
 class Trajectory:
 
     per_frame_keys = [
-        POSITION, 
+        POSITION,
         FORCE,
         TOTAL_ENERGY,
         CELL,
     ]
     metadata_keys = ["dipole_correction", "species", "nelm", "cutoff", "kpoints"]
-    switch_keys = ["python_list", "empty"]
+    fix_fields = []
+    switch_keys = ["empty"]
     stat_keys = ["natom", "nframes", "name", "formula"]
 
     is_padded = False
@@ -41,7 +42,6 @@ class Trajectory:
         self.natom = 0
         self.formula = ""
 
-        self.python_list = False
         self.empty = True
 
         self.per_frame_attrs = []
@@ -85,6 +85,8 @@ class Trajectory:
     def __getitem__(self, key):
         if key in self.per_frame_attrs or key in self.metadata_attrs:
             return getattr(self, key, None)
+        if isinstance(key, int):
+            return self.get_frame(key)
 
     def __iter__(self):
         return self
@@ -99,6 +101,14 @@ class Trajectory:
         key = self.per_frame_attrs[self._iter_index]
         self._iter_index += 1
         return getattr(self, key, None)
+
+    def get_frame(self, idx):
+        if idx >= self.nframes:
+            raise ValueError(f"{idx} is larger than the total length {self.nframes}")
+        frame = {key: getattr(self, key)[idx] for key in self.per_frame_attrs}
+        for key in self.fix_fields:
+            frame[key] = getattr(self, key)
+        return frame
 
     @property
     def keys(self):
@@ -188,11 +198,11 @@ class Trajectory:
         self.nframes = len(accept_id)
 
     @staticmethod
-    def from_file(filename, per_frame_attrs=None):
+    def from_file(filename, per_frame_attrs=None, mapping=None):
         trj = Trajectory()
         if ".npz" == filename[-4:]:
             dictionary = dict(np.load(filename, allow_pickle=True))
-            trj.copy_dict(dictionary, per_frame_attrs)
+            trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         elif ".pickle" == filename[-7:]:
             with open(filename, "rb") as fin:
                 trj = pickle.load(fin)
@@ -201,9 +211,9 @@ class Trajectory:
         return trj
 
     @staticmethod
-    def from_dict(dictionary, per_frame_attrs=None):
+    def from_dict(dictionary, per_frame_attrs=None, mapping=None):
         trj = Trajectory()
-        trj.copy_dict(dictionary, per_frame_attrs)
+        trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         return trj
 
     def to_dict(self):
@@ -214,7 +224,7 @@ class Trajectory:
             data[k] = getattr(self, k)
         return data
 
-    def copy_dict(self, dictionary, per_frame_attrs=None):
+    def copy_dict(self, dictionary, per_frame_attrs=None, mapping=None):
         """
 
         requirement
@@ -230,6 +240,10 @@ class Trajectory:
         """
 
         self.clean_containers()
+
+        if mapping is not None:
+            for new_name, original_name in mapping.items():
+                dictionary[new_name] = dictionary.pop(original_name)
 
         nframes = dictionary[POSITION].shape[0]
         self.nframes = nframes
@@ -349,7 +363,6 @@ class Trajectory:
         self.nframes = 0
         self.natom = 0
         self.species = []
-        self.python_list = False
         self.empty = True
         self.name = ""
 
@@ -357,7 +370,6 @@ class Trajectory:
         self.metadata_attrs = [
             "nframes",
             "name",
-            "python_list",
             "empty",
             "species",
             "natom",
@@ -365,8 +377,7 @@ class Trajectory:
 
     def add_containers(self, natom: int = 0, per_frame_attrs: list = []):
         """
-        initialize all attributes with empty list (python_list = True)
-        or numpy array (python_list = False)
+        initialize all attributes with empty numpy array
 
         attributes: only per_frame_attrs needs to be listed
         """
@@ -374,10 +385,7 @@ class Trajectory:
         if not self.empty:
             return
 
-        if self.python_list:
-            item = []
-        else:
-            item = None
+        item = None
 
         for k in per_frame_attrs:
             self.add_per_frame_attr(k, item)
@@ -443,42 +451,6 @@ class Trajectory:
             self.copy_metadata(trj, exception=["name", "nframes", "natom", "filenames"])
 
             self.nframes += trj.nframes
-
-    def convert_to_np(self):
-        """
-        assume all elements are the same in the list
-        """
-
-        if not self.python_list:
-            return
-
-        for k in self.per_frame_attrs:
-            np_mat = np.array(getattr(self, k))
-            if np_mat.shape[0] != self.nframes:
-                raise RuntimeError(
-                    f"inconsistent content {np_mat.shape} {k}"
-                    f" and counter {self.nframes}"
-                )
-            logging.debug(
-                f"convert content {k} to numpy array" f" with shape {np_mat.shape} "
-            )
-            setattr(self, k, np_mat)
-        self.python_list = False
-
-        self.sanity_check()
-
-    def convert_to_list(self):
-        """
-        assume all elements are the same in the list
-        """
-
-        if self.python_list:
-            return
-
-        for k in self.per_frame_attrs:
-            list_mat = [i for i in getattr(self, k)]
-            setattr(self, k, list_mat)
-        self.python_list = True
 
     def reshape(self):
 
@@ -682,17 +654,17 @@ class PaddedTrajectory(Trajectory):
         return trj
 
     @staticmethod
-    def from_dict(dictionary, per_frame_attrs=None):
+    def from_dict(dictionary, per_frame_attrs=None, mapping=None):
         trj = PaddedTrajectory()
-        trj.copy_dict(dictionary, per_frame_attrs)
+        trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         return trj
 
     @staticmethod
-    def from_file(filename, per_frame_attrs=None):
+    def from_file(filename, per_frame_attrs=None, mapping=None):
         trj = PaddedTrajectory()
         if ".npz" == filename[-4:]:
             dictionary = dict(np.load(filename, allow_pickle=True))
-            trj.copy_dict(dictionary, per_frame_attrs)
+            trj.copy_dict(dictionary, per_frame_attrs, mapping=mapping)
         else:
             raise NotImplementedError(f"{filename} format not supported")
         return trj
