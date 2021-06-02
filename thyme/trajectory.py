@@ -9,18 +9,16 @@ from ase.atoms import Atoms
 from thyme.utils.cell import convert_cell_format
 from thyme.utils.save import sort_format
 from thyme.utils.atomic_symbols import species_to_order_label
+from ._key import *
 
 
 class Trajectory:
 
     per_frame_keys = [
-        "positions",
-        "forces",
-        "energies",
-        "cells",
-        "pe",
-        "label",
-        "labels",
+        POSITION, 
+        FORCE,
+        TOTAL_ENERGY,
+        CELL,
     ]
     metadata_keys = ["dipole_correction", "species", "nelm", "cutoff", "kpoints"]
     switch_keys = ["python_list", "empty"]
@@ -132,7 +130,7 @@ class Trajectory:
 
             self.per_frame_attrs = list(set(self.per_frame_attrs))
 
-            if self.cells.shape[1] != 3 and self.cells.shape[2] != 3:
+            if self.cell.shape[1] != 3 and self.cell.shape[2] != 3:
                 logging.error(
                     f"cell should be 3x3 : {frames} and nframes = {self.nframes}"
                 )
@@ -161,11 +159,12 @@ class Trajectory:
         setattr(self, name, item)
         logging.debug(f"add {name} to the system")
 
-        if "positions" in self.per_frame_attrs:
-            idx = self.per_frame_attrs.index("positions")
+        # always put POSITION as the first attribute
+        if POSITION in self.per_frame_attrs:
+            idx = self.per_frame_attrs.index(POSITION)
             if idx != 0:
                 temp = self.per_frame_attrs[0]
-                self.per_frame_attrs[0] = "positions"
+                self.per_frame_attrs[0] = POSITION
                 self.per_frame_attrs[idx] = temp
 
     def add_metadata(self, name, item):
@@ -232,13 +231,13 @@ class Trajectory:
 
         self.clean_containers()
 
-        nframes = dictionary["positions"].shape[0]
+        nframes = dictionary[POSITION].shape[0]
         self.nframes = nframes
 
-        if "cells" in dictionary:
-            dictionary["cells"] = convert_cell_format(nframes, dictionary["cells"])
+        if CELL in dictionary:
+            dictionary[CELL] = convert_cell_format(nframes, dictionary[CELL])
 
-        for k in ["positions", "forces"]:
+        for k in ["positions", FORCE]:
             if k in dictionary:
                 dictionary[k] = dictionary[k].reshape([nframes, -1, 3])
 
@@ -483,12 +482,12 @@ class Trajectory:
 
     def reshape(self):
 
-        if len(self.positions.shape) == 2:
-            self.positions = self.positions.reshape([self.nframes, self.natoms, 3])
-        if len(self.forces.shape) == 2:
-            self.forces = self.forces.reshape([self.nframes, self.natoms, 3])
-        if len(self.cells.shape) == 2:
-            self.cells = self.cells.reshape([self.nframes, 3, 3])
+        if len(self.position.shape) == 2:
+            self.position = self.position.reshape([self.nframes, self.natoms, 3])
+        if len(self.force.shape) == 2:
+            self.force = self.force.reshape([self.nframes, self.natoms, 3])
+        if len(self.cell.shape) == 2:
+            self.cell = self.cell.reshape([self.nframes, 3, 3])
 
         if self.natom > 2:
             for k in self.per_frame_attrs:
@@ -502,12 +501,12 @@ class Trajectory:
 
     def flatten(self):
 
-        if len(self.positions.shape) == 3:
-            self.positions = self.positions.reshape([self.nframes, -1])
-        if len(self.forces.shape) == 3:
-            self.forces = self.forces.reshape([self.nframes, -1])
-        if len(self.cells.shape) == 3:
-            self.cells = self.cells.reshape([self.nframes, 9])
+        if len(self.position.shape) == 3:
+            self.position = self.position.reshape([self.nframes, -1])
+        if len(self.force.shape) == 3:
+            self.force = self.force.reshape([self.nframes, -1])
+        if len(self.cell.shape) == 3:
+            self.cell = self.cell.reshape([self.nframes, 9])
 
     def skim(self, frame_list):
 
@@ -543,7 +542,7 @@ class Trajectory:
 
         self.species = np.array(self.species)[orders]
 
-        natom = self.positions.shape[1]
+        natom = self.position.shape[1]
 
         if natom != self.natom:
             logging.info(f"skim {self.natom} atoms to {natom} atoms")
@@ -633,7 +632,7 @@ class Trajectory:
             #     order, label = species_to_order_label(otrj.symbols[0][:self.natom])
 
             #     self.species = otrj.symbols[0][order]
-            #     self.natom = self.positions.shape[1]
+            #     self.natom = self.position.shape[1]
 
             #     for i in range(otrj.nframes):
             #         order, label = species_to_order_label(otrj.symbols[i][:self.natom])
@@ -838,7 +837,7 @@ class PaddedTrajectory(Trajectory):
                     item = np.vstack(item)
                     setattr(self, k, item)
 
-        natom = self.positions.shape[1]
+        natom = self.position.shape[1]
 
         if natom != self.natom:
             logging.info(f"skim {self.natom} atoms to {natom} atoms")
