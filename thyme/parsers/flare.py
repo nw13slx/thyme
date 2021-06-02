@@ -12,8 +12,7 @@ from thyme.trajectory import PaddedTrajectory, Trajectory
 from thyme.trajectories import Trajectories
 from thyme.routines.folders import find_folders, find_folders_matching
 
-
-def write(filename, trj):
+def to_strucs(trj):
     structures = []
     if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
         for i in range(trj.nframes):
@@ -36,7 +35,11 @@ def write(filename, trj):
                 energy=trj.energies[i],
             )
             structures += [structure]
+    return structures
 
+def write(filename, trj):
+
+    structures = to_strucs(trj)
     with open(filename, "wb") as fout:
         pickle.dump(structures, fout)
 

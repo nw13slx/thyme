@@ -11,7 +11,7 @@ import pickle
 
 from collections import Counter
 
-from thyme.trajectory import Trajectory, PaddedTrajectory
+from .trajectory import Trajectory, PaddedTrajectory
 from thyme.utils.atomic_symbols import species_to_order_label
 from thyme.utils.save import sort_format
 
@@ -103,6 +103,13 @@ class Trajectories:
             alldata[name] = trj.to_dict()
 
         return alldata
+
+    def to_trajectory(self):
+
+        init_trj = Trajectory()
+        for trj in self.alldata.values():
+            init_trj.add_trj(trj)
+        return init_trj
 
     def to_padded_trajectory(self):
 
