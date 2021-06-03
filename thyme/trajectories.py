@@ -74,6 +74,7 @@ class Trajectories:
     def save(self, name: str, format: str = None):
 
         if format in ["pickle", "npz"] or format is None:
+            logging.info("hello", list(self.to_dict().keys()))
             save_file(
                 self.to_dict(),
                 supported_formats={"npz": "npz", "pickle": "pickle"},
@@ -95,12 +96,7 @@ class Trajectories:
 
     def to_dict(self):
 
-        dictionary = {}
-
-        for name, trj in self.alltrjs.items():
-            dictionary[name] = trj.to_dict()
-
-        return dictionary
+        return {name: trj.to_dict() for name, trj in self.alltrjs.items()}
 
     @staticmethod
     def from_file(name: str, format: str = None, preserve_order: bool = False):

@@ -164,20 +164,16 @@ def parse_outcar_trj(folder, data_filter):
             FORCE: pos_force[converged_steps, :, 3:],
             TOTAL_ENERGY: total_energy[converged_steps],
             SPECIES: species,
-            PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL],
+            "electronic_steps": np.hstack(n_electronic_steps)[converged_steps],
+            PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, "electronic_steps"],
             FIXED_ATTRS: [SPECIES, NATOMS],
         }
     )
 
     trj = Trajectory.from_dict(data)
 
-    try:
-        accept_id = data_filter(trj)
-        trj.include_frames(accept_id)
-    except Exception as e:
-        logging.error(f"{e}")
-        logging.error("extxyz only accept batch filter work on paddedtrajectory")
-        raise RuntimeError("")
+    accept_id = data_filter(trj)
+    trj.include_frames(accept_id)
 
     trj.name = filename
 
@@ -205,8 +201,6 @@ def parse_vasprun_trj(folder, data_filter):
     data["cutoff"] = vasprun.incar["ENCUT"]
     data["dipole_correction"] = vasprun.parameters["LDIPOL"]
     species = vasprun.atomic_symbols
-    data["species"] = species
-    data["natom"] = len(vasprun.atomic_symbols)
     data["kpoints"] = vasprun.kpoints.kpts[0]
 
     positions = []
@@ -214,38 +208,36 @@ def parse_vasprun_trj(folder, data_filter):
     total_energy = []
     cells = []
     electronic_steps = []
-    for step in vasprun.ionic_steps:
-        electronic_steps += [len(step["electronic_steps"])]
-        positions += [step["structure"].cart_coords.reshape([-1])]
-        forces += [np.hstack(step["forces"])]
-        total_energy += [step["e_fr_energy"]]
-        cells += [step["structure"].lattice.matrix.reshape([-1])]
+    for istep, step in enumerate(vasprun.ionic_steps):
+        es = len(step["electronic_steps"])
+        if es < nelm:
+            electronic_steps += [es]
+            positions += [step["structure"].cart_coords.reshape([-1])]
+            forces += [np.hstack(step["forces"])]
+            total_energy += [step["e_fr_energy"]]
+            cells += [step["structure"].lattice.matrix.reshape([-1])]
+        else:
+            logging.info(f"skip unconverged step {istep}")
+
+    if len(electronic_steps) == 0:
+        return Trajectory()
 
     data.update(
-        dict(
-            cells=np.vstack(cells),
-            positions=np.vstack(positions),
-            forces=np.vstack(forces),
-            total_energy=np.hstack(total_energy),
-            species=species,
-        )
+        {
+            CELL: np.vstack(cells),
+            POSITION: np.vstack(positions),
+            FORCE: np.vstack(forces),
+            TOTAL_ENERGY: np.hstack(total_energy),
+            SPECIES: species,
+            "electronic_steps": np.hstack(electronic_steps),
+            PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, "electronic_steps"],
+            FIXED_ATTRS: [SPECIES, NATOMS],
+        }
     )
     trj = Trajectory.from_dict(data)
 
-    electronic_steps = np.hstack(electronic_steps)
-    accept_id = np.where(electronic_steps < nelm)[0]
-    reject_id = np.where(electronic_steps >= nelm)[0]
-    if len(accept_id) < trj.nframes:
-        logging.info(f"skip unconverged step {reject_id}")
+    accept_id = data_filter(trj)
     trj.include_frames(accept_id)
-
-    try:
-        accept_id = data_filter(trj)
-        trj.include_frames(accept_id)
-    except Exception as e:
-        logging.error(f"{e}")
-        logging.error("extxyz only accept batch filter work on paddedtrajectory")
-        raise RuntimeError("")
 
     trj.name = filename
 
