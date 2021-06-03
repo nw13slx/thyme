@@ -74,7 +74,6 @@ class Trajectories:
     def save(self, name: str, format: str = None):
 
         if format in ["pickle", "npz"] or format is None:
-            logging.info("hello", list(self.to_dict().keys()))
             save_file(
                 self.to_dict(),
                 supported_formats={"npz": "npz", "pickle": "pickle"},

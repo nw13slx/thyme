@@ -12,7 +12,7 @@ from os.path import isfile, isdir, dirname, realpath
 @contextlib.contextmanager
 def atomic_write(filename: Union[Path, str]):
     filename = Path(filename)
-    tmp_path = filename.parent / (f".tmp-{filename.name}~")
+    tmp_path = filename.parent / (f".tmp-{filename.name}")
     # Create the temp file
     open(tmp_path, "w").close()
     try:
@@ -23,7 +23,6 @@ def atomic_write(filename: Union[Path, str]):
     finally:
         # clean up
         tmp_path.unlink(missing_ok=True)
-
 
 def save_file(
     item, supported_formats: dict, filename: str, enforced_format: str = None
