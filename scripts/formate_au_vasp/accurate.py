@@ -52,13 +52,13 @@ def main():
 
     for name, trj in trjs.alldata.items():
         frames = sort_e(trj)
-        trj.filter_frames(frames)
+        trj.include_frames(frames)
         logging.info(
             f"{repr(trj)} min and max E difference {np.max(trj.energies)-np.min(trj.energies)}"
         )
         mine = trj.energies[0]
         keep_id = np.where(trj.energies < (mine + 40))[0]
-        trj.filter_frames(keep_id)
+        trj.include_frames(keep_id)
     trjs.save("trjs_remove_40up_padded_mat.npz")
     multiple_plots_e(trjs, prefix="40eV")
     write_trjs("all.xyz", trjs)

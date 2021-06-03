@@ -29,13 +29,13 @@ def main():
     for name, trj in trjs.alldata.items():
         # sort by energy
         frames = sort_e(trj)
-        trj.filter_frames(frames)
+        trj.include_frames(frames)
         mine = trj.energies[0]
         keep_id = np.where(trj.energies < (mine + 20))[0]
-        mineT.add_trj(trj.skim([-1]))
+        mineT.add_trj(trj.extract_frames([-1]))
     # multiple_plots_e(trjs, prefix='alldata')
     # frames = sort_e(mineT)
-    # mineT.filter_frames(frames)
+    # mineT.include_frames(frames)
     mineT.save("20eV.pickle")
     # write("mine.xyz", mineT)
     write_trjs("all.xyz", trjs)

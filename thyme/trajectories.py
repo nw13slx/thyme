@@ -62,7 +62,7 @@ class Trajectories:
 
     def save(self, name: str, format: str = None):
 
-        if format in ["pickle", "npz"]:
+        if format in ["pickle", "npz"] or format is None:
             save_file(
                 self.to_dict(),
                 supported_formats={"npz": "npz", "pickle": "pickle"},

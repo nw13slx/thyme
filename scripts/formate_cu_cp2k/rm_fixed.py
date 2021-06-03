@@ -41,7 +41,7 @@ def main():
     trjs = Trajectories.from_padded_trajectory(trjs, preserve_order=False)
     for i, trj in trjs.alldata.items():
         ids = rm_duplicate(trj)
-        trj.filter_frames(accept_id=ids)
+        trj.include_frames(accept_id=ids)
         write(f"vmd{i}.xyz", trj)
 
     trjs.save("clean_up.padded_mat.npz")

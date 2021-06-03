@@ -40,7 +40,7 @@ for spe_list in all_trjs[0].alldata:
     # collect committee variation
     pred = []
     for i, trjs in enumerate(all_trjs):
-        trjs.alldata[spe_list].filter_frames(filter_id)
+        trjs.alldata[spe_list].include_frames(filter_id)
         pred += [trjs.alldata[spe_list].pred.reshape([-1])]
         if i == 0:
             ref = trjs.alldata[spe_list].forces.reshape([-1])

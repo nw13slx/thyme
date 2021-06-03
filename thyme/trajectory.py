@@ -458,7 +458,7 @@ class Trajectory(object):
         nlines = self.position.shape[1]
 
         if nlines != self.nlines:
-            logging.info(f"skim {self.nlines} lines to {nlines} lines")
+            logging.info(f"extract_frames {self.nlines} lines to {nlines} lines")
             self.nlines = nlines
 
         self.sanity_check()

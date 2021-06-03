@@ -66,18 +66,18 @@ for i, trj in enumerate(original.alldata.values()):
                 # for idx in e_id:
                 #     if idx in test_id:
                 #         test_id.remove(idx)
-                new_trj = trj.skim(test_id)
+                new_trj = trj.extract_frames(test_id)
                 testdata[trj.name] = new_trj
                 alle += [new_trj.energies]
                 count_test += len(test_id)
 
-        new_trj = trj.skim(select_id)
+        new_trj = trj.extract_frames(select_id)
         traindata[trj.name] = new_trj
         alle += [new_trj.energies]
         count += len(select_id)
     elif count_test < ori_test:
         test_id = np.arange(np.min([trj.nframes, ori_test - count_test]))
-        new_trj = trj.skim(test_id)
+        new_trj = trj.extract_frames(test_id)
         testdata[trj.name] = new_trj
         alle += [new_trj.energies]
         count_test += len(test_id)
@@ -131,7 +131,7 @@ for idf, filename in enumerate(new_files):
             train_id = sorted_id[-lower_bound::2]
             test_id = sorted_id[-lower_bound + 1 :: 2]
 
-            new_trj = trj.skim(train_id)
+            new_trj = trj.extract_frames(train_id)
             if len(train_id) > 0:
                 traindata[trj.name + "new"] = new_trj
                 logging.info(f"add to train: configs with err {err[train_id]}")
@@ -139,7 +139,7 @@ for idf, filename in enumerate(new_files):
                     f"add to train: configs with energy {trj.energies[train_id]}"
                 )
 
-            new_trj2 = trj.skim(test_id)
+            new_trj2 = trj.extract_frames(test_id)
             if len(test_id) > 0:
                 testdata[trj.name + "new"] = new_trj2
                 logging.info(f"add to test: configs with err {err[test_id]}")

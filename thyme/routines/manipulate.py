@@ -6,7 +6,7 @@ def replicate(trj, expand: tuple = (1, 1, 1)):
 
     new_trj = Trajectory()
     for idf in range(len(trj)):
-        _trj = trj.skim([idf])
+        _trj = trj.extract_frames([idf])
         cell = _trj.cells[0]
         new_positions = []
         new_cells = []

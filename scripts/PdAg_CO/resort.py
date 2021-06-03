@@ -19,11 +19,11 @@ testdata = test.alldata
 for i, trj in enumerate(trjs.alldata.values()):
     sorted_id = sort_by_force(trj, "pred", "O")
     if i == 0:
-        new_trj = trj.skim(sorted_id[:-20:3])
-        new_trj2 = trj.skim(sorted_id[1:-20:3])
+        new_trj = trj.extract_frames(sorted_id[:-20:3])
+        new_trj2 = trj.extract_frames(sorted_id[1:-20:3])
     else:
-        new_trj = trj.skim(sorted_id[:-50:30])
-        new_trj2 = trj.skim(sorted_id[1:-50:30])
+        new_trj = trj.extract_frames(sorted_id[:-50:30])
+        new_trj2 = trj.extract_frames(sorted_id[1:-50:30])
     traindata[trj.name] = new_trj
     testdata[trj.name] = new_trj2
 

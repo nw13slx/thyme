@@ -27,11 +27,11 @@ def main():
         keep_id = np.where(trj.energies < (mine + 20))[0]
         remove = np.where(trj.energies >= (mine + 20))[0]
         print("ditch", trj.energies[remove])
-        trj.filter_frames(keep_id)
+        trj.include_frames(keep_id)
         print("keep", trj.energies)
         write("result_pos/" + name, trj)
 
-        # trj.filter_frames(keep_id)
+        # trj.include_frames(keep_id)
 
 
 if __name__ == "__main__":

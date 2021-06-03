@@ -48,5 +48,5 @@ for spe_list in all_trjs[0].alldata:
     trj.pred_var = pred_var
     trj.per_frame_attrs += ["pred_var"]
     sort_id, maxf = sort_by_force(trj, "pred_var", "Au")
-    trj.filter_frames(sort_id[-200:])
+    trj.include_frames(sort_id[-200:])
     write(f"filter_{spe_list}.xyz", trj)

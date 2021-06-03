@@ -62,7 +62,7 @@ for spe_list in all_trjs[0].alldata:
         )
         write_extxyz(f"highlight_{spe_list}.xyz", structure, append=True)
 
-    trj.filter_frames(sort_id[-100:])
+    trj.include_frames(sort_id[-100:])
     write_single_xyz(trj, f"filter_{spe_list}")
 
 # all_trjs[0].save("filtered.poscar")
