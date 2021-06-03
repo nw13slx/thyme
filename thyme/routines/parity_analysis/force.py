@@ -90,7 +90,7 @@ def large_force_energy(forces, total_energy, pred, prefix, symbol):
 def multiple_plots(trajectories, pred_label="pred", prefix=""):
 
     alldata = {}
-    for trj in trajectories.alldata.values():
+    for trj in trajectories.alltrjs.values():
         data = single_plot(
             trj.forces, getattr(trj, pred_label), prefix + trj.name, trj.species
         )

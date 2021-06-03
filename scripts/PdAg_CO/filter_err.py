@@ -25,11 +25,11 @@ skips = {
 
 trjs = Trajectories.from_file("trjs.pickle")
 train = Trajectories()
-traindata = train.alldata
+traindata = train.alltrjs
 test = Trajectories()
-testdata = test.alldata
+testdata = test.alltrjs
 
-for i, trj in enumerate(trjs.alldata.values()):
+for i, trj in enumerate(trjs.alltrjs.values()):
     if "O" not in trj.species:
         sorted_id = sort_by_force(trj, "pred", "Pd")
     else:

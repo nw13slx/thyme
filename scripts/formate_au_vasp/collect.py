@@ -29,7 +29,7 @@ def main():
     print(repr(trjs))
 
     mineT = Trajectories()
-    for name, trj in trjs.alldata.items():
+    for name, trj in trjs.alltrjs.items():
         # sort by energy
         frames = sort_e(trj)
         trj.include_frames(frames)

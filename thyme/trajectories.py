@@ -111,7 +111,7 @@ class Trajectories:
         obj = load_file(
             supported_formats={"npz": "npz", "pickle": "pickle"},
             filename=name,
-            enforced_format="npz",
+            enforced_format=format,
         )
         if isinstance(obj, dict):
             return Trajectories.from_dict(obj)

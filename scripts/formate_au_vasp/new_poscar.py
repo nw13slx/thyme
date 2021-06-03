@@ -22,7 +22,7 @@ def main():
     trjs.save("all_data_merged.pickle")
 
     mineT = Trajectory()
-    for name, trj in trjs.alldata.items():
+    for name, trj in trjs.alltrjs.items():
         mine = np.min(trj.total_energy)
         keep_id = np.where(trj.total_energy < (mine + 20))[0]
         remove = np.where(trj.total_energy >= (mine + 20))[0]

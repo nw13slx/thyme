@@ -37,13 +37,13 @@ new_files = ["ref2/result_1.npz", "ref1/result_1.npz", "ref3/result_1.npz"]
 
 train = Trajectories()
 test = Trajectories()
-traindata = train.alldata
-testdata = test.alldata
+traindata = train.alltrjs
+testdata = test.alltrjs
 
 count = 0
 count_test = 0
 alle = []
-for i, trj in enumerate(original.alldata.values()):
+for i, trj in enumerate(original.alltrjs.values()):
     if count < ori_train:
         select_id = np.arange(np.min([trj.nframes, ori_train - count]))
         e_id = np.where(trj.total_energy > 0)[0]
@@ -91,7 +91,7 @@ for idf, filename in enumerate(new_files):
     )
     nsample = nsamples[idf]
 
-    for i, trj in enumerate(trjs.alldata.values()):
+    for i, trj in enumerate(trjs.alltrjs.values()):
         if "O" in trj.species:
 
             logging.info(f"{i} {trj}")

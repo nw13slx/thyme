@@ -14,5 +14,5 @@ def write_single_xyz(trj, prefix):
 
 def write_xyzs(trjs, prefix=""):
     """"""
-    for trj in trjs.alldata.values():
+    for trj in trjs.alltrjs.values():
         write_single_xyz(trj, f"{prefix}{trj.name}")

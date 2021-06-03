@@ -79,5 +79,5 @@ def write(name, trj, color_key=""):
 
 
 def write_trjs(name, trjs):
-    for i, trj in trjs.alldata.items():
+    for i, trj in trjs.alltrjs.items():
         write(f"{trj.name}_{name}", trj)

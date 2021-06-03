@@ -29,10 +29,10 @@ for filename in glob("result*.npz"):
     )
     all_trjs += [trjs]
 
-for spe_list in all_trjs[0].alldata:
+for spe_list in all_trjs[0].alltrjs:
 
     # remove unphysicsl configs
-    filter_id = np.where(trjs.alldata[spe_list].total_energy < 0)[0]
+    filter_id = np.where(trjs.alltrjs[spe_list].total_energy < 0)[0]
 
     fig_m, axs_m = plt.subplots(1, 2, figsize=(6.8, 2.5))
     fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
@@ -40,12 +40,12 @@ for spe_list in all_trjs[0].alldata:
     # collect committee variation
     pred = []
     for i, trjs in enumerate(all_trjs):
-        trjs.alldata[spe_list].include_frames(filter_id)
-        pred += [trjs.alldata[spe_list].pred.reshape([-1])]
+        trjs.alltrjs[spe_list].include_frames(filter_id)
+        pred += [trjs.alltrjs[spe_list].pred.reshape([-1])]
         if i == 0:
-            ref = trjs.alldata[spe_list].forces.reshape([-1])
+            ref = trjs.alltrjs[spe_list].forces.reshape([-1])
 
-    nframe = all_trjs[0].alldata[spe_list].pred.shape[0]
+    nframe = all_trjs[0].alltrjs[spe_list].pred.shape[0]
     skip = int(np.max([np.ceil(ref.shape[0] / 2000), 1]))
     pred = np.vstack(pred)
     pred_var = np.sqrt(np.var(pred, axis=0))

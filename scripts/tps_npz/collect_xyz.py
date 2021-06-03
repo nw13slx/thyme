@@ -17,7 +17,7 @@ def main():
     folders = get_childfolders("./", include_xyz=True)
     trjs = parse_folders_trjs(folders, pack_folder_trj, None, "results.pickle")
 
-    for i, trj in trjs.alldata.items():
+    for i, trj in trjs.alltrjs.items():
 
         labeling(trj)
 

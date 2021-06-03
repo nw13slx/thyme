@@ -25,7 +25,7 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
     nframes = 0
     reference_tally = 0
     prediction_tally = 0
-    for trj in trajectories.alldata.values():
+    for trj in trajectories.alltrjs.values():
 
         reference = trj.total_energy
         prediction = getattr(trj, pred_label)
@@ -37,7 +37,7 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
 
     fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
     data = []
-    for i, trj in enumerate(trajectories.alldata.values()):
+    for i, trj in enumerate(trajectories.alltrjs.values()):
 
         reference = trj.total_energy.reshape([-1])
         prediction = getattr(trj, pred_label).reshape([-1])

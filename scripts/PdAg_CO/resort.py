@@ -12,11 +12,11 @@ logging.getLogger().addHandler(logging.StreamHandler())
 
 trjs = Trajectories.from_file("trjs.pickle")
 train = Trajectories()
-traindata = train.alldata
+traindata = train.alltrjs
 test = Trajectories()
-testdata = test.alldata
+testdata = test.alltrjs
 
-for i, trj in enumerate(trjs.alldata.values()):
+for i, trj in enumerate(trjs.alltrjs.values()):
     sorted_id = sort_by_force(trj, "pred", "O")
     if i == 0:
         new_trj = trj.extract_frames(sorted_id[:-20:3])

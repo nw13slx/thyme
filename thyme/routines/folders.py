@@ -18,7 +18,7 @@ def parse_merged_folders_trjs(
 
     count = 0
     trjs = Trajectories()
-    alldata = trjs.alldata
+    alldata = trjs.alltrjs
     for folder in folders:
 
         if folder == "./":
@@ -70,7 +70,7 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, ckpt_filename=""):
 
     count = 0
     trjs = Trajectories()
-    alldata = trjs.alldata
+    alldata = trjs.alltrjs
     for folder in folders:
 
         if folder == "./":

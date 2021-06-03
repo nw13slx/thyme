@@ -14,7 +14,7 @@ dictionary = dict(np.load("all_results.npz", allow_pickle=True))
 trjs = Trajectories.from_padded_matrices(dictionary)
 trjs.save("trjs.pickle")
 
-for trj in trjs.alldata.values():
+for trj in trjs.alltrjs.values():
     print(trj)
 
 multiple_plots_e(trjs, pred_label="pe")

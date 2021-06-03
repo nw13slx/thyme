@@ -94,7 +94,7 @@ def single_plot(forces, pred, prefix, symbol):
 def multiple_plots(trajectories, pred_label="pred", prefix=""):
 
     alldata = {}
-    for trj in trajectories.alldata.values():
+    for trj in trajectories.alltrjs.values():
         data = single_plot(
             trj.forces, getattr(trj, pred_label), f"{prefix}{trj.name}", trj.species
         )

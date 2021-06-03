@@ -25,13 +25,13 @@ for filename in glob("result*.npz"):
     trjs = Trajectories.from_file(filename, format="padded_mat.npz")
     all_trjs += [trjs]
 
-for spe_list in all_trjs[0].alldata:
+for spe_list in all_trjs[0].alltrjs:
     pred = []
 
     for i, trjs in enumerate(all_trjs):
-        pred += [trjs.alldata[spe_list].pred.reshape([-1])]
+        pred += [trjs.alltrjs[spe_list].pred.reshape([-1])]
 
-    trj = all_trjs[0].alldata[spe_list]
+    trj = all_trjs[0].alltrjs[spe_list]
     nframe = trj.pred.shape[0]
     Au_id = np.where(np.array(trj.species, dtype=str) == "Au")[0]
 

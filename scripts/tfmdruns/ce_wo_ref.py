@@ -27,12 +27,12 @@ for filename in glob("result*.npz"):
     all_trjs += [trjs]
 
 
-for spe_list in all_trjs[0].alldata:
+for spe_list in all_trjs[0].alltrjs:
     pred = []
-    nframe = all_trjs[0].alldata[spe_list].pred.shape[0]
-    species = np.array(all_trjs[0].alldata[spe_list].species, dtype=str)
+    nframe = all_trjs[0].alltrjs[spe_list].pred.shape[0]
+    species = np.array(all_trjs[0].alltrjs[spe_list].species, dtype=str)
     for i, trjs in enumerate(all_trjs):
-        pred += [trjs.alldata[spe_list].pred.reshape([-1])]
+        pred += [trjs.alltrjs[spe_list].pred.reshape([-1])]
 
     pred = np.vstack(pred)
     pred_var = np.sqrt(np.var(pred, axis=0))

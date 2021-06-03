@@ -8,7 +8,7 @@ plt.switch_backend("agg")
 
 
 def multiple_plots(trajectories, label="total_energy", prefix="", xlabel="Energy (eV)"):
-    for i, trj in enumerate(trajectories.alldata.values()):
+    for i, trj in enumerate(trajectories.alltrjs.values()):
         single_plot(trj, label, prefix, xlabel)
 
 

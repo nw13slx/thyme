@@ -40,7 +40,7 @@ def main():
     trjs.save("trjs_padded_mat.npz")
     multiple_plots_e(trjs, prefix="alldata")
 
-    for name, trj in trjs.alldata.items():
+    for name, trj in trjs.alltrjs.items():
         frames = sort_e(trj)
         trj.include_frames(frames)
         logging.info(

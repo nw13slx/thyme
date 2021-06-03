@@ -9,7 +9,7 @@ plt.switch_backend("agg")
 
 
 def multiple_plots(trajectories, prefix=""):
-    for i, trj in enumerate(trajectories.alldata.values()):
+    for i, trj in enumerate(trajectories.alltrjs.values()):
         single_plot(trj, prefix)
 
 

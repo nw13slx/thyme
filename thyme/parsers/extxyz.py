@@ -201,7 +201,7 @@ def write(name, trj):
 
 
 def write_trjs(name, trjs, joint=True):
-    for i, trj in trjs.alldata.items():
+    for i, trj in trjs.alltrjs.items():
         if joint:
             write(name, trj)
         else:
