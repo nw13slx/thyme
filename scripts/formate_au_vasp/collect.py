@@ -19,14 +19,10 @@ logging.getLogger().addHandler(logging.StreamHandler())
 def main():
 
     folders = get_childfolders("./")
-    trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.pickle")
-    # trjs.save("raw.pickle")
-
-    print(repr(trjs))
+    trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.npz")
 
     trjs.merge()
-    trjs.save("all_data_merge.pickle")
-    print(repr(trjs))
+    trjs.save("all_data_merge.npz")
 
     mineT = Trajectories()
     for name, trj in trjs.alltrjs.items():
@@ -39,7 +35,7 @@ def main():
     # multiple_plots_e(trjs, prefix='alldata')
     # frames = sort_e(mineT)
     # mineT.include_frames(frames)
-    mineT.save("20eV.pickle")
+    mineT.save("20eV.npz")
     write_trjs("all.xyz", trjs, joint=True)
 
 

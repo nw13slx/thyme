@@ -182,8 +182,8 @@ def posforce_regex(filename):
     return string, index
 
 
-def write(name, trj):
-    if isfile(name):
+def write(name, trj, append=False):
+    if isfile(name) and not append:
         remove(name)
     for i in range(trj.nframes):
         definition = {"pbc": False}
@@ -201,8 +201,10 @@ def write(name, trj):
 
 
 def write_trjs(name, trjs, joint=True):
+    if isfile(name) and joint:
+        remove(name)
     for i, trj in trjs.alltrjs.items():
         if joint:
-            write(name, trj)
+            write(name, trj, append=True)
         else:
             write(f"{trj.name}_{name}", trj)
