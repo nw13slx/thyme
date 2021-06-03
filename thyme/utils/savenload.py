@@ -24,6 +24,7 @@ def atomic_write(filename: Union[Path, str]):
         # clean up
         tmp_path.unlink(missing_ok=True)
 
+
 def save_file(
     item, supported_formats: dict, filename: str, enforced_format: str = None
 ):
@@ -62,7 +63,7 @@ def save_file(
         elif format == "npz":
             import numpy as np
 
-            np.savez(write_to, item)
+            np.savez(write_to, **item)
         else:
             raise NotImplementedError(
                 f"Output format {format} not supported:"
