@@ -44,10 +44,10 @@ def main():
         frames = sort_e(trj)
         trj.include_frames(frames)
         logging.info(
-            f"{repr(trj)} min and max E difference {np.max(trj.energies)-np.min(trj.energies)}"
+            f"{repr(trj)} min and max E difference {np.max(trj.total_energy)-np.min(trj.total_energy)}"
         )
-        mine = trj.energies[0]
-        keep_id = np.where(trj.energies < (mine + 40))[0]
+        mine = trj.total_energy[0]
+        keep_id = np.where(trj.total_energy < (mine + 40))[0]
         trj.include_frames(keep_id)
     trjs.save("trjs_remove_10up_padded_mat.npz")
     multiple_plots_e(trjs, prefix="40eV")

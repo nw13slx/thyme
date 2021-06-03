@@ -23,12 +23,12 @@ def main():
 
     mineT = Trajectory()
     for name, trj in trjs.alldata.items():
-        mine = np.min(trj.energies)
-        keep_id = np.where(trj.energies < (mine + 20))[0]
-        remove = np.where(trj.energies >= (mine + 20))[0]
-        print("ditch", trj.energies[remove])
+        mine = np.min(trj.total_energy)
+        keep_id = np.where(trj.total_energy < (mine + 20))[0]
+        remove = np.where(trj.total_energy >= (mine + 20))[0]
+        print("ditch", trj.total_energy[remove])
         trj.include_frames(keep_id)
-        print("keep", trj.energies)
+        print("keep", trj.total_energy)
         write("result_pos/" + name, trj)
 
         # trj.include_frames(keep_id)

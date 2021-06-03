@@ -78,8 +78,8 @@ def extxyz_to_trjs(filename, data_filter=None):
             + sfl_num
             + sfl_num
             + r"\"",
-            "free_energies": r"free_energy=" + fl_num,
-            "energies": r"energy=" + fl_num,
+            "free_total_energy": r"free_energy=" + fl_num,
+            "total_energy": r"energy=" + fl_num,
             "posforce": string,
             "symbols": r"^([a-zA-Z]+)\s",
         },
@@ -88,12 +88,12 @@ def extxyz_to_trjs(filename, data_filter=None):
     natoms = np.array(d["natoms"], dtype=int).reshape([-1])
     # logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
 
-    if len(d["free_energies"]) > 0:
-        energies = np.array(d["free_energies"], dtype=float).reshape([-1])
-        logging.debug("use free_energies tag for energies")
+    if len(d["free_total_energy"]) > 0:
+        total_energy = np.array(d["free_total_energy"], dtype=float).reshape([-1])
+        logging.debug("use free_total_energy tag for total_energy")
     else:
-        energies = np.array(d["energies"], dtype=float).reshape([-1])
-        logging.debug("use energies tag for energies")
+        total_energy = np.array(d["total_energy"], dtype=float).reshape([-1])
+        logging.debug("use total_energy tag for total_energy")
 
     cell = np.array(d["cells"], dtype=float).reshape([-1, 3, 3])
 
@@ -115,7 +115,7 @@ def extxyz_to_trjs(filename, data_filter=None):
         trj = Trajectory.from_dict({
             POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
             FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
-            TOTAL_ENERGY: energies[[i]],
+            TOTAL_ENERGY: total_energy[[i]],
             CELL: cells[[i]],
             SPECIES: species[counter : counter + natom].reshape([1, natom]),
             PER_FRAME_ATTRS:[POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES]
@@ -196,7 +196,7 @@ def write(name, trj):
             {"forces": trj.forces[i]} if "forces" in trj.per_frame_attrs else {}
         )
         calc = SinglePointCalculator(
-            structure, energy=trj.energies[i], **definition
+            structure, energy=trj.total_energy[i], **definition
         )
         structure.calc = calc
         write_extxyz(name, structure, append=True)

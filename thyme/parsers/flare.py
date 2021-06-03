@@ -23,7 +23,7 @@ def to_strucs(trj):
                 species=trj.species[:natom],
                 positions=trj.positions[i][:natom].reshape([-1, 3]),
                 forces=trj.forces[i][:natom].reshape([-1, 3]),
-                energy=trj.energies[i],
+                energy=trj.total_energy[i],
             )
             structures += [structure]
     elif isinstance(trj, PaddedTrajectory):
@@ -33,7 +33,7 @@ def to_strucs(trj):
                 species=trj.symbols[i],
                 positions=trj.positions[i].reshape([-1, 3]),
                 forces=trj.forces[i].reshape([-1, 3]),
-                energy=trj.energies[i],
+                energy=trj.total_energy[i],
             )
             structures += [structure]
     return structures
@@ -49,9 +49,9 @@ def write(filename, trj):
 
 
 def from_file(filename, as_trajectory=True):
-    per_frame_attrs = ["energies", "forces", "positions", "stresses"]
+    per_frame_attrs = ["total_energy", "forces", "positions", "stresses"]
     mapping = dict(
-        energy="energies",
+        energy="total_energy",
         forces="forces",
         nat="natom",
         species_labels="species",
@@ -71,7 +71,7 @@ def from_file(filename, as_trajectory=True):
             Trajectory.from_dict(
                 new_dict,
                 per_frame_attrs=[
-                    "energies",
+                    "total_energy",
                     "forces",
                     "positions",
                     "stresses",
@@ -109,7 +109,7 @@ def add_to_model(trj, gp_model, pre_train_env_per_species):
         species = data["species"]
         positions = data["positions"]
         forces = data["forces"]
-        energies = data["pe"]
+        total_energy = data["pe"]
         nframe = data["pe"].shape[0]
         natom = data["positions"].shape[1] // 3
 
@@ -132,7 +132,7 @@ def add_to_model(trj, gp_model, pre_train_env_per_species):
                 species,
                 xyz,
                 forces=forces[i].reshape([-1, 3]),
-                energy=energies[i],
+                energy=total_energy[i],
             )
 
             if i in list_to_train:

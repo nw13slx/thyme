@@ -57,14 +57,14 @@ def main():
 
     positions = []
     cells = []
-    energies = []
+    total_energy = []
     forces = []
     symbols = []
     natoms = []
 
     re_positions = []
     re_cells = []
-    re_energies = []
+    re_total_energy = []
     re_forces = []
     re_symbols = []
     re_natoms = []
@@ -74,7 +74,7 @@ def main():
         data = np.load(npz, allow_pickle=True)
         label = npz[4:-4]
 
-        max_energies = np.argsort(data["energies"])
+        max_total_energy = np.argsort(data["total_energy"])
         skip = float(l[1])
         remove_top = int(l[2])
         nframes = data["cells"].shape[0]
@@ -82,7 +82,7 @@ def main():
         if remove_top == 0:
             if skip >= 1:
                 skip = int(skip)
-                idlist = max_energies[::skip]
+                idlist = max_total_energy[::skip]
                 if (nframes - 1) not in idlist:
                     idlist = np.hstack([idlist, [nframes - 1]])
                 remain_list = set(np.arange(nframes)) - set(idlist)
@@ -94,13 +94,13 @@ def main():
         else:
             if skip >= 1:
                 skip = int(skip)
-                idlist = max_energies[:-remove_top:skip]
-                remain_list = set(max_energies[:-remove_top]) - set(idlist)
+                idlist = max_total_energy[:-remove_top:skip]
+                remain_list = set(max_total_energy[:-remove_top]) - set(idlist)
             else:
                 nframes0 = nframes - remove_top
                 portion = int(np.floor(nframes0 * skip))
                 logging.info(f"fractional skip, total {nframes0}, portion {portion}")
-                idlist = max_energies[np.random.permutation(nframes0)]
+                idlist = max_total_energy[np.random.permutation(nframes0)]
                 remain_list = idlist[portion:]
                 idlist = idlist[:portion]
 
@@ -123,7 +123,7 @@ def main():
             fo[:natom, :] += data["forces"][index].reshape([-1, 3])
             forces += [fo.reshape([-1])]
 
-            energies += [data["energies"][index]]
+            total_energy += [data["total_energy"][index]]
 
             symbols += [symbol]
             natoms += [natom]
@@ -147,7 +147,7 @@ def main():
             fo[:natom, :] += data["forces"][index].reshape([-1, 3])
             re_forces += [fo.reshape([-1])]
 
-            re_energies += [data["energies"][index]]
+            re_total_energy += [data["total_energy"][index]]
 
             re_symbols += [symbol]
             re_natoms += [natom]
@@ -161,7 +161,7 @@ def main():
     cells = np.vstack(cells)
     symbols = np.vstack(symbols)
     natoms = np.hstack(natoms)
-    energies = np.hstack(energies)
+    total_energy = np.hstack(total_energy)
 
     nframes = cells.shape[0]
     nframes0 = cells.shape[0]
@@ -171,14 +171,14 @@ def main():
     cells = cells[permute_id]
     symbols = symbols[permute_id]
     natoms = natoms[permute_id]
-    energies = energies[permute_id]
+    total_energy = total_energy[permute_id]
 
     re_positions = np.vstack(re_positions)
     re_forces = np.vstack(re_forces)
     re_cells = np.vstack(re_cells)
     re_symbols = np.vstack(re_symbols)
     re_natoms = np.hstack(re_natoms)
-    re_energies = np.hstack(re_energies)
+    re_total_energy = np.hstack(re_total_energy)
 
     nframes = re_cells.shape[0]
     permute_id = np.random.permutation(nframes)
@@ -187,7 +187,7 @@ def main():
     re_cells = re_cells[permute_id]
     re_symbols = re_symbols[permute_id]
     re_natoms = re_natoms[permute_id]
-    re_energies = re_energies[permute_id]
+    re_total_energy = re_total_energy[permute_id]
 
     logging.info(
         f"save as {nframes0}_frames.npz with {nframes0} training and {nframes} validation"
@@ -199,7 +199,7 @@ def main():
         cells=np.vstack([cells, re_cells]),
         symbols=np.vstack([symbols, re_symbols]),
         natoms=np.hstack([natoms, re_natoms]),
-        energies=np.hstack([energies, re_energies]),
+        total_energy=np.hstack([total_energy, re_total_energy]),
     )
 
 

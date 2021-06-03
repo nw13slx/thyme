@@ -30,8 +30,8 @@ def main():
         # sort by energy
         frames = sort_e(trj)
         trj.include_frames(frames)
-        mine = trj.energies[0]
-        keep_id = np.where(trj.energies < (mine + 20))[0]
+        mine = trj.total_energy[0]
+        keep_id = np.where(trj.total_energy < (mine + 20))[0]
         mineT.add_trj(trj.extract_frames([-1]))
     # multiple_plots_e(trjs, prefix='alldata')
     # frames = sort_e(mineT)

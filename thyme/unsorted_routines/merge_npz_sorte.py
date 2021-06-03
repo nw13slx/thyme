@@ -36,7 +36,7 @@ def main():
     cells = {}
     symbols = {}
     atomic_number = {}
-    energies = {}
+    total_energy = {}
     ele_to_N = {"Ag": 46, "Pd": 47, "C": 6, "O": 8}
     natoms = {}
     symbols = {}
@@ -52,7 +52,7 @@ def main():
 
         o_pos = data["positions"]
         o_for = data["forces"]
-        o_e = data["energies"]
+        o_e = data["total_energy"]
         o_c = data["cells"]
         o_spe = metadata["species"]
         o_atomic = []
@@ -80,7 +80,7 @@ def main():
             positions[label] = []
             forces[label] = []
             cells[label] = []
-            energies[label] = []
+            total_energy[label] = []
             atomic_number[label] = []
             symbols[label] = []
             natoms[label] = []
@@ -88,7 +88,7 @@ def main():
         positions[label] += [o_pos]
         forces[label] += [o_for]
         cells[label] += [o_c]
-        energies[label] += [o_e]
+        total_energy[label] += [o_e]
         atomic_number[label] += [np.hstack([o_atomic] * nframes).reshape([nframes, -1])]
         symbols[label] += [np.hstack([o_spe] * nframes).reshape([nframes, -1])]
         natoms[label] += [[natom] * nframes]
@@ -101,7 +101,7 @@ def main():
             for matrix in [
                 "positions",
                 "forces",
-                "energies",
+                "total_energy",
                 "natoms",
                 "cells",
                 "symbols",
@@ -113,13 +113,13 @@ def main():
 
         positions[label] = np.vstack(positions[label])
         forces[label] = np.vstack(forces[label])
-        energies[label] = np.hstack(energies[label])
+        total_energy[label] = np.hstack(total_energy[label])
         natoms[label] = np.hstack(natoms[label])
         cells[label] = np.vstack(cells[label])
         symbols[label] = np.vstack(symbols[label])
         atomic_number[label] = np.vstack(atomic_number[label])
 
-        sort_id = np.argsort(energies[label])
+        sort_id = np.argsort(total_energy[label])
 
         task = "lowe"
         for matrix in [
@@ -128,7 +128,7 @@ def main():
             "cells",
             "symbols",
             "atomic_number",
-            "energies",
+            "total_energy",
             "natoms",
         ]:
             d = locals()[matrix][label]
@@ -143,7 +143,7 @@ def main():
             "cells",
             "symbols",
             "atomic_number",
-            "energies",
+            "total_energy",
             "natoms",
         ]:
             d = locals()[matrix][label]
@@ -151,8 +151,8 @@ def main():
                 all_data[task][dataset][matrix] += [d[sort_id[i :: stride * 3]]]
 
         logging.info(
-            f"{label}: {positions[label].shape}, {energies[label][sort_id[0]]}"
-            f"{energies[label][sort_id[-1]]}"
+            f"{label}: {positions[label].shape}, {total_energy[label][sort_id[0]]}"
+            f"{total_energy[label][sort_id[-1]]}"
         )
 
     for task in ["lowe", "alle"]:
@@ -161,7 +161,7 @@ def main():
                 all_data[task][dataset][matrix] = np.vstack(
                     all_data[task][dataset][matrix]
                 )
-            for matrix in ["energies", "natoms"]:
+            for matrix in ["total_energy", "natoms"]:
                 all_data[task][dataset][matrix] = np.hstack(
                     all_data[task][dataset][matrix]
                 )
@@ -177,7 +177,7 @@ def main():
                     all_data[task]["test"][matrix],
                 ]
             )
-        for matrix in ["energies", "natoms"]:
+        for matrix in ["total_energy", "natoms"]:
             save_data[matrix] = np.hstack(
                 [
                     all_data[task]["train"][matrix],

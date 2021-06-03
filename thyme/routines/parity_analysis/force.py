@@ -11,7 +11,7 @@ import matplotlib.cm as cmx
 plt.switch_backend("agg")
 
 
-def large_force_energy(forces, energies, pred, prefix, symbol):
+def large_force_energy(forces, total_energy, pred, prefix, symbol):
     """"""
 
     logging.info(f"plot {prefix}")

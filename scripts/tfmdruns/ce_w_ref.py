@@ -32,7 +32,7 @@ for filename in glob("result*.npz"):
 for spe_list in all_trjs[0].alldata:
 
     # remove unphysicsl configs
-    filter_id = np.where(trjs.alldata[spe_list].energies < 0)[0]
+    filter_id = np.where(trjs.alldata[spe_list].total_energy < 0)[0]
 
     fig_m, axs_m = plt.subplots(1, 2, figsize=(6.8, 2.5))
     fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))

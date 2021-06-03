@@ -31,9 +31,9 @@ def sort_by_force(trj, pred_label, chosen_species: str = None):
 def sort_by_energy(trj, pred_label):
     """"""
 
-    energies = trj.energies
+    total_energy = trj.total_energy
     pred = getattr(trj, pred_label)
-    de = energies - pred
+    de = total_energy - pred
 
     maxdfs = np.max(np.abs(de))
     return np.argsort(maxdfs)

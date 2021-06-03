@@ -78,14 +78,14 @@ def parse_outcar_trj(folder, data_filter):
         return Trajectory()
 
     t = time.time()
-    d_energies = read_pattern(
+    d_total_energy = read_pattern(
         filename,
-        {"energies": r"free  energy   TOTEN\s+=\s+([+-]?\d+.\d+)"},
+        {"total_energy": r"free  energy   TOTEN\s+=\s+([+-]?\d+.\d+)"},
         postprocess=lambda x: float(x),
     )
-    if len(d_energies["energies"]) == 0:
+    if len(d_total_energy["total_energy"]) == 0:
         return Trajectory()
-    energies = np.hstack(d_energies["energies"])
+    total_energy = np.hstack(d_total_energy["total_energy"])
 
     logging.info(f" parsing {filename} for positions")
     pos_force = read_table_pattern(
@@ -162,7 +162,7 @@ def parse_outcar_trj(folder, data_filter):
             CELL: cs[converged_steps],
             POSITION: pos_force[converged_steps, :, :3],
             FORCE: pos_force[converged_steps, :, 3:],
-            TOTAL_ENERGY: energies[converged_steps],
+            TOTAL_ENERGY: total_energy[converged_steps],
             SPECIES: species,
             PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL],
             FIXED_ATTRS: [SPECIES, NATOMS],
@@ -211,14 +211,14 @@ def parse_vasprun_trj(folder, data_filter):
 
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     electronic_steps = []
     for step in vasprun.ionic_steps:
         electronic_steps += [len(step["electronic_steps"])]
         positions += [step["structure"].cart_coords.reshape([-1])]
         forces += [np.hstack(step["forces"])]
-        energies += [step["e_fr_energy"]]
+        total_energy += [step["e_fr_energy"]]
         cells += [step["structure"].lattice.matrix.reshape([-1])]
 
     data.update(
@@ -226,7 +226,7 @@ def parse_vasprun_trj(folder, data_filter):
             cells=np.vstack(cells),
             positions=np.vstack(positions),
             forces=np.vstack(forces),
-            energies=np.hstack(energies),
+            total_energy=np.hstack(total_energy),
             species=species,
         )
     )

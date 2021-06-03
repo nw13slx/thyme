@@ -18,7 +18,7 @@ def main():
 
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     ntrjs = 0
     merge_data = {}
@@ -29,7 +29,7 @@ def main():
         sort_id = np.argsort(data["species"])
         if label not in merge_data:
             merge_data[label] = {}
-            for k in ["positions", "forces", "energies", "cells", "history"]:
+            for k in ["positions", "forces", "total_energy", "cells", "history"]:
                 merge_data[label][k] = []
             merge_data[label]["species"] = np.sort(data["species"])
 
@@ -41,7 +41,7 @@ def main():
                         [nframes, -1]
                     )
                 ]
-            for k in ["energies", "cells"]:
+            for k in ["total_energy", "cells"]:
                 merge_data[label][k] += [data[k]]
             names = [f"{trjname}_{i}" for i in range(nframes)]
             merge_data[label]["history"] += names
@@ -50,19 +50,19 @@ def main():
     for label in merge_data:
         for k in ["positions", "forces", "cells"]:
             merge_data[label][k] = np.vstack(merge_data[label][k])
-        for k in ["energies"]:
+        for k in ["total_energy"]:
             merge_data[label][k] = np.hstack(merge_data[label][k])
         np.savez(
             f"all_{label}.npz",
             species=merge_data[label]["species"],
             positions=merge_data[label]["positions"],
             forces=merge_data[label]["forces"],
-            energies=merge_data[label]["energies"],
+            total_energy=merge_data[label]["total_energy"],
             cells=merge_data[label]["cells"],
             names=merge_data[label]["history"],
         )
         print(
-            label, len(merge_data[label]["energies"]), len(merge_data[label]["history"])
+            label, len(merge_data[label]["total_energy"]), len(merge_data[label]["history"])
         )
 
     return 0
@@ -89,13 +89,13 @@ def filter_trj(data, data_filter):
 
     xyzs = data["positions"]
     fs = data["forces"]
-    es = data["energies"]
+    es = data["total_energy"]
     cs = data["cells"]
     nframes = xyzs.shape[0]
 
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     for istep in range(nframes):
         xyz = xyzs[istep]
@@ -105,13 +105,13 @@ def filter_trj(data, data_filter):
         if data_filter(xyz, f, e, c, species):
             positions += [xyz.reshape([-1])]
             forces += [np.hstack(f)]
-            energies += [e]
+            total_energy += [e]
             cells += [c.reshape([-1])]
     nframes = len(positions)
     if nframes >= 1:
         data["positions"] = np.vstack(positions)
         data["forces"] = np.vstack(forces)
-        data["energies"] = np.hstack(energies)
+        data["total_energy"] = np.hstack(total_energy)
         data["cells"] = np.vstack(cells)
     else:
         return {}

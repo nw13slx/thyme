@@ -20,10 +20,10 @@ def main():
 
 
 def e_filter(trj):
-    set1 = set(np.where(trj.energies < 0)[0])
+    set1 = set(np.where(trj.total_energy < 0)[0])
     set2 = rm_sudden_drop(trj, 10)
 
-    # set2 = set(np.where(trj.energies > -3000)[0])
+    # set2 = set(np.where(trj.total_energy > -3000)[0])
     return list(set1.intersection(set2))
 
 

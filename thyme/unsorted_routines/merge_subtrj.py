@@ -30,7 +30,7 @@ def main():
 
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     nframes = 0
     ntrjs = 0
@@ -40,7 +40,7 @@ def main():
         # alldata['trjname'] = filter_trj(data, data_filter)
         positions += [data["positions"]]
         forces += [data["forces"]]
-        energies += [data["energies"]]
+        total_energy += [data["total_energy"]]
         cells += [data["cells"]]
         nframes += data["positions"].shape[0]
         # print(trjname, nframes)
@@ -48,20 +48,20 @@ def main():
         metadata.update(data)
     positions = np.vstack(positions)
     forces = np.vstack(forces)
-    energies = np.hstack(energies)
+    total_energy = np.hstack(total_energy)
     cells = np.vstack(cells)
     # print(positions.shape, forces.shape,
-    #       energies.shape, cells.shape)
+    #       total_energy.shape, cells.shape)
     np.savez(
         "allmerged.npz",
         positions=positions,
         forces=forces,
-        energies=energies,
+        total_energy=total_energy,
         cells=cells,
     )
     del metadata["positions"]
     del metadata["forces"]
-    del metadata["energies"]
+    del metadata["total_energy"]
     del metadata["cells"]
     metadata["ntrjs"] = ntrjs
     metadata["nframes"] = nframes
@@ -92,13 +92,13 @@ def filter_trj(data, data_filter):
 
     xyzs = data["positions"]
     fs = data["forces"]
-    es = data["energies"]
+    es = data["total_energy"]
     cs = data["cells"]
     nframes = xyzs.shape[0]
 
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     for istep in range(nframes):
         xyz = xyzs[istep]
@@ -108,13 +108,13 @@ def filter_trj(data, data_filter):
         if data_filter(xyz, f, e, c, species):
             positions += [xyz.reshape([-1])]
             forces += [np.hstack(f)]
-            energies += [e]
+            total_energy += [e]
             cells += [c.reshape([-1])]
     nframes = len(positions)
     if nframes >= 1:
         data["positions"] = np.vstack(positions)
         data["forces"] = np.vstack(forces)
-        data["energies"] = np.hstack(energies)
+        data["total_energy"] = np.hstack(total_energy)
         data["cells"] = np.vstack(cells)
     else:
         return {}
