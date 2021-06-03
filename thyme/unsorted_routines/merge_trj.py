@@ -62,7 +62,9 @@ def main():
             names=merge_data[label]["history"],
         )
         print(
-            label, len(merge_data[label]["total_energy"]), len(merge_data[label]["history"])
+            label,
+            len(merge_data[label]["total_energy"]),
+            len(merge_data[label]["history"]),
         )
 
     return 0

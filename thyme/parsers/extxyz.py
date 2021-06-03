@@ -34,9 +34,8 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
     if include_xyz:
         xyzs += glob(f"{folder}/*.xyz")
 
-    hasxyz = len(xyzs) > 0
-    if not hasxyz:
-        return data
+    if len(xyzs) == 0:
+        return Trajectories()
 
     xyzs = sorted(xyzs, key=getmtime)
 
@@ -112,14 +111,16 @@ def extxyz_to_trjs(filename, data_filter=None):
     trjs = Trajectories()
     for i, natom in enumerate(natoms):
         counter += natom
-        trj = Trajectory.from_dict({
-            POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
-            FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
-            TOTAL_ENERGY: total_energy[[i]],
-            CELL: cells[[i]],
-            SPECIES: species[counter : counter + natom].reshape([1, natom]),
-            PER_FRAME_ATTRS:[POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES]
-        })
+        trj = Trajectory.from_dict(
+            {
+                POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
+                FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
+                TOTAL_ENERGY: total_energy[[i]],
+                CELL: cell[[i]],
+                SPECIES: species[counter : counter + natom].reshape([1, natom]),
+                PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES],
+            }
+        )
         if data_filter is not None:
             try:
                 accept_id = data_filter(trj)
@@ -129,7 +130,7 @@ def extxyz_to_trjs(filename, data_filter=None):
                 raise RuntimeError(f"{e}")
         if trj.nframes > 0:
             trj.name = i
-            trjs.add_trj(trj)
+            trjs.add_trj(trj, merge=True, preserve_order=False)
 
     logging.info(f"convert {filename} to {repr(trjs)}")
     logging.debug(f"{trjs}")
@@ -186,15 +187,11 @@ def write(name, trj):
         remove(name)
     for i in range(trj.nframes):
         definition = {"pbc": False}
-        if "cells" in trj.per_frame_attrs:
-            definition["cell"] = trj.cells[i]
+        if CELL in trj.per_frame_attrs:
+            definition["cell"] = trj.cell[i]
             definition["pbc"] = True
-        structure = Atoms(
-            symbols=trj.species, positions=trj.positions[i], **definition
-        )
-        definition = (
-            {"forces": trj.forces[i]} if "forces" in trj.per_frame_attrs else {}
-        )
+        structure = Atoms(symbols=trj.species, positions=trj.position[i], **definition)
+        definition = {"forces": trj.force[i]} if FORCE in trj.per_frame_attrs else {}
         calc = SinglePointCalculator(
             structure, energy=trj.total_energy[i], **definition
         )

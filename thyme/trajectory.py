@@ -134,22 +134,25 @@ class Trajectory(object):
                 {key: getattr(self, key) for key in self.fixed_attrs if key in keys}
             )
         return frame
-        
+
     def add_frames(self, dictionary):
         find_key = [(key in dictionary) for key in self.per_frame_attrs]
         if not all(find_key):
             raise RuntimeError("key missing")
 
-        match_fields = [(repr(dictionary[key]) == getattr(self.key)) for key in self.fixed_attrs if key in dictionary]
+        match_fields = [
+            (repr(dictionary[key]) == getattr(self.key))
+            for key in self.fixed_attrs
+            if key in dictionary
+        ]
         if not all(match_fields):
             raise RuntimeError("fixed fields are not consistent missing")
-        
+
         for key in self.per_frame_attrs:
             mat = np.vstack((getattr(self, key), dictionary[key]))
             setattr(self, key, mat)
-        
-        self.nframes += dictionary[POSITION].shape[0]
 
+        self.nframes += dictionary[POSITION].shape[0]
 
     def sanity_check(self):
 
@@ -389,7 +392,7 @@ class Trajectory(object):
         if self.nframes == 0:
             self.copy(trj)
         else:
-            if self.natom != trj.natom:
+            if self.nlines != trj.nlines:
                 raise ValueError(f"cannot merge two trj with different numbers")
             if save_mode:
                 if not all(trj.species == self.species):

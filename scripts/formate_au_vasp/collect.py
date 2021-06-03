@@ -22,8 +22,11 @@ def main():
     trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.pickle")
     # trjs.save("raw.pickle")
 
-    trjs = trjs.remerge()
+    print(repr(trjs))
+
+    trjs.merge()
     trjs.save("all_data_merge.pickle")
+    print(repr(trjs))
 
     mineT = Trajectories()
     for name, trj in trjs.alldata.items():

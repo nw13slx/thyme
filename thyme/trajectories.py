@@ -5,6 +5,7 @@ Lixin Sun (Harvard University)
 2020
 """
 
+from copy import deepcopy
 import logging
 import numpy as np
 import pickle
@@ -22,29 +23,39 @@ def dummy_comp(trj1, trj2):
 
 class Trajectories:
     def __init__(self):
-        self.alldata = {}
+        self.alltrjs = {}
         self._iter_index = 0
+        self.per_frame_attrs = []
+
+    def __repr__(self) -> str:
+        return f"Trajectories with {len(self)} trj"
+
+    def __str__(self) -> str:
+        s = repr(self)
+        for name, trj in self.alltrjs:
+            s += "\nname: {repr(trj)}"
+        return s
 
     @property
     def nframes(self):
         nframes = 0
-        for trj in self.alldata.values():
+        for trj in self.alltrjs.values():
             nframes += trj.nframes
         return nframes
 
     def __len__(self):
-        return len(self.alldata)
+        return len(self.alltrjs)
 
     def __str__(self):
 
-        s = f"{len(self.alldata)} trajectories\n"
-        for name in self.alldata:
+        s = f"{len(self.alltrjs)} trajectories\n"
+        for name in self.alltrjs:
             s += f"----{name}----\n"
-            s += f"{self.alldata[name]}\n"
+            s += f"{self.alltrjs[name]}\n"
         return s
 
     def __getitem__(self, key):
-        return self.alldata[key]
+        return self.alltrjs[key]
 
     def __iter__(self):
         return self
@@ -53,12 +64,12 @@ class Trajectories:
 
         self._iter_index = getattr(self, "_iter_index", 0)
 
-        n_attrs = len(self.alldata)
+        n_attrs = len(self.alltrjs)
         if self._iter_index >= n_attrs:
             raise StopIteration
-        key = list(self.alldata.keys())[self._iter_index]
+        key = list(self.alltrjs.keys())[self._iter_index]
         self._iter_index += 1
-        return self.alldata[key]
+        return self.alltrjs[key]
 
     def save(self, name: str, format: str = None):
 
@@ -70,10 +81,10 @@ class Trajectories:
                 enforced_format=format,
             )
         elif format == "xyz":
-            for trj in self.alldata.values():
+            for trj in self.alltrjs.values():
                 trj.save(f"{trj.name}_{name}", format)
         elif format == "poscar":
-            for trj in self.alldata.values():
+            for trj in self.alltrjs.values():
                 trj.save(f"{trj.name}_{name}", format)
         else:
             raise NotImplementedError(
@@ -86,20 +97,10 @@ class Trajectories:
 
         dictionary = {}
 
-        for name, trj in self.alldata.items():
+        for name, trj in self.alltrjs.items():
             dictionary[name] = trj.to_dict()
 
         return dictionary
-
-    def to_trajectory(self):
-
-        init_trj = Trajectory()
-        for trj in self.alldata.values():
-            init_trj.add_trj(trj)
-        return init_trj
-
-    def from_dict(self):
-        pass
 
     @staticmethod
     def from_file(name: str, format: str = None, preserve_order: bool = False):
@@ -133,7 +134,7 @@ class Trajectories:
     @property
     def nframes(self):
         nframes = 0
-        for trj in self.alldata.values():
+        for trj in self.alltrjs.values():
             nframes += trj.nframes
         return nframes
 
@@ -144,20 +145,25 @@ class Trajectories:
         merge=False,
         preserve_order=False,
         metadata_compare=dummy_comp,
+        save_mode=True,
     ):
+        if len(self) == 0:
+            self.per_frame_attrs = deepcopy(trj.per_frame_attrs)
+        elif save_mode:
+            nterms = len(self.per_frame_attrs)
+            intersection = set(self.per_frame_attrs).intersection(trj.per_frame_attrs)
+            if len(intersection) != nterms:
+                raise RuntimeError(f"not enough per_frame_attrs")
 
         if not merge:
-            if isinstance(trj, Trajectories):
-                self.alldata.update(trj.alldata)
-            else:
-                if name in self.alldata:
-                    logging.info(f"warning, overwriting trj with name {name}")
+            if name in self.alltrjs:
+                logging.info(f"warning, overwriting trj with name {name}")
 
-                if name is None and trj.name not in self.alldata[name]:
-                    name = trj.name
-                elif name is None:
-                    name = len(self)
-                self.alldata[name] = trj
+            if name is None and trj.name not in self.alltrjs:
+                name = trj.name
+            elif name is None:
+                name = len(self)
+            self.alltrjs[name] = trj
             return
 
         # order trj by element
@@ -166,26 +172,29 @@ class Trajectories:
         stored_label, last_label = obtain_store_label(
             last_label=None,
             label=label,
-            alldata=self.alldata,
+            alldata=self.alltrjs,
             preserve_order=preserve_order,
         )
 
-        if stored_label not in self.alldata:
+        if stored_label not in self.alltrjs:
             newtrj = Trajectory()
             newtrj.name = np.copy(stored_label)
-            self.alldata[stored_label] = newtrj
+            self.alltrjs[stored_label] = newtrj
         else:
-            oldtrj = self.alldata[stored_label]
+            oldtrj = self.alltrjs[stored_label]
             if metadata_compare(trj, oldtrj):
                 logging.debug("! Metadata is exactly the same. Merge")
             else:
                 logging.debug("! Metadata is not the same. Not merge")
                 stored_label, last_label = obtain_store_label(
-                    last_label="NA0", label=label, alldata=self.alldata, preserve_order=True
+                    last_label="NA0",
+                    label=label,
+                    alldata=self.alltrjs,
+                    preserve_order=True,
                 )
-                self.alldata[stored_label] = Trajectory()
+                self.alltrjs[stored_label] = Trajectory()
 
-        self.alldata[stored_label].add_trj(trj, save_mode=False, order=order)
+        self.alltrjs[stored_label].add_trj(trj, save_mode=False, order=order)
 
     def add_trjs(
         self,
@@ -194,22 +203,34 @@ class Trajectories:
         preserve_order=False,
         metadata_compare=dummy_comp,
     ):
+        nterms = len(self.per_frame_attrs)
+        intersection = set(self.per_frame_attrs).intersection(trjs.per_frame_attrs)
+        if len(intersection) != nterms:
+            raise RuntimeError(f"not enough per_frame_attrs")
         for trj in trjs:
-            self.add_trj(trj, name=None, merge=merge, preserve_order=preserve_order, metadata_compare=metadata_compare)
-    
+            self.add_trj(
+                trj,
+                name=None,
+                merge=merge,
+                preserve_order=preserve_order,
+                metadata_compare=metadata_compare,
+                save_mode=False,
+            )
+
     def merge(self, preserve_order=False, metadata_compare=dummy_comp):
 
         trjs = self.remerge()
-        del self.alldata
-        self.alldata = trjs.alldata
+        del self.alltrjs
+        self.alltrjs = trjs.alltrjs
 
     def remerge(self, preserve_order=False, metadata_compare=dummy_comp):
 
         trjs = Trajectories()
 
-        for trj in self.alldata.values():
+        for trj in self.alltrjs.values():
             trjs.add_trj(
                 trj,
+                name=None,
                 merge=True,
                 preserve_order=preserve_order,
                 metadata_compare=metadata_compare,
