@@ -2,7 +2,7 @@ from thyme.trajectories import Trajectories
 from thyme.trajectory import Trajectory
 from thyme.filters.distance import e_filter
 from thyme.filters.energy import sort_e
-from thyme.parsers.extxyz import write_trjs, write
+from thyme.parsers.extxyz import write_trjs
 from thyme.routines.dist_plots.energy import multiple_plots as multiple_plots_e
 from thyme.parsers.vasp import pack_folder_trj, get_childfolders
 from thyme.routines.folders import parse_folders_trjs
@@ -40,8 +40,7 @@ def main():
     # frames = sort_e(mineT)
     # mineT.include_frames(frames)
     mineT.save("20eV.pickle")
-    # write("mine.xyz", mineT)
-    write_trjs("all.xyz", trjs)
+    write_trjs("all.xyz", trjs, joint=True)
 
 
 if __name__ == "__main__":

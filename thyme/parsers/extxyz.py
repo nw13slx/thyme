@@ -200,6 +200,9 @@ def write(name, trj):
     logging.info(f"write {name}")
 
 
-def write_trjs(name, trjs):
+def write_trjs(name, trjs, joint=True):
     for i, trj in trjs.alldata.items():
-        write(f"{trj.name}_{name}", trj)
+        if joint:
+            write(name, trj)
+        else:
+            write(f"{trj.name}_{name}", trj)
