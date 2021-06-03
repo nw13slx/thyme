@@ -6,6 +6,7 @@ import time
 from thyme.parsers.monty import read_pattern, read_table_pattern
 from thyme.routines.folders import find_folders
 from thyme.trajectory import Trajectory
+from thyme._key import *
 
 from collections import Counter
 from os.path import isfile
@@ -155,24 +156,24 @@ def parse_outcar_trj(folder, data_filter):
                 ]
             )
         )
-    natom = pos_force.shape[1]
-    data["natom"] = natom
 
     data.update(
-        dict(
-            cells=cs[converged_steps],
-            positions=pos_force[converged_steps, :, :3],
-            forces=pos_force[converged_steps, :, 3:],
-            energies=energies[converged_steps],
-            species=species,
-        )
+        {
+            CELL: cs[converged_steps],
+            POSITION: pos_force[converged_steps, :, :3],
+            FORCE: pos_force[converged_steps, :, 3:],
+            TOTAL_ENERGY: energies[converged_steps],
+            SPECIES: species,
+            PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL],
+            FIXED_ATTRS: [SPECIES, NATOMS],
+        }
     )
 
     trj = Trajectory.from_dict(data)
 
     try:
         accept_id = data_filter(trj)
-        trj.filter_frames(accept_id)
+        trj.include_frames(accept_id)
     except Exception as e:
         logging.error(f"{e}")
         logging.error("extxyz only accept batch filter work on paddedtrajectory")
@@ -236,11 +237,11 @@ def parse_vasprun_trj(folder, data_filter):
     reject_id = np.where(electronic_steps >= nelm)[0]
     if len(accept_id) < trj.nframes:
         logging.info(f"skip unconverged step {reject_id}")
-    trj.filter_frames(accept_id)
+    trj.include_frames(accept_id)
 
     try:
         accept_id = data_filter(trj)
-        trj.filter_frames(accept_id)
+        trj.include_frames(accept_id)
     except Exception as e:
         logging.error(f"{e}")
         logging.error("extxyz only accept batch filter work on paddedtrajectory")

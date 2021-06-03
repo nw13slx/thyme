@@ -23,7 +23,7 @@ def single_plot(trj, prefix=""):
         if s in specs:
             specs.pop(s)
     for s in specs:
-        f = np.linalg.norm(trj.forces, axis=-1)
+        f = np.linalg.norm(trj.force, axis=-1)
         if isinstance(trj, PaddedTrajectory):
             ids = np.where(trj.symbols == s)
         elif isinstance(trj, Trajectory):

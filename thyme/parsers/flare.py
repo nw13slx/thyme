@@ -12,6 +12,7 @@ from thyme.trajectory import PaddedTrajectory, Trajectory
 from thyme.trajectories import Trajectories
 from thyme.routines.folders import find_folders, find_folders_matching
 
+
 def to_strucs(trj):
     structures = []
     if isinstance(trj, Trajectory) and not isinstance(trj, PaddedTrajectory):
@@ -36,6 +37,7 @@ def to_strucs(trj):
             )
             structures += [structure]
     return structures
+
 
 def write(filename, trj):
 
@@ -80,6 +82,7 @@ def from_file(filename, as_trajectory=True):
         )
     return trjs.remerge()
 
+
 import json
 import numpy as np
 from os.path import isfile
@@ -102,19 +105,19 @@ def add_to_model(trj, gp_model, pre_train_env_per_species):
         meta = metas[itrj]
         # is_aimd = meta['aimd']
 
-        cell = data['cell']
-        species = data['species']
-        positions = data['positions']
-        forces = data['forces']
-        energies = data['pe']
-        nframe = data['pe'].shape[0]
-        natom = data['positions'].shape[1]//3
+        cell = data["cell"]
+        species = data["species"]
+        positions = data["positions"]
+        forces = data["forces"]
+        energies = data["pe"]
+        nframe = data["pe"].shape[0]
+        natom = data["positions"].shape[1] // 3
 
         non_fix_atom = set(np.arange(natom))
-        if meta.get('fix-atoms', True):
-            begin = int(meta['non-fix-atoms'].split(".")[0])
-            end = int(meta['non-fix-atoms'].split(".")[-1])
-            non_fix_atom = set(np.arange(begin-1, end))
+        if meta.get("fix-atoms", True):
+            begin = int(meta["non-fix-atoms"].split(".")[0])
+            end = int(meta["non-fix-atoms"].split(".")[-1])
+            non_fix_atom = set(np.arange(begin - 1, end))
 
         if iskip == 0:
             list_to_train = np.arange(0, nframe, 36)
@@ -124,10 +127,13 @@ def add_to_model(trj, gp_model, pre_train_env_per_species):
         for i in range(nframe):
 
             xyz = positions[i].reshape([-1, 3])
-            structure = Structure(cell[i].reshape([3,3]), species,
-                                  xyz,
-                                  forces=forces[i].reshape([-1, 3]),
-                                  energy=energies[i])
+            structure = Structure(
+                cell[i].reshape([3, 3]),
+                species,
+                xyz,
+                forces=forces[i].reshape([-1, 3]),
+                energy=energies[i],
+            )
 
             if i in list_to_train:
 
@@ -146,7 +152,7 @@ def add_to_model(trj, gp_model, pre_train_env_per_species):
                                 add = True
                                 list_to_add = []
                                 for iatom in atoms_of_specie:
-                                    if xyz[iatom, 2]>12:
+                                    if xyz[iatom, 2] > 12:
                                         list_to_add += [iatom]
                                 atoms_of_specie = set(list_to_add)
 
@@ -158,18 +164,26 @@ def add_to_model(trj, gp_model, pre_train_env_per_species):
                         n_at = len(list_to_add)
 
                         # Determine how many to add based on user defined cutoffs
-                        n_to_add = min(n_at, pre_train_env_per_species.get(
-                                species_i, inf), 2)
+                        n_to_add = min(
+                            n_at, pre_train_env_per_species.get(species_i, inf), 2
+                        )
                         if n_to_add > 0:
-                            gp_model.update_db(structure, structure.forces, custom_range=list_to_add[:n_to_add])
+                            gp_model.update_db(
+                                structure,
+                                structure.forces,
+                                custom_range=list_to_add[:n_to_add],
+                            )
                             count += n_to_add
 
                         # print(f"Add {n_to_add} Atoms with specie {species_i} to model"
                         #       f" {gp_model.n_experts}; Total envs {count}")
-                        print(f"Add {n_to_add} Atoms with specie {species_i} to model"
-                              f"; Total envs {count}", iskip, filename)
+                        print(
+                            f"Add {n_to_add} Atoms with specie {species_i} to model"
+                            f"; Total envs {count}",
+                            iskip,
+                            filename,
+                        )
             else:
                 test_structures += [structure]
-
 
     return test_structures

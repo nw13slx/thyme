@@ -2,7 +2,6 @@ import logging
 import numpy as np
 
 from thyme.utils.atomic_symbols import species_to_idgroups, species_to_dict
-from thyme.trajectory import PaddedTrajectory
 
 
 def even_hist(trj, max_count, bin_width, max_apperance=2, max_e=None):
@@ -88,25 +87,13 @@ def sort_e(trj, chosen_specie=None, chosen_count=0):
 
     sorted_id = np.argsort(trj.energies)
     if chosen_specie is not None:
-        if isinstance(trj, PaddedTrajectory):
-            for i in sorted_id:
-                ncount = len(
-                    [
-                        idx
-                        for idx in range(trj.natoms[i])
-                        if trj.symbols[i][idx] == chosen_specie
-                    ]
-                )
-                if ncount == chosen_count:
-                    return i
+        ncount = len(
+            [idx for idx in range(trj.natom) if trj.species[idx] == chosen_specie]
+        )
+        if ncount <= chosen_count:
+            return -1
         else:
-            ncount = len(
-                [idx for idx in range(trj.natom) if trj.species[idx] == chosen_specie]
-            )
-            if ncount <= chosen_count:
-                return -1
-            else:
-                return sorted_id
+            return sorted_id
     else:
         return sorted_id
 
@@ -116,25 +103,13 @@ def lowe(trj, chosen_specie=None, chosen_count=0):
 
     sorted_id = np.argsort(trj.energies)
     if chosen_specie is not None:
-        if isinstance(trj, PaddedTrajectory):
-            for i in sorted_id:
-                ncount = len(
-                    [
-                        idx
-                        for idx in range(trj.natoms[i])
-                        if trj.symbols[i][idx] == chosen_specie
-                    ]
-                )
-                if ncount == chosen_count:
-                    return i
+        ncount = len(
+            [idx for idx in range(trj.natom) if trj.species[idx] == chosen_specie]
+        )
+        if ncount <= chosen_count:
+            return -1
         else:
-            ncount = len(
-                [idx for idx in range(trj.natom) if trj.species[idx] == chosen_specie]
-            )
-            if ncount <= chosen_count:
-                return -1
-            else:
-                return sorted_id[0]
+            return sorted_id[0]
     else:
         return sorted_id[0]
 

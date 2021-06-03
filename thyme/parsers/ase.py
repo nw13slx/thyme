@@ -11,9 +11,9 @@ def configuration(trj, i):
     if isinstance(trj, PaddedTrajectory):
         natom = trj.natoms[i]
         structure = Atoms(
-            cell=trj.cells[i].reshape([3, 3]),
+            cell=trj.cell[i].reshape([3, 3]),
             symbols=trj.symbols[i][:natom],
-            positions=trj.positions[i][:natom].reshape([natom, 3]),
+            positions=trj.position[i][:natom].reshape([natom, 3]),
             pbc=True,
         )
     else:

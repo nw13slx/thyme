@@ -11,9 +11,9 @@ import pickle
 
 from collections import Counter
 
-from .trajectory import Trajectory, PaddedTrajectory
+from .trajectory import Trajectory
 from thyme.utils.atomic_symbols import species_to_order_label
-from thyme.utils.save import sort_format
+from thyme.utils.savenload import save_file, load_file
 
 
 def dummy_comp(trj1, trj2):
@@ -62,26 +62,13 @@ class Trajectories:
 
     def save(self, name: str, format: str = None):
 
-        supported_formats = [
-            "pickle",
-            "padded_mat.npz",
-            "npz",
-            "padded.xyz",
-            "xyz",
-            "poscar",
-        ]
-        format, name = sort_format(supported_formats, format, name)
-
-        if format == "pickle":
-            with open(name, "wb") as f:
-                pickle.dump(self, f)
-        elif format == "padded_mat.npz":
-            self.save_padded_matrices(name)
-        elif format == "npz":
-            self.save_npz(name)
-        elif format == "padded.xyz":
-            trj = self.to_padded_trajectory()
-            trj.save(name, format)
+        if format in ["pickle", "npz"]:
+            save_file(
+                self.to_dict(),
+                supported_formats={"npz": "npz", "pickle": "pickle"},
+                filename=name,
+                enforced_format=format,
+            )
         elif format == "xyz":
             for trj in self.alldata.values():
                 trj.save(f"{trj.name}_{name}", format)
@@ -91,18 +78,18 @@ class Trajectories:
         else:
             raise NotImplementedError(
                 f"Output format {format} not supported:"
-                f" try from {supported_formats}"
+                f" try from pickle, xyz, poscar"
             )
         logging.info(f"save as {name}")
 
     def to_dict(self):
 
-        alldata = {}
+        dictionary = {}
 
         for name, trj in self.alldata.items():
-            alldata[name] = trj.to_dict()
+            dictionary[name] = trj.to_dict()
 
-        return alldata
+        return dictionary
 
     def to_trajectory(self):
 
@@ -111,92 +98,35 @@ class Trajectories:
             init_trj.add_trj(trj)
         return init_trj
 
-    def to_padded_trajectory(self):
-
-        init_trj = PaddedTrajectory()
-        for trj in self.alldata.values():
-            init_trj.add_trj(trj)
-        return init_trj
-
-    def save_padded_matrices(self, name: str):
-
-        if ".npz" != name[-4:]:
-            name += ".npz"
-
-        init_trj = self.to_padded_trajectory()
-        init_trj.save(name)
-
-    def save_npz(self, name: str):
-
-        if ".npz" != name[-4:]:
-            name += ".npz"
-
-        dictionary = self.to_dict()
-        np.savez(name, **dictionary)
+    def from_dict(self):
+        pass
 
     @staticmethod
     def from_file(name: str, format: str = None, preserve_order: bool = False):
         """
         pickle format: previous objects saved as pickle format
-        padded_mat.npz: contains matrices that can be parsed by PaddedTrajectory
-                        from file loader. and then the frames are partitioned
-                        such that eacy trajectory has the same number of atoms
-                        and same order of species
         """
 
-        supported_formats = ["pickle", "padded_mat.npz"]  # npz
-
-        format, newname = sort_format(supported_formats, format, name)
-
-        if format == "pickle":
-            with open(name, "rb") as f:
-                trjs = pickle.load(f)
-            return trjs
-        elif format == "padded_mat.npz":
-            dictionary = dict(np.load(name, allow_pickle=True))
-            return Trajectories.from_padded_matrices(
-                dictionary, preserve_order=preserve_order
-            )
-        else:
-            raise NotImplementedError(
-                f"Output format not supported:" f" try from {supported_formats}"
-            )
+        obj = load_file(
+            supported_formats={"npz": "npz", "pickle": "pickle"},
+            filename=name,
+            enforced_format="npz",
+        )
+        if isinstance(obj, dict):
+            return Trajectories.from_dict(obj)
+        return obj
 
     @staticmethod
-    def from_dict(dictionary: dict, merge=True):
+    def from_dict(dictionary: dict, merge=True, preserve_order=False):
         """
         convert dictionary to a Trajectory instance
         """
 
-        raise NotImplementedError("this part need to be double check!")
-
         trjs = Trajectories()
-        alldata = trjs.alldata
 
-        trjnames = sorted(list(dictionary.keys()))
-
-        for trjname in trjnames:
-            try:
-                data = dictionary[trjname].item()
-                order, label = species_to_order_label(data["species"])
-            except:
-                data = dictionary[trjname].item()
-                order, label = species_to_order_label(data["species"])
-
-            logging.info(f"read {trjname} from dict formula {label}")
-
-            if merge:
-                if label not in alldata:
-                    alldata[label] = Trajectory()
-                    alldata[label].python_list = True
-                alldata[label].add_trj(Trajectory.from_dict(data))
-            else:
-                alldata[trjname] = Trajectory.from_dict(data)
-
-        for label in alldata:
-            alldata[label].convert_to_np()
-            alldata[label].name = f"{label}"
-            logging.info(f"from dict {repr(alldata[label])}")
+        for name, trj_dict in dictionary.items():
+            trj = Trajectory.from_dict(trj_dict)
+            trjs.add_trj(trj, merge=merge, preserve_order=preserve_order)
 
         return trjs
 
@@ -223,16 +153,15 @@ class Trajectories:
                 if name in self.alldata:
                     logging.info(f"warning, overwriting trj with name {name}")
 
-                if name is None:
+                if name is None and trj.name not in self.alldata[name]:
                     name = trj.name
+                elif name is None:
+                    name = len(self)
                 self.alldata[name] = trj
             return
 
         # order trj by element
         order, label = species_to_order_label(trj.species)
-        newtrj = Trajectory()
-        newtrj.copy(trj)
-        newtrj.reorder(order)
 
         stored_label, last_label = obtain_store_label(
             last_label=None,
@@ -242,68 +171,37 @@ class Trajectories:
         )
 
         if stored_label not in self.alldata:
+            newtrj = Trajectory()
             newtrj.name = np.copy(stored_label)
             self.alldata[stored_label] = newtrj
         else:
-            if metadata_compare(trj, newtrj):
-                logging.info("! True merge")
-                self.alldata[stored_label].add_trj(newtrj)
+            oldtrj = self.alldata[stored_label]
+            if metadata_compare(trj, oldtrj):
+                logging.debug("! Metadata is exactly the same. Merge")
             else:
-                logging.info("! False merge")
-                newtrj.name = stored_label
+                logging.debug("! Metadata is not the same. Not merge")
                 stored_label, last_label = obtain_store_label(
-                    "NA0", label, self.alldata, True
+                    last_label="NA0", label=label, alldata=self.alldata, preserve_order=True
                 )
-                self.alldata[stored_label] = newtrj
+                self.alldata[stored_label] = Trajectory()
 
-    def add_trj(
+        self.alldata[stored_label].add_trj(trj, save_mode=False, order=order)
+
+    def add_trjs(
         self,
-        trj,
-        name=None,
+        trjs,
         merge=False,
         preserve_order=False,
         metadata_compare=dummy_comp,
     ):
+        for trj in trjs:
+            self.add_trj(trj, name=None, merge=merge, preserve_order=preserve_order, metadata_compare=metadata_compare)
+    
+    def merge(self, preserve_order=False, metadata_compare=dummy_comp):
 
-        if not merge:
-            if isinstance(trj, Trajectories):
-                self.alldata.update(trj.alldata)
-            else:
-                if name in self.alldata:
-                    logging.info(f"warning, overwriting trj with name {name}")
-
-                if name is None:
-                    name = trj.name
-                self.alldata[name] = trj
-            return
-
-        # order trj by element
-        order, label = species_to_order_label(trj.species)
-        newtrj = Trajectory()
-        newtrj.copy(trj)
-        newtrj.reorder(order)
-
-        stored_label, last_label = obtain_store_label(
-            last_label=None,
-            label=label,
-            alldata=self.alldata,
-            preserve_order=preserve_order,
-        )
-
-        if stored_label not in self.alldata:
-            newtrj.name = np.copy(stored_label)
-            self.alldata[stored_label] = newtrj
-        else:
-            if metadata_compare(trj, newtrj):
-                logging.info("! True merge")
-                self.alldata[stored_label].add_trj(newtrj)
-            else:
-                logging.info("! False merge")
-                newtrj.name = stored_label
-                stored_label, last_label = obtain_store_label(
-                    "NA0", label, self.alldata, True
-                )
-                self.alldata[stored_label] = newtrj
+        trjs = self.remerge()
+        del self.alldata
+        self.alldata = trjs.alldata
 
     def remerge(self, preserve_order=False, metadata_compare=dummy_comp):
 
@@ -317,80 +215,7 @@ class Trajectories:
                 metadata_compare=metadata_compare,
             )
 
-        for i, trj in trjs.alldata.items():
-            trj.name = i
-            logging.info(f"found one type of formula {trj.name} with key {i}")
-            logging.info(f"add {repr(trj)}")
-
         return trjs
-
-    @staticmethod
-    def from_padded_trajectory(ptrj: dict, preserve_order=False):
-
-        trjs = Trajectories()
-
-        nframes = ptrj.nframes
-        symbols = ptrj.symbols
-
-        last_label = None
-        label = None
-        curr_label_count = 0
-        last_label_count = 0
-        alldata = {}
-        for iconfig in range(nframes):
-
-            # obtain label
-            order, label = species_to_order_label(symbols[iconfig])
-            natom = ptrj.natoms[iconfig]
-
-            stored_label, last_label = obtain_store_label(
-                last_label, label, alldata, preserve_order
-            )
-
-            if stored_label not in alldata:
-                alldata[stored_label] = [label, [iconfig], [order]]
-            else:
-                alldata[stored_label][1].append(iconfig)
-                alldata[stored_label][2].append(order)
-
-        for stored_label in alldata:
-
-            label = alldata[stored_label][0]
-            configs = alldata[stored_label][1]
-            orders = alldata[stored_label][2]
-
-            trj = ptrj.skim(configs)
-            trj.reorder(orders)
-
-            newtrj = trj.to_Trajectory()
-            newtrj.name = label
-
-            trjs.add_trj(newtrj, stored_label)
-            logging.info(f"{label} {configs}")
-            logging.info(f"found one type of formula {label}")
-            logging.info(f"add {repr(newtrj)}")
-
-        return trjs
-
-    @staticmethod
-    def from_padded_matrices(
-        dictionary: dict, per_frame_attrs: list = None, preserve_order=False
-    ):
-        """
-        Keys needed:
-
-        positions  (n, m, 3)
-        symbols    (n, m)
-        natoms     (n, m)
-
-        if preserve_order is off (default)
-            all the configures that has the same number of species
-
-        """
-
-        ptrj = PaddedTrajectory.from_dict(dictionary, per_frame_attrs)
-
-        return Trajectories.from_padded_trajectory(ptrj, preserve_order)
 
 
 def obtain_store_label(last_label, label, alldata, preserve_order):

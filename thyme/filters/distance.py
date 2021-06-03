@@ -1,27 +1,27 @@
 import logging
 import numpy as np
+from thyme._key import *
 
 from ase.atoms import Atoms
 
 
 def e_filter(trj, maxE=0, minE=-1e6):
     """
-    filter away non-negative energies
+    filter away non-negative total_energy
     """
 
     accept_frame = []
-    species = trj.species
-    energy_id1 = np.where(trj.energies < maxE)[0]
-    energy_id2 = np.where(trj.energies > minE)[0]
+    energy_id1 = np.where(trj.total_energy < maxE)[0]
+    energy_id2 = np.where(trj.total_energy > minE)[0]
     energy_id = list(set(energy_id1).intersection(set(energy_id2)))
-    skip_id = list(set(np.arange(len(trj.energies))) - set(energy_id))
+    skip_id = list(set(np.arange(len(trj.total_energy))) - set(energy_id))
     if len(skip_id) > 0:
         logging.info(f"skip frames for out of energy range [{minE},{maxE}] {skip_id}")
 
     for i in energy_id:
-        xyz = trj.positions[i]
-        c = trj.cells[i]
-        atoms = Atoms(species, xyz, cell=c, pbc=True)
+        frame = trj.get_frame(i, keys=[POSITION, CELL, SPECIES])
+        species = frame[SPECIES]
+        atoms = Atoms(species, frame[POSITION], cell=frame[CELL], pbc=True)
         dist_mat = atoms.get_all_distances(mic=True)
         not_metal = [
             i for i in range(dist_mat.shape[0]) if species[i] in ["C", "H", "O"]
@@ -78,16 +78,16 @@ def e_filter(trj, maxE=0, minE=-1e6):
 
 def e_disp_filter(trj):
     """
-    filter away non-negative energies
+    filter away non-negative total_energy
     and configs with isolated metal atoms
     """
 
     accept_frame = []
     species = trj.species
-    energy_id = np.where(trj.energies < 0)[0]
+    energy_id = np.where(trj.total_energy < 0)[0]
     for i in energy_id:
-        xyz = trj.positions[i]
-        c = trj.cells[i]
+        xyz = trj.position[i]
+        c = trj.cell[i]
         atoms = Atoms(species, xyz, cell=c, pbc=True)
         dist_mat = atoms.get_all_distances(mic=True)
         not_metal = [
@@ -139,21 +139,21 @@ def e_disp_filter(trj):
 
 def fixed_bottom(trj, layer_no=12):
     """
-    filter away non-negative energies
+    filter away non-negative total_energy
     and configs with isolated metal atoms
     """
 
     accept_frame = []
     species = trj.species
-    energy_id = np.where(trj.energies < 0)[0]
+    energy_id = np.where(trj.total_energy < 0)[0]
 
     for i in energy_id:
 
         if trj.is_padded:
             n = trj.natoms[i]
-            xyz = trj.positions[i][:n]
+            xyz = trj.position[i][:n]
         else:
-            xyz = trj.positions[i]
+            xyz = trj.position[i]
         sort_id = np.argsort(xyz[:, 2])
         std_z = np.std(xyz[sort_id[:layer_no], 2])
 
@@ -171,16 +171,16 @@ def fixed_bottom(trj, layer_no=12):
 
 # def mind_filter(trj):
 #     """
-#     filter away non-negative energies
+#     filter away non-negative total_energy
 #     and configs with isolated metal atoms
 #     """
 #
 #     accept_frame = []
 #     species = trj.species
-#     energy_id = np.argsort(trj.energies)
+#     energy_id = np.argsort(trj.total_energy)
 #     for i in energy_id:
-#         xyz = trj.positions[i]
-#         c = trj.cells[i]
+#         xyz = trj.position[i]
+#         c = trj.cell[i]
 #         atoms = Atoms(species, xyz, cell=c, pbc=True)
 #         dist_mat = atoms.get_all_distances(mic=True)
 #         not_metal = [i for i in range(dist_mat.shape[0]) if species[i] in ['C', 'H', 'O']]

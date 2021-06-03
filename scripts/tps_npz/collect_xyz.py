@@ -44,7 +44,7 @@ def main():
 
     for label in [-1, 0, 1]:
         sort_id = np.where(trj.labels == label)[0]
-        new_trj = trj.skim(sort_id)
+        new_trj = trj.extract_frames(sort_id)
         new_trj.save(f"l{label}results_padded_mat.npz")
         new_trj.name = f"l{label}"
         single_plot_e(new_trj, prefix=f"")

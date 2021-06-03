@@ -1,2 +1,2 @@
-from .trajectory import Trajectory, PaddedTrajectory
+from .trajectory import Trajectory
 from .trajectories import Trajectories

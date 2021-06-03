@@ -30,7 +30,7 @@ def main():
             folders,
             pack_folder_trj,
             e_filter,
-            npz_filename="all_data.pickle",
+            ckpt_filename="all_data.pickle",
             merge_level=1,
         )
     else:
