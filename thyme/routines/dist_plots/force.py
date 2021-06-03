@@ -1,6 +1,6 @@
 from thyme.routines.parity_plots.setup import tabcolors
 from thyme.routines.dist_plots.base import base_line_hist
-from thyme.trajectory import PaddedTrajectory, Trajectory
+from thyme.trajectory import Trajectory
 import numpy as np
 import logging
 import matplotlib.pyplot as plt
@@ -14,20 +14,10 @@ def multiple_plots(trajectories, prefix=""):
 
 
 def single_plot(trj, prefix=""):
-    if isinstance(trj, PaddedTrajectory):
-        specs = set(list(trj.symbols.reshape([-1])))
-    elif isinstance(trj, Trajectory):
-        specs = set(list(trj.species))
-    specs = list(specs)
-    for s in ["NA", 0, "0"]:
-        if s in specs:
-            specs.pop(s)
+    specs = list(set(list(trj.species)))
     for s in specs:
         f = np.linalg.norm(trj.force, axis=-1)
-        if isinstance(trj, PaddedTrajectory):
-            ids = np.where(trj.symbols == s)
-        elif isinstance(trj, Trajectory):
-            ids = np.where(trj.species == s)
+        ids = np.where(trj.species == s)
         base_line_hist(
             f[:, ids].reshape([-1]),
             "Forces (eV/$\\mathrm{\\AA}$)",

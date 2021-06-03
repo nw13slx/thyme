@@ -97,8 +97,8 @@ class Trajectories:
 
         return {name: trj.to_dict() for name, trj in self.alltrjs.items()}
 
-    @staticmethod
-    def from_file(name: str, format: str = None, preserve_order: bool = False):
+    @classmethod
+    def from_file(cls, name: str, format: str = None, preserve_order: bool = False):
         """
         pickle format: previous objects saved as pickle format
         """
@@ -108,9 +108,9 @@ class Trajectories:
             filename=name,
             enforced_format=format,
         )
-        if isinstance(obj, dict):
-            return Trajectories.from_dict(obj)
-        return obj
+        if isinstance(obj, Trajectories):
+            return obj
+        return cls.from_dict(dict(obj))
 
     @staticmethod
     def from_dict(dictionary: dict, merge=True, preserve_order=False):
@@ -121,6 +121,7 @@ class Trajectories:
         trjs = Trajectories()
 
         for name, trj_dict in dictionary.items():
+            print(name, type(trj_dict))
             trj = Trajectory.from_dict(trj_dict)
             trjs.add_trj(trj, merge=merge, preserve_order=preserve_order)
 

@@ -265,9 +265,9 @@ class Trajectory(object):
         obj = load_file(
             supported_formats={"npz": "npz", "pickle": "pickle"}, filename=filename
         )
-        if isinstance(obj, dict):
-            return cls.from_dict(obj, update_dict=update_dict, mapping=mapping)
-        return obj
+        if isinstance(obj, cls):
+            return obj
+        return cls.from_dict(dict(obj), update_dict=update_dict, mapping=mapping)
 
     def to_dict(self):
         data = {k: getattr(self, k) for k in self.keys}
@@ -289,6 +289,7 @@ class Trajectory(object):
 
         """
         trj = cls()
+        print("input_dict", type(input_dict))
 
         input_dict = {k: v for k, v in input_dict.items()}
         for new_name, original_name in mapping.items():
