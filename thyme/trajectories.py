@@ -8,9 +8,6 @@ Lixin Sun (Harvard University)
 from copy import deepcopy
 import logging
 import numpy as np
-import pickle
-
-from collections import Counter
 
 from .trajectory import Trajectory
 from thyme.utils.atomic_symbols import species_to_order_label
@@ -22,13 +19,17 @@ def dummy_comp(trj1, trj2):
 
 
 class Trajectories:
+    
     def __init__(self):
+
         self.alltrjs = {}
         self._iter_index = 0
         self.per_frame_attrs = []
+        self.trj_id = None
+        self.in_trj_id = None
 
     def __repr__(self) -> str:
-        return f"Trajectories with {len(self)} trj"
+        return f"Trajectories with {len(self.alltrjs)} trj"
 
     def __str__(self) -> str:
         s = repr(self)
@@ -44,11 +45,13 @@ class Trajectories:
         return nframes
 
     def __len__(self):
-        return len(self.alltrjs)
+        if self.trj_id is not None:
+            return self.trj_id.shape[0]
+        return 0
 
     def __str__(self):
 
-        s = f"{len(self.alltrjs)} trajectories\n"
+        s = f"{len(self.alltrjs)} trajectories with {len(self)} frames\n"
         for name in self.alltrjs:
             s += f"----{name}----\n"
             s += f"{self.alltrjs[name]}\n"
@@ -64,12 +67,21 @@ class Trajectories:
 
         self._iter_index = getattr(self, "_iter_index", 0)
 
-        n_attrs = len(self.alltrjs)
+        n_attrs = len(self)
         if self._iter_index >= n_attrs:
             raise StopIteration
-        key = list(self.alltrjs.keys())[self._iter_index]
         self._iter_index += 1
-        return self.alltrjs[key]
+        return self.get_frame(self._iter_index-1)
+
+    def get_frame(self, idx, keys=None):
+
+        n_attrs = len(self)
+        if idx >= n_attrs:
+            raise ValueError("frame index overflow")
+        trj = list(self.alltrjs.keys())[self.trj_id[idx]]
+        frame_id = self.in_trj_id[idx]
+        return trj.get_frame(frame_id, keys=keys)
+    
 
     def save(self, name: str, format: str = None):
 
@@ -143,7 +155,7 @@ class Trajectories:
         metadata_compare=dummy_comp,
         save_mode=True,
     ):
-        if len(self) == 0:
+        if len(self.alltrjs) == 0:
             self.per_frame_attrs = deepcopy(trj.per_frame_attrs)
         elif save_mode:
             nterms = len(self.per_frame_attrs)
@@ -158,7 +170,7 @@ class Trajectories:
             if name is None and trj.name not in self.alltrjs:
                 name = trj.name
             elif name is None:
-                name = len(self)
+                name = len(self.alltrjs)
             self.alltrjs[name] = trj
             return
 
@@ -203,7 +215,7 @@ class Trajectories:
         intersection = set(self.per_frame_attrs).intersection(trjs.per_frame_attrs)
         if len(intersection) != nterms:
             raise RuntimeError(f"not enough per_frame_attrs")
-        for trj in trjs:
+        for trj in trjs.alltrjs.values():
             self.add_trj(
                 trj,
                 name=None,
