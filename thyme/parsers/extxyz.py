@@ -186,14 +186,15 @@ def write(name, trj, append=False):
     if isfile(name) and not append:
         remove(name)
     for i in range(trj.nframes):
+        frame = trj.get_frame(i)
         definition = {"pbc": False}
-        if CELL in trj.per_frame_attrs:
-            definition["cell"] = trj.cell[i]
+        if CELL in frame:
+            definition["cell"] = frame[CELL]
             definition["pbc"] = True
-        structure = Atoms(symbols=trj.species, positions=trj.position[i], **definition)
-        definition = {"forces": trj.force[i]} if FORCE in trj.per_frame_attrs else {}
+        structure = Atoms(symbols=frame['species'], positions=frame['position'], **definition)
+        definition = {"forces": frame[FORCE]} if FORCE in frame else {}
         calc = SinglePointCalculator(
-            structure, energy=trj.total_energy[i], **definition
+            structure, energy=frame[TOTAL_ENERGY], **definition
         )
         structure.calc = calc
         write_extxyz(name, structure, append=True)
