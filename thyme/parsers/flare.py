@@ -26,8 +26,11 @@ def to_strucs(trj):
 def write(filename, trj):
 
     structures = to_strucs(trj)
-    with open(filename, "wb") as fout:
-        pickle.dump(structures, fout)
+    # with open(filename, "wb") as fout:
+    #     pickle.dump(structures, fout)
+    with open(filename, "w+") as fout:
+        for struc in structures:
+            print(struc.as_str(), file=fout)
 
     return structures
 
