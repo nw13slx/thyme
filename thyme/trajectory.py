@@ -28,7 +28,6 @@ class Trajectory(object):
         "kpoints",
     ]
     stat_keys = [
-        NLINES,
         NATOMS,
         SPECIES,
         "nframes",
@@ -49,7 +48,6 @@ class Trajectory(object):
         self.name = "default"
         self.nframes = 0
         self.natoms = 0
-        self.nlines = 0
         self.formula = ""
 
         self.per_frame_attrs = []
@@ -62,12 +60,7 @@ class Trajectory(object):
         return self.nframes
 
     def __repr__(self):
-        if NATOMS in self.fixed_attrs:
-            s = f"{self.name}: {self.nframes} frames with {self.natoms} atoms, {self.formula}"
-        elif NATOMS in self.per_frame_attrs:
-            s = f"{self.name}: {self.nframes} frames with {np.min(self.natoms)}-{np.max(self.natom)} atoms"
-        else:
-            s = f"{self.name}: {self.nframes} frames with 0 atoms"
+        s = f"{self.name}: {self.nframes} frames with {self.natoms} atoms, {self.formula}"
         return s
 
     def __str__(self):
@@ -149,7 +142,7 @@ class Trajectory(object):
             raise RuntimeError("fixed fields are not consistent missing")
 
         for key in self.per_frame_attrs:
-            mat = np.vstack((getattr(self, key), dictionary[key]))
+            mat = np.append(getattr(self, key), dictionary[key], axis=0)
             setattr(self, key, mat)
 
         self.nframes += dictionary[POSITION].shape[0]
@@ -189,7 +182,7 @@ class Trajectory(object):
                 self.per_frame_attrs[0] = POSITION
                 self.per_frame_attrs[idx] = temp
 
-            if self.position.shape[1] != self.nlines:
+            if self.position.shape[1] != self.natoms:
                 raise ValueError(POSITION + " has to be defined")
 
         if len(self.metadata_attrs) > len(list(set(self.metadata_attrs))):
@@ -301,7 +294,7 @@ class Trajectory(object):
         for k in [POSITION, FORCE]:
             if k in input_dict:
                 input_dict[k] = input_dict[k].reshape([trj.nframes, -1, 3])
-        trj.nlines = input_dict[POSITION].shape[1]
+        trj.natoms = input_dict[POSITION].shape[1]
 
         for k in cls.stat_keys:
             if k in input_dict:
@@ -390,7 +383,7 @@ class Trajectory(object):
         if self.nframes == 0:
             self.copy(trj)
         else:
-            if self.nlines != trj.nlines:
+            if self.natoms != trj.natoms:
                 raise ValueError(f"cannot merge two trj with different numbers")
             if save_mode:
                 if not all(trj.species == self.species):
@@ -404,11 +397,8 @@ class Trajectory(object):
             for k in self.per_frame_attrs:
                 item = getattr(trj, k)
                 ori_item = getattr(self, k)
-                if len(item.shape) == 1:
-                    setattr(self, k, np.hstack((ori_item, item)))
-                else:
-                    setattr(self, k, np.vstack((ori_item, item)))
-                ori_item = getattr(self, k)
+                mat = np.append(ori_item, item, axis=0)
+                setattr(self, k, mat)
 
             self.copy_metadata(trj, exception=["name", "nframes", "natom", "filenames"])
 
@@ -439,16 +429,16 @@ class Trajectory(object):
 
     def reorder_atoms(self, order):
 
-        if len(order) > self.nlines:
+        if len(order) > self.natoms:
             logging.error(
-                f"{len(order)} order should be smaller than {self.nlines} lines"
+                f"{len(order)} order should be smaller than {self.natoms} lines"
             )
             raise RuntimeError()
 
         for k in self.per_frame_attrs:
             ori_item = getattr(self, k)
             if len(ori_item.shape) > 1:
-                if ori_item.shape[1] == self.nlines:
+                if ori_item.shape[1] == self.natoms:
                     item = np.swapaxes(ori_item, 0, 1)
                     item = item[order]
                     item = np.swapaxes(item, 0, 1)
@@ -456,11 +446,11 @@ class Trajectory(object):
 
         self.species = np.array(self.species)[order]
 
-        nlines = self.position.shape[1]
+        natoms = self.position.shape[1]
 
-        if nlines != self.nlines:
-            logging.info(f"extract_frames {self.nlines} lines to {nlines} lines")
-            self.nlines = nlines
+        if natoms != self.natoms:
+            logging.info(f"extract_frames {self.natoms} lines to {natoms} lines")
+            self.natoms = natoms
 
         self.sanity_check()
 
