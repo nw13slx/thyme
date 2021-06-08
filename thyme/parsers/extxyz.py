@@ -41,7 +41,7 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
 
     join_trj = Trajectories()
     for filename in xyzs:
-        join_trj.add_trjs(extxyz_to_trjs(filename, data_filter))
+        join_trj.add_trjs(from_file(filename, data_filter))
 
     return join_trj
 
@@ -55,7 +55,7 @@ def pack_folder(folder, data_filter=None, include_xyz=True):
     return data
 
 
-def extxyz_to_trjs(filename, data_filter=None):
+def from_file(filename, data_filter=None):
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
