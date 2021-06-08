@@ -20,6 +20,7 @@ def main():
 
     folders = get_childfolders("./")
     trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.pickle")
+    trjs.save("all_trjs.npz")
 
     trjs.merge()
     trjs.save("all_data_merge.pickle")

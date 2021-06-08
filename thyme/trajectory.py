@@ -170,7 +170,7 @@ class Trajectory(object):
                 raise RuntimeError(f"Data inconsistent")
 
             if len(self.per_frame_attrs) > len(list(set(self.per_frame_attrs))):
-                raise ValueError(f"repeated keys in self.per_frame_attr")
+                raise ValueError(f"repeated keys in self.per_frame_attrs")
 
             # always put POSITION as the first attribute
             if POSITION not in self.per_frame_attrs:
@@ -186,9 +186,9 @@ class Trajectory(object):
                 raise ValueError(POSITION + " has to be defined")
 
         if len(self.metadata_attrs) > len(list(set(self.metadata_attrs))):
-            raise ValueError(f"repeated keys in self.metadata_attr")
+            raise ValueError(f"repeated keys in self.metadata_attrs")
         if len(self.fixed_attrs) > len(list(set(self.fixed_attrs))):
-            raise ValueError(f"repeated keys in self.fix_attr")
+            raise ValueError(f"repeated keys in self.fix_attrs")
 
         if len(set(self.fixed_attrs).intersection(set(self.per_frame_attrs))) > 0:
             raise ValueError(
@@ -263,8 +263,7 @@ class Trajectory(object):
         return cls.from_dict(dict(obj), update_dict=update_dict, mapping=mapping)
 
     def to_dict(self):
-        data = {k: getattr(self, k) for k in self.keys}
-        return data
+        return {k: getattr(self, k) for k in self.keys}
 
     @classmethod
     def from_dict(cls, input_dict, update_dict={}, mapping={}):
@@ -282,7 +281,6 @@ class Trajectory(object):
 
         """
         trj = cls()
-        print("input_dict", type(input_dict))
 
         input_dict = {k: v for k, v in input_dict.items()}
         for new_name, original_name in mapping.items():
@@ -298,23 +296,22 @@ class Trajectory(object):
                 input_dict[k] = input_dict[k].reshape([trj.nframes, -1, 3])
         trj.natoms = input_dict[POSITION].shape[1]
 
-        for k in input_dict.get(PER_FRAME_ATTRS, []) + cls.default_per_frame_keys:
-            if k in input_dict:
-                trj.add_field(PER_FRAME_ATTRS, k, input_dict[k])
-
-        for k in input_dict.get(METADATA_ATTRS, []) + cls.default_metadata_keys:
-            if k in input_dict:
-                trj.add_field(METADATA_ATTRS, k, input_dict[k])
-
-        for k in input_dict.get(FIXED_ATTRS, []):
-            if k in input_dict:
-                trj.add_field(FIXED_ATTRS, k, input_dict[k])
-
         for k in cls.stat_keys:
             if k in input_dict:
                 setattr(trj, k, input_dict[k])
 
-        remain_keys = set(list(input_dict.keys())).intersection(set(trj.keys))
+        for attr in ["per_frame", "metadata", "fixed"]:
+            input_list = input_dict.get(f"{attr}_attrs", [])
+            default_list = getattr(cls, f"default_{attr}_keys", [])
+            for k in  input_list + default_list:
+                if k in input_dict:
+                    trj.add_field(f"{attr}_attrs", k, input_dict[k])
+
+        trj.nframes = trj.position.shape[0]
+        trj.natoms = trj.position.shape[1]
+
+
+        remain_keys = set(list(input_dict.keys()))-set(trj.keys)
         for k in remain_keys:
             logging.debug(f"undefined attributes {k}, set to metadata")
             try:
@@ -366,7 +363,7 @@ class Trajectory(object):
 
     def save(self, name: str, format: str = None):
         save_file(
-            self,
+            self.to_dict(),
             supported_formats={"npz": "npz", "pickle": "pickle"},
             filename=name,
             enforced_format=format,
