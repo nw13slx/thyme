@@ -121,7 +121,8 @@ class Trajectories:
         trjs = Trajectories()
 
         for name, trj_dict in dictionary.items():
-            print(name, type(trj_dict))
+            if not isinstance(trj_dict, dict):
+                trj_dict = trj_dict.item()
             trj = Trajectory.from_dict(trj_dict)
             trjs.add_trj(trj, merge=merge, preserve_order=preserve_order)
 
@@ -133,6 +134,8 @@ class Trajectories:
         for trj in self.alltrjs.values():
             nframes += trj.nframes
         return nframes
+
+
 
     def add_trj(
         self,

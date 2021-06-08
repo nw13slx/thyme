@@ -198,13 +198,3 @@ def write(name, trj, append=False):
         structure.calc = calc
         write_extxyz(name, structure, append=True)
     logging.info(f"write {name}")
-
-
-def write_trjs(name, trjs, joint=True):
-    if isfile(name) and joint:
-        remove(name)
-    for i, trj in trjs.alltrjs.items():
-        if joint:
-            write(name, trj, append=True)
-        else:
-            write(f"{trj.name}_{name}", trj)
