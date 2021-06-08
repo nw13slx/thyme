@@ -113,7 +113,7 @@ class Trajectories:
         return cls.from_dict(dict(obj))
 
     @staticmethod
-    def from_dict(dictionary: dict, merge=True, preserve_order=False):
+    def from_dict(dictionary: dict, merge=False, preserve_order=False):
         """
         convert dictionary to a Trajectory instance
         """

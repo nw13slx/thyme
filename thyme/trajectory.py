@@ -270,8 +270,7 @@ class Trajectory(object):
         return cls.from_dict(dict(obj), update_dict=update_dict, mapping=mapping)
 
     def to_dict(self):
-        data = {k: getattr(self, k) for k in self.keys}
-        return data
+        return {k: getattr(self, k) for k in self.keys}
 
     @classmethod
     def from_dict(cls, input_dict, update_dict={}, mapping={}):
@@ -315,8 +314,11 @@ class Trajectory(object):
                 if k in input_dict:
                     trj.add_field(f"{attr}_attrs", k, input_dict[k])
 
+        trj.nframes = trj.position.shape[0]
+        trj.natoms = trj.position.shape[1]
 
-        remain_keys = set(list(input_dict.keys())).intersection(set(trj.keys))
+
+        remain_keys = set(list(input_dict.keys()))-set(trj.keys)
         for k in remain_keys:
             logging.debug(f"undefined attributes {k}, set to metadata")
             try:
@@ -368,7 +370,7 @@ class Trajectory(object):
 
     def save(self, name: str, format: str = None):
         save_file(
-            self,
+            self.to_dict(),
             supported_formats={"npz": "npz", "pickle": "pickle"},
             filename=name,
             enforced_format=format,
