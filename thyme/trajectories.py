@@ -19,7 +19,7 @@ def dummy_comp(trj1, trj2):
 
 
 class Trajectories:
-    
+
     def __init__(self):
 
         self.alltrjs = {}
@@ -27,6 +27,7 @@ class Trajectories:
         self.per_frame_attrs = []
         self.trj_id = None
         self.in_trj_id = None
+        self.global_id = None
 
     def __repr__(self) -> str:
         return f"Trajectories with {len(self.alltrjs)} trj"
@@ -45,9 +46,24 @@ class Trajectories:
         return nframes
 
     def __len__(self):
+        self.construct_id_list()
+        return self.trj_id.shape[0]
+
+    def construct_id_list(self):
+
         if self.trj_id is not None:
-            return self.trj_id.shape[0]
-        return 0
+            return
+
+        self.trj_id = np.zeros(self.nframes, dtype=int)
+        self.in_trj_id = np.zeros(self.nframes, dtype=int)
+        self.global_id = np.arange(self.nframes)
+        count = 0
+        for id_trj, trj in enumerate(self.alltrjs.values()):
+            nframes = trj.nframes
+            self.trj_id[count:count+nframes] += id_trj
+            self.in_trj_id[count:count+nframes] += np.arange(nframes)
+            count += nframes
+
 
     def __str__(self):
 
@@ -67,8 +83,7 @@ class Trajectories:
 
         self._iter_index = getattr(self, "_iter_index", 0)
 
-        n_attrs = len(self)
-        if self._iter_index >= n_attrs:
+        if self._iter_index >= len(self):
             raise StopIteration
         self._iter_index += 1
         return self.get_frame(self._iter_index-1)
@@ -77,11 +92,37 @@ class Trajectories:
 
         n_attrs = len(self)
         if idx >= n_attrs:
-            raise ValueError("frame index overflow")
-        trj = list(self.alltrjs.keys())[self.trj_id[idx]]
+            raise ValueError(f"frame index overflow {n_attrs}")
+        trj_id = self.trj_id[idx]
         frame_id = self.in_trj_id[idx]
-        return trj.get_frame(frame_id, keys=keys)
-    
+        trj = list(self.alltrjs.values())[trj_id]
+        trj_name = list(self.alltrjs.keys())[trj_id]
+        return dict(name=trj_name, **trj.get_frame(frame_id, keys=keys))
+
+    def get_attrs(self, key):
+
+        self.construct_id_list()
+        for id_trj, trj in enumerate(self.alltrjs.values()):
+            attr = getattr(trj, attr, None)
+            if attr is None:
+                raise ValueError(f"not all trjs has attr {attr}")
+
+        array = []
+        for id_trj, trj in enumerate(self.alltrjs.values()):
+            array += [getattr(trj, attr)]
+        array = np.stack(array)
+
+        return array[self.global_id]
+
+    def include_frames(self, accept_id=None):
+
+        if accept_id is None:
+            return
+        self.construct_id_list()
+
+        self.trj_id = self.trj_id[accept_id]
+        self.in_trj_id = self.in_trj_id[accept_id]
+        self.global_id = self.global_id[accept_id]
 
     def save(self, name: str, format: str = None):
 
