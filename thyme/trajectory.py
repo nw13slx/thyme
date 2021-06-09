@@ -128,6 +128,12 @@ class Trajectory(object):
             )
         return frame
 
+    def get_attr(self, key):
+        if key in self.per_frame_attrs:
+            return getattr(self, key)
+        else:
+            return np.array([getattr(self, key)] * self.nframes)
+
     def add_frames(self, dictionary):
         find_key = [(key in dictionary) for key in self.per_frame_attrs]
         if not all(find_key):
@@ -303,15 +309,14 @@ class Trajectory(object):
         for attr in ["per_frame", "metadata", "fixed"]:
             input_list = input_dict.get(f"{attr}_attrs", [])
             default_list = getattr(cls, f"default_{attr}_keys", [])
-            for k in  input_list + default_list:
+            for k in input_list + default_list:
                 if k in input_dict:
                     trj.add_field(f"{attr}_attrs", k, input_dict[k])
 
         trj.nframes = trj.position.shape[0]
         trj.natoms = trj.position.shape[1]
 
-
-        remain_keys = set(list(input_dict.keys()))-set(trj.keys)
+        remain_keys = set(list(input_dict.keys())) - set(trj.keys)
         for k in remain_keys:
             logging.debug(f"undefined attributes {k}, set to metadata")
             try:

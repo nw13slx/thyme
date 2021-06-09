@@ -253,7 +253,9 @@ def write(name, trj):
         if CELL in frame:
             definition["cell"] = frame[CELL]
             definition["pbc"] = True
-        structure = Atoms(symbols=frame['species'], positions=frame['position'], **definition)
+        structure = Atoms(
+            symbols=frame["species"], positions=frame["position"], **definition
+        )
         write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
 
 

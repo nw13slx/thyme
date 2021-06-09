@@ -17,10 +17,11 @@ def to_strucs(trj):
             species=frame[SPECIES],
             positions=frame[POSITION],
             forces=frame[FORCE],
-            energy=frame[TOTAL_ENERGY]
+            energy=frame[TOTAL_ENERGY],
         )
         structures += [structure]
     return structures
+
 
 def write(filename, trj):
 
@@ -54,7 +55,7 @@ def from_file(filename, as_trajectory=True):
             new_dict[key] = new_dict[key].reshape((1,) + new_dict[key].shape)
         new_dict[PER_FRAME_ATTRS] = per_frame_attrs
         trjs.add_trj(
-            Trajectory.from_dict( new_dict),
+            Trajectory.from_dict(new_dict),
             name=count,
             merge=True,
             preserve_order=False,

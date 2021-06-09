@@ -191,7 +191,9 @@ def write(name, trj, append=False):
         if CELL in frame:
             definition["cell"] = frame[CELL]
             definition["pbc"] = True
-        structure = Atoms(symbols=frame['species'], positions=frame['position'], **definition)
+        structure = Atoms(
+            symbols=frame["species"], positions=frame["position"], **definition
+        )
         definition = {"forces": frame[FORCE]} if FORCE in frame else {}
         calc = SinglePointCalculator(
             structure, energy=frame[TOTAL_ENERGY], **definition

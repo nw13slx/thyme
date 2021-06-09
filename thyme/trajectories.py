@@ -19,9 +19,10 @@ def dummy_comp(trj1, trj2):
 
 
 class Trajectories:
-
     def __init__(self):
 
+        self.nframes = 0
+        self.ntrjs = 0
         self.alltrjs = {}
         self._iter_index = 0
         self.per_frame_attrs = []
@@ -35,24 +36,19 @@ class Trajectories:
     def __str__(self) -> str:
         s = repr(self)
         for name, trj in self.alltrjs:
-            s += "\nname: {repr(trj)}"
+            s += "\nname: {str(trj)}"
         return s
 
-    @property
-    def nframes(self):
-        nframes = 0
-        for trj in self.alltrjs.values():
-            nframes += trj.nframes
-        return nframes
-
     def __len__(self):
-        self.construct_id_list()
-        return self.trj_id.shape[0]
+        return self.nframes
 
     def construct_id_list(self, force_run=False):
 
         if self.trj_id is not None and not force_run:
-            return
+            max_trj = np.max(self.trj_id)
+            max_frame = np.max(self.global_id)
+            if max_trj == (self.ntrjs - 1) and max_frame == (self.nframes - 1):
+                return
 
         self.trj_id = np.zeros(self.nframes, dtype=int)
         self.in_trj_id = np.zeros(self.nframes, dtype=int)
@@ -60,10 +56,9 @@ class Trajectories:
         count = 0
         for id_trj, trj in enumerate(self.alltrjs.values()):
             nframes = trj.nframes
-            self.trj_id[count:count+nframes] += id_trj
-            self.in_trj_id[count:count+nframes] += np.arange(nframes)
+            self.trj_id[count : count + nframes] += id_trj
+            self.in_trj_id[count : count + nframes] += np.arange(nframes)
             count += nframes
-
 
     def __str__(self):
 
@@ -86,7 +81,7 @@ class Trajectories:
         if self._iter_index >= len(self):
             raise StopIteration
         self._iter_index += 1
-        return self.get_frame(self._iter_index-1)
+        return self.get_frame(self._iter_index - 1)
 
     def get_frame(self, idx, keys=None):
 
@@ -99,23 +94,22 @@ class Trajectories:
         trj_name = list(self.alltrjs.keys())[trj_id]
         return dict(name=trj_name, **trj.get_frame(frame_id, keys=keys))
 
-    def get_attrs(self, attr):
+    def get_attrs(self, key):
 
         self.construct_id_list()
         for id_trj, trj in enumerate(self.alltrjs.values()):
-            attr = getattr(trj, attr, None)
+            attr = getattr(trj, key, None)
             if attr is None:
                 raise ValueError(f"not all trjs has attr {attr}")
 
         array = []
         for id_trj, trj in enumerate(self.alltrjs.values()):
-            sub_array = getattr(trj, attr)
-            if attr in trj.per_frame_attrs:
-                array += [sub_array]
-            else:
-                array += [sub_array]*trj.nframes
-        array = np.stack(array)
-
+            sub_array = trj.get_attr(key)
+            array += [sub_array]
+        if len(array[0].shape) <= 1:
+            array = np.hstack(array)
+        else:
+            array = np.vstack(array)
         return array[self.global_id]
 
     def include_frames(self, accept_id=None):
@@ -185,14 +179,11 @@ class Trajectories:
 
         return trjs
 
-    @property
-    def nframes(self):
-        nframes = 0
-        for trj in self.alltrjs.values():
-            nframes += trj.nframes
-        return nframes
-
-
+    def pop_trj(self, name):
+        trj = self.alltrjs.pop(name, None)
+        if trj is not None:
+            self.nframes -= trj.nframes
+            self.ntrjs -= 1
 
     def add_trj(
         self,
@@ -220,6 +211,8 @@ class Trajectories:
             elif name is None:
                 name = len(self.alltrjs)
             self.alltrjs[name] = trj
+            self.nframes += trj.nframes
+            self.ntrjs += 1
             return
 
         # order trj by element
@@ -251,6 +244,8 @@ class Trajectories:
                 self.alltrjs[stored_label] = Trajectory()
 
         self.alltrjs[stored_label].add_trj(trj, save_mode=False, order=order)
+        self.nframes += trj.nframes
+        self.ntrjs += 1
 
     def add_trjs(
         self,
