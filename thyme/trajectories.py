@@ -49,9 +49,9 @@ class Trajectories:
         self.construct_id_list()
         return self.trj_id.shape[0]
 
-    def construct_id_list(self):
+    def construct_id_list(self, force_run=False):
 
-        if self.trj_id is not None:
+        if self.trj_id is not None and not force_run:
             return
 
         self.trj_id = np.zeros(self.nframes, dtype=int)
@@ -99,7 +99,7 @@ class Trajectories:
         trj_name = list(self.alltrjs.keys())[trj_id]
         return dict(name=trj_name, **trj.get_frame(frame_id, keys=keys))
 
-    def get_attrs(self, key):
+    def get_attrs(self, attr):
 
         self.construct_id_list()
         for id_trj, trj in enumerate(self.alltrjs.values()):
@@ -109,7 +109,11 @@ class Trajectories:
 
         array = []
         for id_trj, trj in enumerate(self.alltrjs.values()):
-            array += [getattr(trj, attr)]
+            sub_array = getattr(trj, attr)
+            if attr in trj.per_frame_attrs:
+                array += [sub_array]
+            else:
+                array += [sub_array]*trj.nframes
         array = np.stack(array)
 
         return array[self.global_id]
