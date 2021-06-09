@@ -247,25 +247,14 @@ def parse_vasprun_trj(folder, data_filter):
 
 
 def write(name, trj):
-    if trj.is_padded:
-        for i in range(trj.nframes):
-            natom = trj.natoms[i]
-            structure = Atoms(
-                cell=trj.cells[i].reshape([3, 3]),
-                symbols=trj.symbols[:natom],
-                positions=trj.positions[i][:natom].reshape([-1, 3]),
-                pbc=True,
-            )
-            write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
-    else:
-        for i in range(trj.nframes):
-            structure = Atoms(
-                cell=trj.cells[i].reshape([3, 3]),
-                symbols=trj.species,
-                positions=trj.positions[i].reshape([-1, 3]),
-                pbc=True,
-            )
-            write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
+    for i in range(trj.nframes):
+        frame = trj.get_frame(i)
+        definition = {"pbc": False}
+        if CELL in frame:
+            definition["cell"] = frame[CELL]
+            definition["pbc"] = True
+        structure = Atoms(symbols=frame['species'], positions=frame['position'], **definition)
+        write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
 
 
 def compare_metadata(trj1, trj2):
