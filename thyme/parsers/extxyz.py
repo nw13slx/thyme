@@ -208,9 +208,7 @@ def write(name, trj, append=False):
                     rtol=1e-4,
                 )
             ):
-                raise RuntimeWarning(
-                    "Stress Tensor is not symmetical"
-                )
+                raise RuntimeWarning("Stress Tensor is not symmetical")
         calc = SinglePointCalculator(
             structure, energy=frame[TOTAL_ENERGY], **definition
         )

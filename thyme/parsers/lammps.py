@@ -45,7 +45,6 @@ def write(name, trj, color_key=""):
 
     spe2num = {}
 
-
     fout = open(name, "w+")
 
     for i in range(trj.nframes):
@@ -58,17 +57,19 @@ def write(name, trj, color_key=""):
 
         natom = frame[NATOMS]
         hs = head_str.format(
-                lx=cell[0, 0],
-                ly=cell[1, 1],
-                lz=cell[2, 2],
-                timestep=i,
-                natom=natom,
-                type_str=type_str,
+            lx=cell[0, 0],
+            ly=cell[1, 1],
+            lz=cell[2, 2],
+            timestep=i,
+            natom=natom,
+            type_str=type_str,
         )
 
         species = np.unique(frame[SPECIES])
-        base = len(spe2num)+1
-        spe2num.update({spe:i+base for i, spe in enumerate(species) if spe not in spe2num})
+        base = len(spe2num) + 1
+        spe2num.update(
+            {spe: i + base for i, spe in enumerate(species) if spe not in spe2num}
+        )
 
         string = f"{hs}"
         for j in range(natom):

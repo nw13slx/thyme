@@ -114,16 +114,18 @@ class Trajectory(object):
     def get_frame(self, idx, keys=None):
         if idx >= self.nframes:
             raise ValueError(f"{idx} is larger than the total length {self.nframes}")
-        frame = {NATOMS:self.natoms, SPECIES:self.species}
+        frame = {NATOMS: self.natoms, SPECIES: self.species}
         if keys is None:
             frame.update({key: getattr(self, key)[idx] for key in self.per_frame_attrs})
             frame.update({key: getattr(self, key) for key in self.fixed_attrs})
         else:
-            frame.update({
-                key: getattr(self, key)[idx]
-                for key in self.per_frame_attrs
-                if key in keys
-            })
+            frame.update(
+                {
+                    key: getattr(self, key)[idx]
+                    for key in self.per_frame_attrs
+                    if key in keys
+                }
+            )
             frame.update(
                 {key: getattr(self, key) for key in self.fixed_attrs if key in keys}
             )
@@ -201,7 +203,10 @@ class Trajectory(object):
                 self.per_frame_attrs[0] = POSITION
                 self.per_frame_attrs[idx] = temp
 
-            if self.position.shape[1] != self.natoms or len(self.species) != self.natoms:
+            if (
+                self.position.shape[1] != self.natoms
+                or len(self.species) != self.natoms
+            ):
                 if self.position.shape[1] == len(self.species):
                     self.natoms = self.position.shape[1]
                 else:
@@ -305,7 +310,12 @@ class Trajectory(object):
         """
         trj = cls()
 
-        backward_remap = {POSITION: POSITION+"s", FORCE:FORCE+"S", CELL: CELL+"s", TOTAL_ENERGY: "energies"}
+        backward_remap = {
+            POSITION: POSITION + "s",
+            FORCE: FORCE + "S",
+            CELL: CELL + "s",
+            TOTAL_ENERGY: "energies",
+        }
 
         input_dict = {k: v for k, v in input_dict.items()}
         for new_name, original_name in mapping.items():
@@ -314,7 +324,6 @@ class Trajectory(object):
             if original_name in input_dict:
                 input_dict[new_name] = input_dict.pop(original_name)
         input_dict.update(update_dict)
-
 
         trj.nframes = input_dict[POSITION].shape[0]
 
