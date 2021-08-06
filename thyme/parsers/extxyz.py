@@ -83,6 +83,7 @@ def from_file(filename, data_filter=None):
             "symbols": r"^([a-zA-Z]+)\s",
         },
     )
+    # TO DO: need to parse stress as well
 
     natoms = np.array(d["natoms"], dtype=int).reshape([-1])
     # logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
@@ -197,6 +198,8 @@ def write(name, trj, append=False):
             symbols=frame["species"], positions=frame["position"], **definition
         )
         definition = {"forces": frame[FORCE]} if FORCE in frame else {}
+        if STRESS in frame:
+            definition["stress"] = frame[STRESS]
         calc = SinglePointCalculator(
             structure, energy=frame[TOTAL_ENERGY], **definition
         )
