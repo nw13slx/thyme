@@ -15,6 +15,6 @@ for filename in files:
     alldata.add_trj(trj)
 
 keep_id = rm_duplicate(alldata)
-alldata.filter_frames(keep_id)
+alldata.include_frames(keep_id)
 
 alldata.save(sys.argv[-1])

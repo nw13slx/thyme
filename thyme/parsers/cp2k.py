@@ -210,7 +210,7 @@ def parse_force_eval_pairs(folder, outfile, outfile_dict):
     logging.info(f"parse {outfile}")
 
     trj = Trajectory()
-    trj.per_frame_attrs += ["forces", "energies", "positions"]  # , 'symbols']
+    trj.per_frame_attrs += ["forces", "total_energy", "positions"]  # , 'symbols']
 
     symbol, force = parse_forceeval_force(outfile)
 
@@ -249,7 +249,7 @@ def parse_force_eval_pairs(folder, outfile, outfile_dict):
     if find_force:
         data["forces"] = force
         if "energy" in outfile_dict:
-            data["energies"] = [outfile_dict["energy"]]
+            data["total_energy"] = [outfile_dict["energy"]]
 
         trj = Trajectory.from_dict(data)
 
@@ -492,7 +492,7 @@ def parse_ase_shell_out(folder, filename):
             data["cells"] = np.copy(cell).reshape([1, 3, 3])
             # data['species'] = species
             data["positions"] = np.copy(position).reshape([1, -1, 3])
-            data["energies"] = [energy]
+            data["total_energy"] = [energy]
             data["forces"] = np.copy(force).reshape([1, -1, 3])
             data["natom"] = natom
 
@@ -521,7 +521,7 @@ def parse_cp2k_xyzs(posxyz, forcexyz, cell, metadata):
         posxyz,
         {
             "natoms": r"^\s*([0-9]+)\s*$",
-            "energies": r"E\s*=\s*" + fl_num,
+            "total_energy": r"E\s*=\s*" + fl_num,
             "pos": r"^\s*[A-Z][a-zA-Z]*" + sfl_num * 3,
             "symbols": r"^\s*([A-Z][a-zA-Z]*)" + nc_sfl_num * 3,
         },
@@ -535,7 +535,7 @@ def parse_cp2k_xyzs(posxyz, forcexyz, cell, metadata):
         },
     )
 
-    nframes = len(d["energies"])
+    nframes = len(d["total_energy"])
     if nframes == 0:
         return Trajectory()
 
@@ -543,7 +543,7 @@ def parse_cp2k_xyzs(posxyz, forcexyz, cell, metadata):
         positions=np.array(d["pos"], dtype=float).reshape([nframes, -1, 3]),
         forces=np.array(d_f["pos"], dtype=float).reshape([nframes, -1, 3])
         * HARTREE_BOHR,
-        energies=np.array(d["energies"], dtype=float).reshape([-1]) * HARTREE,
+        total_energy=np.array(d["total_energy"], dtype=float).reshape([-1]) * HARTREE,
         cells=np.array([cell] * nframes, dtype=float).reshape([nframes, 3, 3]),
     )
 

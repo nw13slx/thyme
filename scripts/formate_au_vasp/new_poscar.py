@@ -22,16 +22,16 @@ def main():
     trjs.save("all_data_merged.pickle")
 
     mineT = Trajectory()
-    for name, trj in trjs.alldata.items():
-        mine = np.min(trj.energies)
-        keep_id = np.where(trj.energies < (mine + 20))[0]
-        remove = np.where(trj.energies >= (mine + 20))[0]
-        print("ditch", trj.energies[remove])
-        trj.filter_frames(keep_id)
-        print("keep", trj.energies)
+    for name, trj in trjs.alltrjs.items():
+        mine = np.min(trj.total_energy)
+        keep_id = np.where(trj.total_energy < (mine + 20))[0]
+        remove = np.where(trj.total_energy >= (mine + 20))[0]
+        print("ditch", trj.total_energy[remove])
+        trj.include_frames(keep_id)
+        print("keep", trj.total_energy)
         write("result_pos/" + name, trj)
 
-        # trj.filter_frames(keep_id)
+        # trj.include_frames(keep_id)
 
 
 if __name__ == "__main__":

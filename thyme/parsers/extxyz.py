@@ -10,8 +10,9 @@ from ase.io.extxyz import key_val_str_to_dict, parse_properties
 from ase.io.extxyz import write_xyz as write_extxyz
 from ase.calculators.singlepoint import SinglePointCalculator
 
+from thyme import Trajectories, Trajectory
+from thyme._key import *
 from thyme.parsers.monty import read_pattern, read_table_pattern
-from thyme.trajectory import PaddedTrajectory
 from thyme.routines.folders import find_folders, find_folders_matching
 
 fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
@@ -33,15 +34,14 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
     if include_xyz:
         xyzs += glob(f"{folder}/*.xyz")
 
-    hasxyz = len(xyzs) > 0
-    if not hasxyz:
-        return data
+    if len(xyzs) == 0:
+        return Trajectories()
 
     xyzs = sorted(xyzs, key=getmtime)
 
-    join_trj = PaddedTrajectory()
+    join_trj = Trajectories()
     for filename in xyzs:
-        join_trj.add_trj(extxyz_to_padded_trj(filename, data_filter))
+        join_trj.add_trjs(from_file(filename, data_filter))
 
     return join_trj
 
@@ -55,7 +55,7 @@ def pack_folder(folder, data_filter=None, include_xyz=True):
     return data
 
 
-def extxyz_to_padded_dict(filename):
+def from_file(filename, data_filter=None):
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
@@ -77,8 +77,8 @@ def extxyz_to_padded_dict(filename):
             + sfl_num
             + sfl_num
             + r"\"",
-            "free_energies": r"free_energy=" + fl_num,
-            "energies": r"energy=" + fl_num,
+            "free_total_energy": r"free_energy=" + fl_num,
+            "total_energy": r"energy=" + fl_num,
             "posforce": string,
             "symbols": r"^([a-zA-Z]+)\s",
         },
@@ -87,93 +87,55 @@ def extxyz_to_padded_dict(filename):
     natoms = np.array(d["natoms"], dtype=int).reshape([-1])
     # logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
 
-    if len(d["free_energies"]) > 0:
-        energies = np.array(d["free_energies"], dtype=float).reshape([-1])
-        logging.debug("use free_energies tag for energies")
+    if len(d["free_total_energy"]) > 0:
+        total_energy = np.array(d["free_total_energy"], dtype=float).reshape([-1])
+        logging.debug("use free_total_energy tag for total_energy")
     else:
-        energies = np.array(d["energies"], dtype=float).reshape([-1])
-        logging.debug("use energies tag for energies")
+        total_energy = np.array(d["total_energy"], dtype=float).reshape([-1])
+        logging.debug("use total_energy tag for total_energy")
 
-    cells = np.array(d["cells"], dtype=float).reshape([-1, 3, 3])
+    cell = np.array(d["cells"], dtype=float).reshape([-1, 3, 3])
 
     posforce = np.array(d["posforce"], dtype=float).reshape([-1, 6])
-    positions = posforce[:, index["pos"] : index["pos"] + 3]
-    forces = posforce[:, index["forces"] : index["forces"] + 3]
-    # logging.debug(f"pos.shape {positions.shape} force.shape {forces.shape}")
-    # logging.debug(f"first couple lines of posforce")
-    # logging.debug(f"{posforce[0]}")
-    # logging.debug(f"{posforce[1]}")
-    # logging.debug(f"{posforce[2]}")
+    position = posforce[:, index["pos"] : index["pos"] + 3]
+    force = posforce[:, index["forces"] : index["forces"] + 3]
+    del posforce
 
-    symbols = np.array(d["symbols"], dtype=str).reshape([-1])
+    species = np.array(d["symbols"], dtype=str).reshape([-1])
 
     max_atoms = np.max(natoms)
     newpos = []
     newforce = []
     newsymbols = []
     counter = 0
+    trjs = Trajectories()
     for i, natom in enumerate(natoms):
-        pos = np.zeros((max_atoms, 3))
-        pos[:natom] += positions[counter : counter + natom]
-        newpos += [[pos]]
-        fo = np.zeros((max_atoms, 3))
-        fo[:natom] += forces[counter : counter + natom]
-        newforce += [[fo]]
-        newsymbols += [
-            np.hstack((symbols[counter : counter + natom], ["0"] * (max_atoms - natom)))
-        ]
         counter += natom
-    positions = np.vstack(newpos)
-    forces = np.vstack(newforce)
-    symbols = np.vstack(newsymbols)
+        trj = Trajectory.from_dict(
+            {
+                POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
+                FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
+                TOTAL_ENERGY: total_energy[[i]],
+                CELL: cell[[i]],
+                SPECIES: species[counter : counter + natom].reshape([1, natom]),
+                PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES],
+            }
+        )
+        if data_filter is not None:
+            try:
+                accept_id = data_filter(trj)
+                trj.include_frames(accept_id)
+            except Exception as e:
+                logging.error(f"{e}")
+                raise RuntimeError(f"{e}")
+        if trj.nframes > 0:
+            trj.name = i
+            trjs.add_trj(trj, merge=True, preserve_order=False)
 
-    # logging.debug(f"after reshape: pos.shape {positions.shape} force.shape {forces.shape}")
-    # logging.debug(f"first couple lines of posforce")
-    # logging.debug(f"{positions[0][0]}")
-    # logging.debug(f"{positions[0][1]}")
-    # logging.debug(f"{positions[0][2]}")
+    logging.info(f"convert {filename} to {repr(trjs)}")
+    logging.debug(f"{trjs}")
 
-    dictionary = dict(
-        positions=positions,
-        forces=forces,
-        energies=energies,
-        cells=cells,
-        symbols=symbols,
-        natoms=natoms,
-        natom=max_atoms,
-    )
-
-    # double check all arrays have the same number of frames
-    nframes = []
-    for k in dictionary:
-        if k != "natom":
-            nframes += [dictionary[k].shape[0]]
-    assert len(set(nframes)) == 1
-
-    return dictionary
-
-
-def extxyz_to_padded_trj(filename, data_filter=None):
-
-    dictionary = extxyz_to_padded_dict(filename)
-
-    trj = PaddedTrajectory.from_dict(dictionary)
-
-    if data_filter is not None:
-        try:
-            accept_id = data_filter(trj)
-            trj.filter_frames(accept_id)
-        except Exception as e:
-            logging.error(f"{e}")
-            logging.error("extxyz only accept batch filter work on paddedtrajectory")
-            raise RuntimeError("")
-
-    trj.name = filename
-
-    logging.info(f"convert {filename} to {repr(trj)}")
-    logging.debug(f"{trj}")
-
-    return trj
+    return trjs
 
 
 def posforce_regex(filename):
@@ -220,43 +182,24 @@ def posforce_regex(filename):
     return string, index
 
 
-def write(name, trj):
-    if isfile(name):
+def write(name, trj, append=False):
+    if isfile(name) and not append:
         remove(name)
-    if not trj.is_padded:
-        for i in range(trj.nframes):
-            definition = {'pbc':False}
-            if 'cells' in trj.per_frame_attrs:
-                definition['cell']=trj.cells[i]
-                definition['pbc']=True
-            structure = Atoms(
-                symbols=trj.species,
-                positions=trj.positions[i],
-                **definition
-            )
-            definition = {'forces':trj.forces[i]} if 'forces' in trj.per_frame_attrs else {}
-            calc = SinglePointCalculator(
-                structure, energy=trj.energies[i], **definition
-            )
-            structure.calc = calc
-            write_extxyz(name, structure, append=True)
-    else:
-        for i in range(trj.nframes):
-            natom = trj.natoms[i]
-            structure = Atoms(
-                cell=trj.cells[i],
-                symbols=trj.symbols[i][:natom],
-                positions=trj.positions[i][:natom],
-                pbc=True,
-            )
-            calc = SinglePointCalculator(
-                structure, energy=trj.energies[i], forces=trj.forces[i][:natom]
-            )
-            structure.calc = calc
-            write_extxyz(name, structure, append=True)
+    if hasattr(trj, "construct_id_list"):
+        trj.construct_id_list(force_run=False)
+    for i in range(trj.nframes):
+        frame = trj.get_frame(i)
+        definition = {"pbc": False}
+        if CELL in frame:
+            definition["cell"] = frame[CELL]
+            definition["pbc"] = True
+        structure = Atoms(
+            symbols=frame["species"], positions=frame["position"], **definition
+        )
+        definition = {"forces": frame[FORCE]} if FORCE in frame else {}
+        calc = SinglePointCalculator(
+            structure, energy=frame[TOTAL_ENERGY], **definition
+        )
+        structure.calc = calc
+        write_extxyz(name, structure, append=True)
     logging.info(f"write {name}")
-
-
-def write_trjs(name, trjs):
-    for i, trj in trjs.alldata.items():
-        write(f"{trj.name}_{name}", trj)

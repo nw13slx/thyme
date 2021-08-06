@@ -40,7 +40,7 @@ def main():
             folders,
             pack_folder_trj,
             e_filter,
-            npz_filename="all_data.pickle",
+            ckpt_filename="all_data.pickle",
             merge_level=1,
         )
     else:
@@ -50,15 +50,15 @@ def main():
     trjs.save("trjs_padded_mat.npz")
     multiple_plots_e(trjs, prefix="alldata")
 
-    for name, trj in trjs.alldata.items():
+    for name, trj in trjs.alltrjs.items():
         frames = sort_e(trj)
-        trj.filter_frames(frames)
+        trj.include_frames(frames)
         logging.info(
-            f"{repr(trj)} min and max E difference {np.max(trj.energies)-np.min(trj.energies)}"
+            f"{repr(trj)} min and max E difference {np.max(trj.total_energy)-np.min(trj.total_energy)}"
         )
-        mine = trj.energies[0]
-        keep_id = np.where(trj.energies < (mine + 40))[0]
-        trj.filter_frames(keep_id)
+        mine = trj.total_energy[0]
+        keep_id = np.where(trj.total_energy < (mine + 40))[0]
+        trj.include_frames(keep_id)
     trjs.save("trjs_remove_40up_padded_mat.npz")
     multiple_plots_e(trjs, prefix="40eV")
     write_trjs("all.xyz", trjs)

@@ -6,8 +6,8 @@ from os.path import getmtime, isfile
 from os import remove
 
 from thyme.parsers.monty import read_pattern, read_table_pattern
-from thyme.trajectory import PaddedTrajectory
 from thyme.routines.folders import find_folders, find_folders_matching
+from thyme._key import *
 
 fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
 sfl_num = r"\s+([+-]?\d+.\d+[eE]?[+-]?\d*)"
@@ -20,64 +20,62 @@ ITEM: BOX BOUNDS pp pp pp
 0 {lx}
 0 {ly}
 0 {lz}
-ITEM: ATOMS id x y z {type_str}"""
+ITEM: ATOMS id type x y z {type_str}"""
 
 
 def write(name, trj, color_key=""):
+
     if isfile(name):
         remove(name)
 
+    keys = [POSITION]
+
+    type_str = ""
     for key in trj.per_frame_attrs:
 
-        if key == "forces":
-            type_str = "fx fy fz"
-        elif key == "velocities":
-            type_str = "vx vy vz"
+        if key == FORCE:
+            type_str += "fx fy fz"
+            keys += [FORCE]
+        elif key == VELOCITY:
+            type_str += "vx vy vz"
+            keys += [VELOCITY]
         elif key == color_key:
-            type_str = "q"
+            type_str += "q"
+            keys += [color_key]
 
-    if not trj.is_padded:
-        species = np.unique(trj.symbolx)
-    else:
-        species = np.unique(trj.species)
+    spe2num = {}
+
 
     fout = open(name, "w+")
 
-    natom = trj.natom
-    if not trj.is_padded:
-        atomic_number = np.array(
-            [atomic_numbers_dict[sym] for sym in trj.species], dtype=int
-        ).reshape([-1, 1])
-
     for i in range(trj.nframes):
+        frame = trj.get_frame(i)
 
-        non_diag = trj.cells[i][((0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1))]
-        if np.max(np.abs(non_diag)) > 0:
+        cell = frame[CELL]
+        off_dia_sum = np.sum(np.abs(cell)) - np.trace(np.abs(cell))
+        if off_dia_sum > 0:
             raise NotImplementedError()
 
-        if trj.is_padded:
-            natom = trj.natoms[i]
-            atomic_number = np.array(
-                [atomic_numbers_dict[sym] for sym in trj.symbols[i]], dtype=int
-            ).reshape([-1, 1])
-
-        head_str.format(
-            dict(
-                lx=trj.cells[i][0, 0],
-                ly=trj.cells[i][1, 1],
-                lz=trj.cells[i][2, 2],
+        natom = frame[NATOMS]
+        hs = head_str.format(
+                lx=cell[0, 0],
+                ly=cell[1, 1],
+                lz=cell[2, 2],
                 timestep=i,
                 natom=natom,
                 type_str=type_str,
-            )
         )
-        #  data
-        # for key in trj.per_frame_attrs:
+
+        species = np.unique(frame[SPECIES])
+        base = len(spe2num)+1
+        spe2num.update({spe:i+base for i, spe in enumerate(species) if spe not in spe2num})
+
+        string = f"{hs}"
+        for j in range(natom):
+            string += f"\n{j+1} {spe2num[frame[SPECIES][j]]} "
+            for key in keys:
+                string += " ".join([f"{value}" for value in frame[key][j]])
+        print(string, file=fout)
 
     logging.info(f"write {name}")
     fout.close()
-
-
-def write_trjs(name, trjs):
-    for i, trj in trjs.alldata.items():
-        write(f"{trj.name}_{name}", trj)

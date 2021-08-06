@@ -50,7 +50,7 @@ def main():
         data = np.load(npz)
         o_pos = data["positions"]
         o_for = data["forces"]
-        o_e = data["energies"]
+        o_e = data["total_energy"]
         o_c = data["cells"]
         o_spe = metadata["species"]
         o_atomic = []

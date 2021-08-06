@@ -6,6 +6,7 @@ import time
 from thyme.parsers.monty import read_pattern, read_table_pattern
 from thyme.routines.folders import find_folders
 from thyme.trajectory import Trajectory
+from thyme._key import *
 
 from collections import Counter
 from os.path import isfile
@@ -77,14 +78,14 @@ def parse_outcar_trj(folder, data_filter):
         return Trajectory()
 
     t = time.time()
-    d_energies = read_pattern(
+    d_total_energy = read_pattern(
         filename,
-        {"energies": r"free  energy   TOTEN\s+=\s+([+-]?\d+.\d+)"},
+        {"total_energy": r"free  energy   TOTEN\s+=\s+([+-]?\d+.\d+)"},
         postprocess=lambda x: float(x),
     )
-    if len(d_energies["energies"]) == 0:
+    if len(d_total_energy["total_energy"]) == 0:
         return Trajectory()
-    energies = np.hstack(d_energies["energies"])
+    total_energy = np.hstack(d_total_energy["total_energy"])
 
     logging.info(f" parsing {filename} for positions")
     pos_force = read_table_pattern(
@@ -155,28 +156,24 @@ def parse_outcar_trj(folder, data_filter):
                 ]
             )
         )
-    natom = pos_force.shape[1]
-    data["natom"] = natom
 
     data.update(
-        dict(
-            cells=cs[converged_steps],
-            positions=pos_force[converged_steps, :, :3],
-            forces=pos_force[converged_steps, :, 3:],
-            energies=energies[converged_steps],
-            species=species,
-        )
+        {
+            CELL: cs[converged_steps],
+            POSITION: pos_force[converged_steps, :, :3],
+            FORCE: pos_force[converged_steps, :, 3:],
+            TOTAL_ENERGY: total_energy[converged_steps],
+            SPECIES: species,
+            "electronic_steps": np.hstack(n_electronic_steps)[converged_steps],
+            PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, "electronic_steps"],
+            FIXED_ATTRS: [SPECIES, NATOMS],
+        }
     )
 
     trj = Trajectory.from_dict(data)
 
-    try:
-        accept_id = data_filter(trj)
-        trj.filter_frames(accept_id)
-    except Exception as e:
-        logging.error(f"{e}")
-        logging.error("extxyz only accept batch filter work on paddedtrajectory")
-        raise RuntimeError("")
+    accept_id = data_filter(trj)
+    trj.include_frames(accept_id)
 
     trj.name = filename
 
@@ -204,47 +201,43 @@ def parse_vasprun_trj(folder, data_filter):
     data["cutoff"] = vasprun.incar["ENCUT"]
     data["dipole_correction"] = vasprun.parameters["LDIPOL"]
     species = vasprun.atomic_symbols
-    data["species"] = species
-    data["natom"] = len(vasprun.atomic_symbols)
     data["kpoints"] = vasprun.kpoints.kpts[0]
 
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     electronic_steps = []
-    for step in vasprun.ionic_steps:
-        electronic_steps += [len(step["electronic_steps"])]
-        positions += [step["structure"].cart_coords.reshape([-1])]
-        forces += [np.hstack(step["forces"])]
-        energies += [step["e_fr_energy"]]
-        cells += [step["structure"].lattice.matrix.reshape([-1])]
+    for istep, step in enumerate(vasprun.ionic_steps):
+        es = len(step["electronic_steps"])
+        if es < nelm:
+            electronic_steps += [es]
+            positions += [step["structure"].cart_coords.reshape([-1])]
+            forces += [np.hstack(step["forces"])]
+            total_energy += [step["e_fr_energy"]]
+            cells += [step["structure"].lattice.matrix.reshape([-1])]
+        else:
+            logging.info(f"skip unconverged step {istep}")
+
+    if len(electronic_steps) == 0:
+        return Trajectory()
 
     data.update(
-        dict(
-            cells=np.vstack(cells),
-            positions=np.vstack(positions),
-            forces=np.vstack(forces),
-            energies=np.hstack(energies),
-            species=species,
-        )
+        {
+            CELL: np.vstack(cells),
+            POSITION: np.vstack(positions),
+            FORCE: np.vstack(forces),
+            TOTAL_ENERGY: np.hstack(total_energy),
+            SPECIES: species,
+            "electronic_steps": np.hstack(electronic_steps),
+            PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, "electronic_steps"],
+            FIXED_ATTRS: [SPECIES, NATOMS],
+        }
     )
     trj = Trajectory.from_dict(data)
 
-    electronic_steps = np.hstack(electronic_steps)
-    accept_id = np.where(electronic_steps < nelm)[0]
-    reject_id = np.where(electronic_steps >= nelm)[0]
-    if len(accept_id) < trj.nframes:
-        logging.info(f"skip unconverged step {reject_id}")
-    trj.filter_frames(accept_id)
-
-    try:
-        accept_id = data_filter(trj)
-        trj.filter_frames(accept_id)
-    except Exception as e:
-        logging.error(f"{e}")
-        logging.error("extxyz only accept batch filter work on paddedtrajectory")
-        raise RuntimeError("")
+    accept_id = data_filter(trj)
+    trj.include_frames(accept_id)
 
     trj.name = filename
 
@@ -254,25 +247,18 @@ def parse_vasprun_trj(folder, data_filter):
 
 
 def write(name, trj):
-    if trj.is_padded:
-        for i in range(trj.nframes):
-            natom = trj.natoms[i]
-            structure = Atoms(
-                cell=trj.cells[i].reshape([3, 3]),
-                symbols=trj.symbols[:natom],
-                positions=trj.positions[i][:natom].reshape([-1, 3]),
-                pbc=True,
-            )
-            write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
-    else:
-        for i in range(trj.nframes):
-            structure = Atoms(
-                cell=trj.cells[i].reshape([3, 3]),
-                symbols=trj.species,
-                positions=trj.positions[i].reshape([-1, 3]),
-                pbc=True,
-            )
-            write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
+    if hasattr(trj, "construct_id_list"):
+        trj.construct_id_list(force_run=False)
+    for i in range(trj.nframes):
+        frame = trj.get_frame(i)
+        definition = {"pbc": False}
+        if CELL in frame:
+            definition["cell"] = frame[CELL]
+            definition["pbc"] = True
+        structure = Atoms(
+            symbols=frame["species"], positions=frame["position"], **definition
+        )
+        write_vasp(f"{name}_{i}.poscar", structure, vasp5=True)
 
 
 def compare_metadata(trj1, trj2):

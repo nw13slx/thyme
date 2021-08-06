@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 plt.switch_backend("agg")
 
 
-def single_plot(energies, pred, prefix, shift=[0]):
+def single_plot(total_energy, pred, prefix, shift=[0]):
     """"""
     base_parity(
-        energies,
+        total_energy,
         pred,
         prefix,
         "energy",
@@ -25,9 +25,9 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
     nframes = 0
     reference_tally = 0
     prediction_tally = 0
-    for trj in trajectories.alldata.values():
+    for trj in trajectories.alltrjs.values():
 
-        reference = trj.energies
+        reference = trj.total_energy
         prediction = getattr(trj, pred_label)
         reference_tally += np.sum(reference)
         prediction_tally += np.sum(prediction)
@@ -37,9 +37,9 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
 
     fig, axs = plt.subplots(1, 2, figsize=(6.8, 2.5))
     data = []
-    for i, trj in enumerate(trajectories.alldata.values()):
+    for i, trj in enumerate(trajectories.alltrjs.values()):
 
-        reference = trj.energies.reshape([-1])
+        reference = trj.total_energy.reshape([-1])
         prediction = getattr(trj, pred_label).reshape([-1])
         shift = np.average(reference) - np.average(prediction)
 
@@ -65,8 +65,8 @@ def multiple_plots(trajectories, pred_label="pe", prefix=""):
             xlims, xlims - shift, "--", zorder=1, color=tabcolors[i % len(tabcolors)]
         )
     data = np.hstack(data)
-    axs[0].set_xlabel("DFT energies (eV)")
-    axs[0].set_ylabel("Predicted energies (eV)")
+    axs[0].set_xlabel("DFT total_energy (eV)")
+    axs[0].set_ylabel("Predicted total_energy (eV)")
     xlims = axs[0].get_xlim()
     axs[0].plot(xlims, xlims - universal_shift, "--k", zorder=1)
     axs[0].legend()

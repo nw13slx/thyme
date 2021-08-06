@@ -36,17 +36,16 @@ def parse_npz(filename, data_filter):
             return Trajectory()
 
     nframes = len(dictionary["x"])
-    trj.positions = dictionary["x"].reshape([nframes, -1, 3])
-    trj.energies = dictionary["alle"][:, 1]
+    trj.position = dictionary["x"].reshape([nframes, -1, 3])
+    trj.total_energy = dictionary["alle"][:, 1]
     trj.pe = dictionary["intc"][:, -1]
     trj.intc = dictionary["intc"][:, :-1]
-    trj.per_frame_attrs = ["positions", "energies", "pe", "intc"]
-    trj.empty = False
+    trj.per_frame_attrs = ["positions", "total_energy", "pe", "intc"]
     trj.sanity_check()
 
     if data_filter is not None:
         ids = data_filter(trj)
-        trj.filter_frames(ids)
+        trj.include_frames(ids)
 
     logging.info(f"trj {trj}")
     return trj

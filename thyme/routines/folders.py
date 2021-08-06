@@ -10,7 +10,7 @@ from thyme.trajectories import Trajectories
 
 
 def parse_merged_folders_trjs(
-    folders, pack_folder_trj, data_filter, npz_filename="", merge_level=1
+    folders, pack_folder_trj, data_filter, ckpt_filename="", merge_level=1
 ):
 
     folders = folders
@@ -18,7 +18,7 @@ def parse_merged_folders_trjs(
 
     count = 0
     trjs = Trajectories()
-    alldata = trjs.alldata
+    alldata = trjs.alltrjs
     for folder in folders:
 
         if folder == "./":
@@ -50,27 +50,27 @@ def parse_merged_folders_trjs(
                     except:
                         alldata[oldname] = new_trj
                 count += 1
-                if count % 10 == 0 and len(npz_filename) > 0:
-                    trjs.save(f"{npz_filename}")
+                if count % 10 == 0 and len(ckpt_filename) > 0:
+                    trjs.save(f"{ckpt_filename}")
         else:
             logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
-    if len(npz_filename) > 0:
-        trjs.save(f"{npz_filename}")
+    if len(ckpt_filename) > 0:
+        trjs.save(f"{ckpt_filename}")
 
     logging.info("Complete parsing")
 
     return trjs
 
 
-def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
+def parse_folders_trjs(folders, pack_folder_trj, data_filter, ckpt_filename=""):
 
     folders = folders
     logging.info(f"all folders: {folders}")
 
     count = 0
     trjs = Trajectories()
-    alldata = trjs.alldata
+    alldata = trjs.alltrjs
     for folder in folders:
 
         if folder == "./":
@@ -88,13 +88,13 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, npz_filename=""):
             new_trj.name = casename
             trjs.add_trj(new_trj, casename)
             count += 1
-            if count % 10 == 0 and len(npz_filename) > 0:
-                trjs.save(f"{npz_filename}")
+            if count % 10 == 0 and len(ckpt_filename) > 0:
+                trjs.save(f"{ckpt_filename}")
         else:
             logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
-    if len(npz_filename) > 0:
-        trjs.save(f"{npz_filename}")
+    if len(ckpt_filename) > 0:
+        trjs.save(f"{ckpt_filename}")
 
     logging.info("Complete parsing")
 

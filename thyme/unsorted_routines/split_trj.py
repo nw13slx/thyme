@@ -92,7 +92,7 @@ def main():
 
     positions = {}
     forces = {}
-    energies = {}
+    total_energy = {}
     cells = {}
     count = {}
     tasks = ["train", "valid", "test", "spare"]
@@ -100,7 +100,7 @@ def main():
     for task in tasks:
         positions[task] = []
         forces[task] = []
-        energies[task] = []
+        total_energy[task] = []
         cells[task] = []
         count[task] = 0
         list_of_trj[task] = []
@@ -253,22 +253,22 @@ def main():
                 list_of_trj[task] += [(trjname, this_frame)]
                 positions[task] += [data["positions"][ltt]]
                 forces[task] += [data["forces"][ltt]]
-                energies[task] += [data["energies"][ltt]]
+                total_energy[task] += [data["total_energy"][ltt]]
                 cells[task] += [data["cells"][ltt]]
 
     for task in tasks:
         if len(positions[task]) > 0:
             positions[task] = np.vstack(positions[task])
             forces[task] = np.vstack(forces[task])
-            energies[task] = np.hstack(energies[task])
+            total_energy[task] = np.hstack(total_energy[task])
             cells[task] = np.vstack(cells[task])
             # logging.info(positions.shape, forces.shape,
-            #       energies.shape, cells.shape)
+            #       total_energy.shape, cells.shape)
             np.savez(
                 f"{folder}/{task}.npz",
                 positions=positions[task],
                 forces=forces[task],
-                energies=energies[task],
+                total_energy=total_energy[task],
                 cells=cells[task],
             )
     with open(f"{folder}/split_details.json", "w+") as fout:
@@ -299,14 +299,14 @@ def filter_trj(data, data_filter):
 
     xyzs = data["positions"]
     fs = data["forces"]
-    es = data["energies"]
+    es = data["total_energy"]
     cs = data["cells"]
     nframes = xyzs.shape[0]
 
     species = data["species"]
     positions = []
     forces = []
-    energies = []
+    total_energy = []
     cells = []
     for istep in range(nframes):
         xyz = xyzs[istep]
@@ -316,14 +316,14 @@ def filter_trj(data, data_filter):
         if data_filter(xyz, f, e, c, species):
             positions += [xyz.reshape([-1])]
             forces += [np.hstack(f)]
-            energies += [e]
+            total_energy += [e]
             cells += [c.reshape([-1])]
     nframes = len(positions)
     if nframes >= 1:
         data["nframes"] = nframes
         data["positions"] = np.vstack(positions)
         data["forces"] = np.vstack(forces)
-        data["energies"] = np.hstack(energies)
+        data["total_energy"] = np.hstack(total_energy)
         data["cells"] = np.vstack(cells)
     else:
         return {"nframes": nframes}
