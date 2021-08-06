@@ -199,7 +199,18 @@ def write(name, trj, append=False):
         )
         definition = {"forces": frame[FORCE]} if FORCE in frame else {}
         if STRESS in frame:
-            definition["stress"] = frame[STRESS]
+            stress = frame[STRESS]
+            definition["stress"] = stress[((0, 1, 2, 1, 0, 0), (0, 1, 2, 2, 2, 1))]
+            if not all(
+                np.isclose(
+                    stress[((0, 1, 2), (1, 2, 0))],
+                    stress[((1, 2, 0), (0, 1, 2))],
+                    rtol=1e-4,
+                )
+            ):
+                raise RuntimeWarning(
+                    "Stress Tensor is not symmetical"
+                )
         calc = SinglePointCalculator(
             structure, energy=frame[TOTAL_ENERGY], **definition
         )
