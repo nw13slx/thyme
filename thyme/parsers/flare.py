@@ -37,7 +37,9 @@ def write(filename, trj):
     return structures
 
 
-def from_file(filename, as_trajectory=True):
+def from_file(filename, as_trajectory=True, **kwargs):
+    """
+    """
     mapping = dict(
         energy=TOTAL_ENERGY,
         forces=FORCE,
@@ -59,8 +61,7 @@ def from_file(filename, as_trajectory=True):
         trjs.add_trj(
             Trajectory.from_dict(new_dict),
             name=count,
-            merge=True,
-            preserve_order=False,
+            **kwargs
         )
     return trjs
 

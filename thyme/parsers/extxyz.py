@@ -41,7 +41,7 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
 
     join_trj = Trajectories()
     for filename in xyzs:
-        join_trj.add_trjs(from_file(filename, data_filter))
+        join_trj.add_trjs(from_file(filename, data_filter), merge=False, preserve_order=True)
 
     return join_trj
 
@@ -55,7 +55,7 @@ def pack_folder(folder, data_filter=None, include_xyz=True):
     return data
 
 
-def from_file(filename, data_filter=None):
+def from_file(filename, data_filter=None, **kwargs):
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
@@ -131,7 +131,7 @@ def from_file(filename, data_filter=None):
                 raise RuntimeError(f"{e}")
         if trj.nframes > 0:
             trj.name = i
-            trjs.add_trj(trj, merge=True, preserve_order=False)
+            trjs.add_trj(trj, **kwargs)
 
     logging.info(f"convert {filename} to {repr(trjs)}")
     logging.debug(f"{trjs}")
