@@ -4,7 +4,7 @@ import numpy as np
 from glob import glob
 
 from os import walk, mkdir
-from os.path import isdir, isfile
+from os.path import isdir
 
 from thyme.trajectories import Trajectories
 
@@ -39,7 +39,7 @@ def parse_merged_folders_trjs(
         if new_trj.nframes >= 1:
             logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
             if isinstance(new_trj, Trajectories):
-                trjs.add_trj(trjs)
+                trjs.add_trjs(new_trj)
             else:
                 new_trj.name = casename
                 if casename not in alldata:

@@ -1,0 +1,148 @@
+&GLOBAL
+  PROJECT CO2H2
+  RUN_TYPE MD
+  PRINT_LEVEL LOW
+  SAVE_MEM
+  SEED 1
+&END GLOBAL
+&FORCE_EVAL
+  METHOD Quickstep
+  &SUBSYS
+    &KIND C
+      ELEMENT	C
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q4
+      MASS 63
+    &END KIND
+    &KIND O
+      ELEMENT	O
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q6
+      MASS 63
+    &END KIND
+    &KIND H
+      ELEMENT	H
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q1
+      MASS 63
+    &END KIND
+    &CELL
+      A  10 0 0
+      B  0 10 0
+      C  0 0 10
+    &END CELL
+    &COORD
+  H         5.9232032292        5.9842392233        5.2706048685
+  C         0.0274273069       -0.0594766627        1.1073748102
+  O         0.0605781896       -0.0135448188        2.2784166399
+  O        -0.0520121458        0.2472921180       -0.0073267680
+  H         6.0495911033        5.8576608880        5.9705759739
+    &END COORD
+  &END SUBSYS
+  &DFT
+    BASIS_SET_FILE_NAME  User/unknown/----/-------/BR
+    POTENTIAL_FILE_NAME  User/unknown/----/-------/GR
+    &QS
+      EPS_DEFAULT 1.0E-10
+    &END QS
+    &MGRID
+      NGRIDS 4
+      CUTOFF 400
+      REL_CUTOFF 80
+    &END MGRID
+    &XC
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+      &VDW_POTENTIAL
+        POTENTIAL_TYPE  PAIR_POTENTIAL
+        &PAIR_POTENTIAL
+          TYPE  DFTD3
+          PARAMETER_FILE_NAME /n/home06/unknown/software/CP2K/cp2k-6.1/data/dftd3.dat
+          REFERENCE_FUNCTIONAL PBE
+          CALCULATE_C9_TERM  T
+        &END PAIR_POTENTIAL
+      &END VDW_POTENTIAL
+    &END XC
+    &SCF
+      SCF_GUESS ATOMIC
+      EPS_SCF 1.0E-7
+      MAX_SCF 300
+      ADDED_MOS 20
+      &DIAGONALIZATION  ON
+        ALGORITHM STANDARD
+      &END DIAGONALIZATION
+      &MIXING  T
+        METHOD BROYDEN_MIXING
+        ALPHA 0.4
+        NBROYDEN 8
+      &END MIXING
+      &SMEAR ON
+        METHOD FERMI_DIRAC
+        ELECTRONIC_TEMPERATURE [K] 300
+      &END SMEAR
+    &END SCF
+  &END DFT
+&END FORCE_EVAL
+&MOTION
+  &CONSTRAINT
+      &FIXED_ATOMS
+          LIST  1
+      &END FIXED_ATOMS
+  &END CONSTRAINT
+  &MD
+    ENSEMBLE LANGEVIN
+    STEPS  2
+    TIMESTEP 0.5
+    &LANGEVIN
+        GAMMA 0.01
+    &END LANGEVIN
+    &THERMAL_REGION
+      &DEFINE_REGION
+        LIST 2..5
+        DO_LANGEVIN T
+        TEMPERATURE 600
+      &END DEFINE_REGION
+    &END THERMAL_REGION
+    &PRINT
+      &ENERGY
+        &EACH
+           MD 1
+        &END
+      &END
+      &PROGRAM_RUN_INFO
+        &EACH
+           MD 10
+        &END
+      &END
+      FORCE_LAST
+    &END PRINT
+  &END MD
+  &PRINT
+    &TRAJECTORY
+      &EACH
+        MD 1
+      &END
+    &END
+    &VELOCITIES ON
+      &EACH
+        MD 1
+      &END
+    &END
+    &FORCES ON
+      &EACH
+        MD 1
+      &END
+    &END
+    &RESTART
+      &EACH
+         MD 200
+      &END
+      ADD_LAST NUMERIC
+    &END
+    &RESTART_HISTORY
+      &EACH
+         MD 200
+      &END
+    &END
+  &END
+&END MOTION
