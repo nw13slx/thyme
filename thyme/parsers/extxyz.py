@@ -41,7 +41,7 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
 
     join_trj = Trajectories()
     for filename in xyzs:
-        join_trj.add_trjs(from_file(filename, data_filter))
+        join_trj.add_trjs(from_file(filename, data_filter), merge=False, preserve_order=True)
 
     return join_trj
 
@@ -55,7 +55,7 @@ def pack_folder(folder, data_filter=None, include_xyz=True):
     return data
 
 
-def from_file(filename, data_filter=None):
+def from_file(filename, data_filter=None, **kwargs):
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
@@ -112,16 +112,6 @@ def from_file(filename, data_filter=None):
     trjs = Trajectories()
     for i, natom in enumerate(natoms):
         counter += natom
-<<<<<<< HEAD
-        trj = Trajectory.from_dict({
-            POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
-            FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
-            TOTAL_ENERGY: energies[[i]],
-            CELL: cells[[i]],
-            SPECIES: species[counter : counter + natom].reshape([1, natom]),
-            PER_FRAME_ATTRS:[POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES]
-        })
-=======
         trj = Trajectory.from_dict(
             {
                 POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
@@ -132,7 +122,6 @@ def from_file(filename, data_filter=None):
                 PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES],
             }
         )
->>>>>>> 02e5967143150271f20fb088f5646d9ca2cb0612
         if data_filter is not None:
             try:
                 accept_id = data_filter(trj)
@@ -142,11 +131,7 @@ def from_file(filename, data_filter=None):
                 raise RuntimeError(f"{e}")
         if trj.nframes > 0:
             trj.name = i
-<<<<<<< HEAD
-            trjs.add_trj(trj)
-=======
-            trjs.add_trj(trj, merge=True, preserve_order=False)
->>>>>>> 02e5967143150271f20fb088f5646d9ca2cb0612
+            trjs.add_trj(trj, **kwargs)
 
     logging.info(f"convert {filename} to {repr(trjs)}")
     logging.debug(f"{trjs}")
@@ -201,21 +186,6 @@ def posforce_regex(filename):
 def write(name, trj, append=False):
     if isfile(name) and not append:
         remove(name)
-<<<<<<< HEAD
-    for i in range(trj.nframes):
-        definition = {"pbc": False}
-        if "cells" in trj.per_frame_attrs:
-            definition["cell"] = trj.cells[i]
-            definition["pbc"] = True
-        structure = Atoms(
-            symbols=trj.species, positions=trj.positions[i], **definition
-        )
-        definition = (
-            {"forces": trj.forces[i]} if "forces" in trj.per_frame_attrs else {}
-        )
-        calc = SinglePointCalculator(
-            structure, energy=trj.energies[i], **definition
-=======
     if hasattr(trj, "construct_id_list"):
         trj.construct_id_list(force_run=False)
     for i in range(trj.nframes):
@@ -233,7 +203,6 @@ def write(name, trj, append=False):
             definition["stresses"] = stress
         calc = SinglePointCalculator(
             structure, energy=frame[TOTAL_ENERGY], **definition
->>>>>>> 02e5967143150271f20fb088f5646d9ca2cb0612
         )
         structure.calc = calc
         write_extxyz(name, structure, append=True)
