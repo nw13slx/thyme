@@ -34,15 +34,14 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
     if include_xyz:
         xyzs += glob(f"{folder}/*.xyz")
 
-    hasxyz = len(xyzs) > 0
-    if not hasxyz:
-        return data
+    if len(xyzs) == 0:
+        return Trajectories()
 
     xyzs = sorted(xyzs, key=getmtime)
 
     join_trj = Trajectories()
     for filename in xyzs:
-        join_trj.add_trjs(extxyz_to_trjs(filename, data_filter))
+        join_trj.add_trjs(from_file(filename, data_filter))
 
     return join_trj
 
@@ -56,7 +55,7 @@ def pack_folder(folder, data_filter=None, include_xyz=True):
     return data
 
 
-def extxyz_to_trjs(filename, data_filter=None):
+def from_file(filename, data_filter=None):
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
@@ -78,22 +77,23 @@ def extxyz_to_trjs(filename, data_filter=None):
             + sfl_num
             + sfl_num
             + r"\"",
-            "free_energies": r"free_energy=" + fl_num,
-            "energies": r"energy=" + fl_num,
+            "free_total_energy": r"free_energy=" + fl_num,
+            "total_energy": r"energy=" + fl_num,
             "posforce": string,
             "symbols": r"^([a-zA-Z]+)\s",
         },
     )
+    # TO DO: need to parse stress as well
 
     natoms = np.array(d["natoms"], dtype=int).reshape([-1])
     # logging.debug(f"found {len(natoms)} frames with maximum {np.max(natoms)} atoms")
 
-    if len(d["free_energies"]) > 0:
-        energies = np.array(d["free_energies"], dtype=float).reshape([-1])
-        logging.debug("use free_energies tag for energies")
+    if len(d["free_total_energy"]) > 0:
+        total_energy = np.array(d["free_total_energy"], dtype=float).reshape([-1])
+        logging.debug("use free_total_energy tag for total_energy")
     else:
-        energies = np.array(d["energies"], dtype=float).reshape([-1])
-        logging.debug("use energies tag for energies")
+        total_energy = np.array(d["total_energy"], dtype=float).reshape([-1])
+        logging.debug("use total_energy tag for total_energy")
 
     cell = np.array(d["cells"], dtype=float).reshape([-1, 3, 3])
 
@@ -112,6 +112,7 @@ def extxyz_to_trjs(filename, data_filter=None):
     trjs = Trajectories()
     for i, natom in enumerate(natoms):
         counter += natom
+<<<<<<< HEAD
         trj = Trajectory.from_dict({
             POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
             FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
@@ -120,6 +121,18 @@ def extxyz_to_trjs(filename, data_filter=None):
             SPECIES: species[counter : counter + natom].reshape([1, natom]),
             PER_FRAME_ATTRS:[POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES]
         })
+=======
+        trj = Trajectory.from_dict(
+            {
+                POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
+                FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
+                TOTAL_ENERGY: total_energy[[i]],
+                CELL: cell[[i]],
+                SPECIES: species[counter : counter + natom].reshape([1, natom]),
+                PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES],
+            }
+        )
+>>>>>>> 02e5967143150271f20fb088f5646d9ca2cb0612
         if data_filter is not None:
             try:
                 accept_id = data_filter(trj)
@@ -129,7 +142,11 @@ def extxyz_to_trjs(filename, data_filter=None):
                 raise RuntimeError(f"{e}")
         if trj.nframes > 0:
             trj.name = i
+<<<<<<< HEAD
             trjs.add_trj(trj)
+=======
+            trjs.add_trj(trj, merge=True, preserve_order=False)
+>>>>>>> 02e5967143150271f20fb088f5646d9ca2cb0612
 
     logging.info(f"convert {filename} to {repr(trjs)}")
     logging.debug(f"{trjs}")
@@ -181,9 +198,10 @@ def posforce_regex(filename):
     return string, index
 
 
-def write(name, trj):
-    if isfile(name):
+def write(name, trj, append=False):
+    if isfile(name) and not append:
         remove(name)
+<<<<<<< HEAD
     for i in range(trj.nframes):
         definition = {"pbc": False}
         if "cells" in trj.per_frame_attrs:
@@ -197,12 +215,26 @@ def write(name, trj):
         )
         calc = SinglePointCalculator(
             structure, energy=trj.energies[i], **definition
+=======
+    if hasattr(trj, "construct_id_list"):
+        trj.construct_id_list(force_run=False)
+    for i in range(trj.nframes):
+        frame = trj.get_frame(i)
+        definition = {"pbc": False}
+        if CELL in frame:
+            definition["cell"] = frame[CELL]
+            definition["pbc"] = True
+        structure = Atoms(
+            symbols=frame["species"], positions=frame["position"], **definition
+        )
+        definition = {"forces": frame[FORCE]} if FORCE in frame else {}
+        if STRESS in frame:
+            stress = frame[STRESS]
+            definition["stresses"] = stress
+        calc = SinglePointCalculator(
+            structure, energy=frame[TOTAL_ENERGY], **definition
+>>>>>>> 02e5967143150271f20fb088f5646d9ca2cb0612
         )
         structure.calc = calc
         write_extxyz(name, structure, append=True)
     logging.info(f"write {name}")
-
-
-def write_trjs(name, trjs):
-    for i, trj in trjs.alldata.items():
-        write(f"{trj.name}_{name}", trj)

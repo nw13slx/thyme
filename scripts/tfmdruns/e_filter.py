@@ -37,16 +37,16 @@ new_files = ["ref2/result_1.npz", "ref1/result_1.npz", "ref3/result_1.npz"]
 
 train = Trajectories()
 test = Trajectories()
-traindata = train.alldata
-testdata = test.alldata
+traindata = train.alltrjs
+testdata = test.alltrjs
 
 count = 0
 count_test = 0
 alle = []
-for i, trj in enumerate(original.alldata.values()):
+for i, trj in enumerate(original.alltrjs.values()):
     if count < ori_train:
         select_id = np.arange(np.min([trj.nframes, ori_train - count]))
-        e_id = np.where(trj.energies > 0)[0]
+        e_id = np.where(trj.total_energy > 0)[0]
         if len(e_id) > 0:
             logging.info(f" pop non-negative elements {e_id}")
         select_id = np.setdiff1d(select_id, e_id)
@@ -59,27 +59,27 @@ for i, trj in enumerate(original.alldata.values()):
                     ori_train - count,
                     np.min([trj.nframes, ori_test + ori_train - count_test - count]),
                 )
-                e_id = np.where(trj.energies > 0)[0]
+                e_id = np.where(trj.total_energy > 0)[0]
                 if len(e_id) > 0:
                     logging.info(f" pop non-negative elements {e_id}")
                 select_id = np.setdiff1d(select_id, e_id)
                 # for idx in e_id:
                 #     if idx in test_id:
                 #         test_id.remove(idx)
-                new_trj = trj.skim(test_id)
+                new_trj = trj.extract_frames(test_id)
                 testdata[trj.name] = new_trj
-                alle += [new_trj.energies]
+                alle += [new_trj.total_energy]
                 count_test += len(test_id)
 
-        new_trj = trj.skim(select_id)
+        new_trj = trj.extract_frames(select_id)
         traindata[trj.name] = new_trj
-        alle += [new_trj.energies]
+        alle += [new_trj.total_energy]
         count += len(select_id)
     elif count_test < ori_test:
         test_id = np.arange(np.min([trj.nframes, ori_test - count_test]))
-        new_trj = trj.skim(test_id)
+        new_trj = trj.extract_frames(test_id)
         testdata[trj.name] = new_trj
-        alle += [new_trj.energies]
+        alle += [new_trj.total_energy]
         count_test += len(test_id)
 
 alle = np.hstack(alle)
@@ -91,7 +91,7 @@ for idf, filename in enumerate(new_files):
     )
     nsample = nsamples[idf]
 
-    for i, trj in enumerate(trjs.alldata.values()):
+    for i, trj in enumerate(trjs.alltrjs.values()):
         if "O" in trj.species:
 
             logging.info(f"{i} {trj}")
@@ -99,12 +99,12 @@ for idf, filename in enumerate(new_files):
             sorted_id, err = sort_by_force(trj, "pred", "O")
 
             # # remove top 3 highest energy configuration
-            # e_id = np.argsort(trj.energies)[-3:]
+            # e_id = np.argsort(trj.total_energy)[-3:]
 
-            pop_id = [np.where(trj.energies > 0)[0]]
-            pop_info = ["non-negative energies"]
+            pop_id = [np.where(trj.total_energy > 0)[0]]
+            pop_info = ["non-negative total_energy"]
 
-            pop_id += [np.where(trj.energies > (np.min(trj.energies) + 60))[0]]
+            pop_id += [np.where(trj.total_energy > (np.min(trj.total_energy) + 60))[0]]
             pop_info += ["energy > 60 eV + min"]
 
             pop_id += [np.where(err < threshold)[0]]
@@ -119,32 +119,32 @@ for idf, filename in enumerate(new_files):
             # double check whether the config was included before
             new_list = []
             for j in sorted_id:
-                condi = len(np.where(trj.energies[j] == alle)[0])
+                condi = len(np.where(trj.total_energy[j] == alle)[0])
                 if condi > 0:
-                    logging.info(f"{trj.energies[j]} is seen before!")
+                    logging.info(f"{trj.total_energy[j]} is seen before!")
                 else:
                     new_list += [j]
-                    alle = np.hstack([alle, [trj.energies[j]]])
+                    alle = np.hstack([alle, [trj.total_energy[j]]])
 
             sorted_id = np.array(new_list, dtype=int)
             lower_bound = np.min([nsample, len(sorted_id)])
             train_id = sorted_id[-lower_bound::2]
             test_id = sorted_id[-lower_bound + 1 :: 2]
 
-            new_trj = trj.skim(train_id)
+            new_trj = trj.extract_frames(train_id)
             if len(train_id) > 0:
                 traindata[trj.name + "new"] = new_trj
                 logging.info(f"add to train: configs with err {err[train_id]}")
                 logging.info(
-                    f"add to train: configs with energy {trj.energies[train_id]}"
+                    f"add to train: configs with energy {trj.total_energy[train_id]}"
                 )
 
-            new_trj2 = trj.skim(test_id)
+            new_trj2 = trj.extract_frames(test_id)
             if len(test_id) > 0:
                 testdata[trj.name + "new"] = new_trj2
                 logging.info(f"add to test: configs with err {err[test_id]}")
                 logging.info(
-                    f"add to test: configs with energy {trj.energies[test_id]}"
+                    f"add to test: configs with energy {trj.total_energy[test_id]}"
                 )
 
             logging.info(f"{trj.name} select {new_trj.nframes} and {new_trj2.nframes}")

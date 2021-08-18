@@ -25,11 +25,11 @@ skips = {
 
 trjs = Trajectories.from_file("trjs.pickle")
 train = Trajectories()
-traindata = train.alldata
+traindata = train.alltrjs
 test = Trajectories()
-testdata = test.alldata
+testdata = test.alltrjs
 
-for i, trj in enumerate(trjs.alldata.values()):
+for i, trj in enumerate(trjs.alltrjs.values()):
     if "O" not in trj.species:
         sorted_id = sort_by_force(trj, "pred", "Pd")
     else:
@@ -39,8 +39,8 @@ for i, trj in enumerate(trjs.alldata.values()):
     cap = a[1]
     top = a[2]
     if skip > 0:
-        new_trj = trj.skim(sorted_id[:-top:skip])
-        new_trj2 = trj.skim(sorted_id[1:-top:skip][:cap])
+        new_trj = trj.extract_frames(sorted_id[:-top:skip])
+        new_trj2 = trj.extract_frames(sorted_id[1:-top:skip][:cap])
         traindata[trj.name] = new_trj
         testdata[trj.name] = new_trj2
 

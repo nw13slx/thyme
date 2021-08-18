@@ -12,7 +12,7 @@ from os.path import isfile, isdir, dirname, realpath
 @contextlib.contextmanager
 def atomic_write(filename: Union[Path, str]):
     filename = Path(filename)
-    tmp_path = filename.parent / (f".tmp-{filename.name}~")
+    tmp_path = filename.parent / (f".tmp-{filename.name}")
     # Create the temp file
     open(tmp_path, "w").close()
     try:
@@ -62,8 +62,7 @@ def save_file(
                 pickle.dump(item, fout)
         elif format == "npz":
             import numpy as np
-
-            np.savez(write_to, item)
+            np.savez(write_to, **item)
         else:
             raise NotImplementedError(
                 f"Output format {format} not supported:"

@@ -20,7 +20,7 @@ def main():
 
     cell = [10.638, 0.0, 0.0, 0.0, 10.0296, 0.0, 0.0, 0.0, 30.0]
     cell_abc = [10.638, 10.0296, 30.0]
-    for i, trj in trjs.alldata.items():
+    for i, trj in trjs.alltrjs.items():
 
         trj.species = ["H", "C", "O", "O"] + ["Cu"] * 48
         trj.cells = np.hstack([cell] * trj.nframes).reshape([trj.nframes, 3, 3])

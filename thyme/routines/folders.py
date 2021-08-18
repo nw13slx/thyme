@@ -18,7 +18,7 @@ def parse_merged_folders_trjs(
 
     count = 0
     trjs = Trajectories()
-    alldata = trjs.alldata
+    alldata = trjs.alltrjs
     for folder in folders:
 
         if folder == "./":
@@ -51,7 +51,7 @@ def parse_merged_folders_trjs(
                         alldata[oldname] = new_trj
                 count += 1
                 if count % 10 == 0 and len(ckpt_filename) > 0:
-                    trjs.save(f"{ckpt_filename}", format="pickle")
+                    trjs.save(f"{ckpt_filename}")
         else:
             logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
@@ -70,7 +70,7 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, ckpt_filename=""):
 
     count = 0
     trjs = Trajectories()
-    alldata = trjs.alldata
+    alldata = trjs.alltrjs
     for folder in folders:
 
         if folder == "./":
@@ -94,7 +94,7 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, ckpt_filename=""):
             logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
 
     if len(ckpt_filename) > 0:
-        trjs.save(f"{ckpt_filename}", format="pickle")
+        trjs.save(f"{ckpt_filename}")
 
     logging.info("Complete parsing")
 

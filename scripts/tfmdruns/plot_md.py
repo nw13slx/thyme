@@ -16,7 +16,7 @@ logging.getLogger().addHandler(logging.StreamHandler())
 trjs = Trajectories.from_file(sys.argv[1])
 trjs.save("trjs.pickle")
 
-for trj in trjs.alldata.values():
+for trj in trjs.alltrjs.values():
     print(trj)
 
 multiple_plots_e(trjs, pred_label="pe", prefix=sys.argv[2])

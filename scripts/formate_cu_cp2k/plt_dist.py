@@ -26,7 +26,7 @@ def main():
     trjs = trjs.to_padded_trajectory()
     single_plot_e(trjs, prefix="merge")
     trjs = Trajectories.from_padded_trajectory(trjs, preserve_order=False)
-    for i, trj in trjs.alldata.items():
+    for i, trj in trjs.alltrjs.items():
         write(f"vmd{i}.xyz", trj)
 
     multiple_plots_e(trjs, prefix="elemenet")

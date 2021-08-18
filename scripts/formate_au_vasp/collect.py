@@ -2,7 +2,7 @@ from thyme.trajectories import Trajectories
 from thyme.trajectory import Trajectory
 from thyme.filters.distance import e_filter
 from thyme.filters.energy import sort_e
-from thyme.parsers.extxyz import write_trjs, write
+from thyme.parsers.extxyz import write_trjs
 from thyme.routines.dist_plots.energy import multiple_plots as multiple_plots_e
 from thyme.parsers.vasp import pack_folder_trj, get_childfolders
 from thyme.routines.folders import parse_folders_trjs
@@ -20,25 +20,24 @@ def main():
 
     folders = get_childfolders("./")
     trjs = parse_folders_trjs(folders, pack_folder_trj, e_filter, "all_data_raw.pickle")
-    # trjs.save("raw.pickle")
+    trjs.save("all_trjs.npz")
 
-    trjs = trjs.remerge()
+    trjs.merge()
     trjs.save("all_data_merge.pickle")
 
     mineT = Trajectories()
-    for name, trj in trjs.alldata.items():
+    for name, trj in trjs.alltrjs.items():
         # sort by energy
         frames = sort_e(trj)
-        trj.filter_frames(frames)
-        mine = trj.energies[0]
-        keep_id = np.where(trj.energies < (mine + 20))[0]
-        mineT.add_trj(trj.skim([-1]))
+        trj.include_frames(frames)
+        mine = trj.total_energy[0]
+        keep_id = np.where(trj.total_energy < (mine + 20))[0]
+        mineT.add_trj(trj.extract_frames([-1]))
     # multiple_plots_e(trjs, prefix='alldata')
     # frames = sort_e(mineT)
-    # mineT.filter_frames(frames)
+    # mineT.include_frames(frames)
     mineT.save("20eV.pickle")
-    # write("mine.xyz", mineT)
-    write_trjs("all.xyz", trjs)
+    write_trjs("all.xyz", trjs, joint=True)
 
 
 if __name__ == "__main__":

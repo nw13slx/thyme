@@ -28,7 +28,6 @@ class Trajectory(object):
         "kpoints",
     ]
     stat_keys = [
-        NLINES,
         NATOMS,
         SPECIES,
         "nframes",
@@ -49,7 +48,6 @@ class Trajectory(object):
         self.name = "default"
         self.nframes = 0
         self.natoms = 0
-        self.nlines = 0
         self.formula = ""
 
         self.per_frame_attrs = []
@@ -62,12 +60,7 @@ class Trajectory(object):
         return self.nframes
 
     def __repr__(self):
-        if NATOMS in self.fixed_attrs:
-            s = f"{self.name}: {self.nframes} frames with {self.natoms} atoms, {self.formula}"
-        elif NATOMS in self.per_frame_attrs:
-            s = f"{self.name}: {self.nframes} frames with {np.min(self.natoms)}-{np.max(self.natom)} atoms"
-        else:
-            s = f"{self.name}: {self.nframes} frames with 0 atoms"
+        s = f"{self.name}: {self.nframes} frames with {self.natoms} atoms, {self.formula}"
         return s
 
     def __str__(self):
@@ -121,20 +114,23 @@ class Trajectory(object):
     def get_frame(self, idx, keys=None):
         if idx >= self.nframes:
             raise ValueError(f"{idx} is larger than the total length {self.nframes}")
+        frame = {NATOMS: self.natoms, SPECIES: self.species}
         if keys is None:
-            frame = {key: getattr(self, key)[idx] for key in self.per_frame_attrs}
+            frame.update({key: getattr(self, key)[idx] for key in self.per_frame_attrs})
             frame.update({key: getattr(self, key) for key in self.fixed_attrs})
         else:
-            frame = {
-                key: getattr(self, key)[idx]
-                for key in self.per_frame_attrs
-                if key in keys
-            }
+            frame.update(
+                {
+                    key: getattr(self, key)[idx]
+                    for key in self.per_frame_attrs
+                    if key in keys
+                }
+            )
             frame.update(
                 {key: getattr(self, key) for key in self.fixed_attrs if key in keys}
             )
         return frame
-        
+
     def add_frames(self, dictionary):
         find_key = [(key in dictionary) for key in self.per_frame_attrs]
         if not all(find_key):
@@ -143,15 +139,51 @@ class Trajectory(object):
         match_fields = [(repr(dictionary[key]) == getattr(self.key)) for key in self.fixed_attrs if key in dictionary]
         if not all(match_fields):
             raise RuntimeError("fixed fields are not consistent missing")
-        
+
         for key in self.per_frame_attrs:
             mat = np.vstack((getattr(self, key), dictionary[key]))
             setattr(self, key, mat)
-        
+
         self.nframes += dictionary[POSITION].shape[0]
 
+    def get_attr(self, key):
+        if key in self.per_frame_attrs:
+            return getattr(self, key)
+        else:
+            return np.array([getattr(self, key)] * self.nframes)
+
+    def pop(self, key, fail=None):
+        item = self.get_attr(key)
+        for name_list in [self.per_frame_attrs, self.fixed_attrs, self.metadata_attrs]:
+            if key in name_list:
+                name_list.remove(key)
+        delattr(self, key)
+        return item
+
+    def add_frames(self, dictionary):
+        find_key = [(key in dictionary) for key in self.per_frame_attrs]
+        if not all(find_key):
+            raise RuntimeError("key missing")
+
+        match_fields = [
+            (repr(dictionary[key]) == getattr(self.key))
+            for key in self.fixed_attrs
+            if key in dictionary
+        ]
+        if not all(match_fields):
+            raise RuntimeError("fixed fields are not consistent missing")
+
+        for key in self.per_frame_attrs:
+            mat = np.append(getattr(self, key), dictionary[key], axis=0)
+            setattr(self, key, mat)
+
+        self.nframes += dictionary[POSITION].shape[0]
 
     def sanity_check(self):
+
+        for k in self.stat_keys:
+            if not hasattr(self, k):
+                setattr(self, k, 0)
 
         if self.nframes < 0:
             raise RuntimeError("nframes should be non-negative int")
@@ -174,7 +206,7 @@ class Trajectory(object):
                 raise RuntimeError(f"Data inconsistent")
 
             if len(self.per_frame_attrs) > len(list(set(self.per_frame_attrs))):
-                raise ValueError(f"repeated keys in self.per_frame_attr")
+                raise ValueError(f"repeated keys in self.per_frame_attrs")
 
             # always put POSITION as the first attribute
             if POSITION not in self.per_frame_attrs:
@@ -186,13 +218,19 @@ class Trajectory(object):
                 self.per_frame_attrs[0] = POSITION
                 self.per_frame_attrs[idx] = temp
 
-            if self.position.shape[1] != self.nlines:
-                raise ValueError(POSITION + " has to be defined")
+            if (
+                self.position.shape[1] != self.natoms
+                or len(self.species) != self.natoms
+            ):
+                if self.position.shape[1] == len(self.species):
+                    self.natoms = self.position.shape[1]
+                else:
+                    raise ValueError("Natoms cannot be defined")
 
         if len(self.metadata_attrs) > len(list(set(self.metadata_attrs))):
-            raise ValueError(f"repeated keys in self.metadata_attr")
+            raise ValueError(f"repeated keys in self.metadata_attrs")
         if len(self.fixed_attrs) > len(list(set(self.fixed_attrs))):
-            raise ValueError(f"repeated keys in self.fix_attr")
+            raise ValueError(f"repeated keys in self.fix_attrs")
 
         if len(set(self.fixed_attrs).intersection(set(self.per_frame_attrs))) > 0:
             raise ValueError(
@@ -262,13 +300,13 @@ class Trajectory(object):
         obj = load_file(
             supported_formats={"npz": "npz", "pickle": "pickle"}, filename=filename
         )
-        if isinstance(obj, dict):
-            return cls.from_dict(obj, update_dict=update_dict, mapping=mapping)
-        return obj
+        if isinstance(obj, cls):
+            obj.sanity_check()
+            return obj
+        return cls.from_dict(dict(obj), update_dict=update_dict, mapping=mapping)
 
     def to_dict(self):
-        data = {k: getattr(self, k) for k in self.keys}
-        return data
+        return {k: getattr(self, k) for k in self.keys}
 
     @classmethod
     def from_dict(cls, input_dict, update_dict={}, mapping={}):
@@ -287,9 +325,19 @@ class Trajectory(object):
         """
         trj = cls()
 
+        backward_remap = {
+            POSITION: POSITION + "s",
+            FORCE: FORCE + "S",
+            CELL: CELL + "s",
+            TOTAL_ENERGY: "energies",
+        }
+
         input_dict = {k: v for k, v in input_dict.items()}
         for new_name, original_name in mapping.items():
             input_dict[new_name] = input_dict.pop(original_name)
+        for new_name, original_name in backward_remap.items():
+            if original_name in input_dict:
+                input_dict[new_name] = input_dict.pop(original_name)
         input_dict.update(update_dict)
 
         trj.nframes = input_dict[POSITION].shape[0]
@@ -299,25 +347,29 @@ class Trajectory(object):
         for k in [POSITION, FORCE]:
             if k in input_dict:
                 input_dict[k] = input_dict[k].reshape([trj.nframes, -1, 3])
-        trj.nlines = input_dict[POSITION].shape[1]
-
-        for k in input_dict.get(PER_FRAME_ATTRS, []) + cls.default_per_frame_keys:
-            if k in input_dict:
-                trj.add_field(PER_FRAME_ATTRS, k, input_dict[k])
-
-        for k in input_dict.get(METADATA_ATTRS, []) + cls.default_metadata_keys:
-            if k in input_dict:
-                trj.add_field(METADATA_ATTRS, k, input_dict[k])
-
-        for k in input_dict.get(FIXED_ATTRS, []):
-            if k in input_dict:
-                trj.add_field(FIXED_ATTRS, k, input_dict[k])
+        trj.natoms = input_dict[POSITION].shape[1]
 
         for k in cls.stat_keys:
             if k in input_dict:
                 setattr(trj, k, input_dict[k])
 
-        remain_keys = set(list(input_dict.keys())).intersection(set(trj.keys))
+        for k in input_dict:
+            found = False
+            for attr in ["per_frame", "metadata", "fixed"]:
+                input_list = input_dict.get(f"{attr}_attrs", [])
+                if k in input_list and not found:
+                    trj.add_field(f"{attr}_attrs", k, input_dict[k])
+                    found = True
+            for attr in ["per_frame", "metadata", "fixed"]:
+                default_list = getattr(cls, f"default_{attr}_keys", [])
+                if k in default_list and not found:
+                    trj.add_field(f"{attr}_attrs", k, input_dict[k])
+                    found = True
+
+        trj.nframes = trj.position.shape[0]
+        trj.natoms = trj.position.shape[1]
+
+        remain_keys = set(list(input_dict.keys())) - set(trj.keys)
         for k in remain_keys:
             logging.debug(f"undefined attributes {k}, set to metadata")
             try:
@@ -369,7 +421,7 @@ class Trajectory(object):
 
     def save(self, name: str, format: str = None):
         save_file(
-            self,
+            self.to_dict(),
             supported_formats={"npz": "npz", "pickle": "pickle"},
             filename=name,
             enforced_format=format,
@@ -389,7 +441,7 @@ class Trajectory(object):
         if self.nframes == 0:
             self.copy(trj)
         else:
-            if self.natom != trj.natom:
+            if self.natoms != trj.natoms:
                 raise ValueError(f"cannot merge two trj with different numbers")
             if save_mode:
                 if not all(trj.species == self.species):
@@ -403,11 +455,11 @@ class Trajectory(object):
             for k in self.per_frame_attrs:
                 item = getattr(trj, k)
                 ori_item = getattr(self, k)
-                if len(item.shape) == 1:
-                    setattr(self, k, np.hstack((ori_item, item)))
-                else:
-                    setattr(self, k, np.vstack((ori_item, item)))
-                ori_item = getattr(self, k)
+                try:
+                    mat = np.append(ori_item, item, axis=0)
+                except Exception as e:
+                    raise RuntimeError("fail", k, item.shape, ori_item.shape, e)
+                setattr(self, k, mat)
 
             self.copy_metadata(trj, exception=["name", "nframes", "natom", "filenames"])
 
@@ -438,16 +490,16 @@ class Trajectory(object):
 
     def reorder_atoms(self, order):
 
-        if len(order) > self.nlines:
+        if len(order) > self.natoms:
             logging.error(
-                f"{len(order)} order should be smaller than {self.nlines} lines"
+                f"{len(order)} order should be smaller than {self.natoms} lines"
             )
             raise RuntimeError()
 
         for k in self.per_frame_attrs:
             ori_item = getattr(self, k)
             if len(ori_item.shape) > 1:
-                if ori_item.shape[1] == self.nlines:
+                if ori_item.shape[1] == self.natoms:
                     item = np.swapaxes(ori_item, 0, 1)
                     item = item[order]
                     item = np.swapaxes(item, 0, 1)
@@ -455,11 +507,11 @@ class Trajectory(object):
 
         self.species = np.array(self.species)[order]
 
-        nlines = self.position.shape[1]
+        natoms = self.position.shape[1]
 
-        if nlines != self.nlines:
-            logging.info(f"skim {self.nlines} lines to {nlines} lines")
-            self.nlines = nlines
+        if natoms != self.natoms:
+            logging.info(f"extract_frames {self.natoms} lines to {natoms} lines")
+            self.natoms = natoms
 
         self.sanity_check()
 

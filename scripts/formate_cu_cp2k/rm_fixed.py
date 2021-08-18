@@ -20,17 +20,17 @@ def main():
     trjs2 = Trajectories.from_file("DIPOLE_CORRECTED/all_data.pickle")
 
     trjs = Trajectories()
-    for i, trj in trjs1.alldata.items():
+    for i, trj in trjs1.alltrjs.items():
         fix = getattr(trj, "fix_atom", False)
         if not fix:
-            trjs.alldata[f"iter_{i}"] = trj
+            trjs.alltrjs[f"iter_{i}"] = trj
         else:
             logging.info(f"remove fixed bottom {trj}")
 
-    for i, trj in trjs2.alldata.items():
+    for i, trj in trjs2.alltrjs.items():
         fix = getattr(trj, "fix_atom", False)
         if not fix:
-            trjs.alldata[f"ori_{i}"] = trj
+            trjs.alltrjs[f"ori_{i}"] = trj
         else:
             logging.info(f"remove fixed bottom {trj}")
 
@@ -39,9 +39,9 @@ def main():
 
     trjs = trjs.to_padded_trajectory()
     trjs = Trajectories.from_padded_trajectory(trjs, preserve_order=False)
-    for i, trj in trjs.alldata.items():
+    for i, trj in trjs.alltrjs.items():
         ids = rm_duplicate(trj)
-        trj.filter_frames(accept_id=ids)
+        trj.include_frames(accept_id=ids)
         write(f"vmd{i}.xyz", trj)
 
     trjs.save("clean_up.padded_mat.npz")
