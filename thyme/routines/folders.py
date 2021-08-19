@@ -6,7 +6,7 @@ from glob import glob
 from os import walk, mkdir
 from os.path import isdir
 
-from thyme.trajectories import Trajectories
+from thyme.trajectories import Trajectories, Trajectory
 
 
 def parse_merged_folders_trjs(
@@ -21,39 +21,35 @@ def parse_merged_folders_trjs(
     alldata = trjs.alltrjs
     for folder in folders:
 
+        # obtain folder path as a tuple
         if folder == "./":
-            casename = "current_folder"
+            tuple_name = tuple()
         else:
-            if folder[:2] == "./":
-                split = folder[2:].split("/")
-                oldname = "current_folder"
-            else:
-                split = folder.split("/")
-                oldname = "_".join(split)
-            if len(split) <= merge_level:
-                casename = oldname
-            else:
-                casename = "_".join(split[:-merge_level])
+            split = folder[2:].split("/") if folder[:2] == "./" else folder.split("/")
+            tuple_name = tuple(split)
+
+        if len(tuple_name) <= merge_level:
+            tuple_name = "./"
+        elif merge_level > 0:
+            tuple_name = "_".join(tuple_name[:-merge_level])
+        else:
+            tuple_name = "_".join(tuple_name)
 
         new_trj = pack_folder_trj(folder, data_filter)
+
         if new_trj.nframes >= 1:
-            logging.info(f"save {folder} as {casename} : {new_trj.nframes} frames")
             if isinstance(new_trj, Trajectories):
-                trjs.add_trjs(new_trj)
+                for _name, _trj in new_trj.alltrjs.items():
+                    suffix = "" if merge_level>=0 else "_"+_name
+                    trjs.add_trj(_trj, name=tuple_name+suffix, merge=merge_level>=0)
             else:
-                new_trj.name = casename
-                if casename not in alldata:
-                    trjs.add_trj(new_trj)
-                else:
-                    try:
-                        alldata[casename].add_trj(new_trj)
-                    except:
-                        alldata[oldname] = new_trj
-                count += 1
-                if count % 10 == 0 and len(ckpt_filename) > 0:
-                    trjs.save(f"{ckpt_filename}")
+                trjs.add_trj(new_trj, name=tuple_name, merge=merge_level>=0)
+
+            count += 1
+            if count % 10 == 0 and len(ckpt_filename) > 0:
+                trjs.save(f"{ckpt_filename}")
         else:
-            logging.info(f"! skip whole folder {casename}, {new_trj.nframes}")
+            logging.info(f"! skip whole folder {tuple_name}, {new_trj.nframes}")
 
     if len(ckpt_filename) > 0:
         trjs.save(f"{ckpt_filename}")

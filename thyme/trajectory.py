@@ -36,6 +36,7 @@ class Trajectory(object):
         PER_FRAME_ATTRS,
         METADATA_ATTRS,
         "fixed_attrs",
+        "filenames",
     ]
 
     def __init__(self):

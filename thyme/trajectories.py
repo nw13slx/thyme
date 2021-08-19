@@ -200,16 +200,19 @@ class Trajectories:
             nterms = len(self.per_frame_attrs)
             intersection = set(self.per_frame_attrs).intersection(trj.per_frame_attrs)
             if len(intersection) != nterms:
+                print(self.per_frame_attrs)
+                print(trj.per_frame_attrs)
                 raise RuntimeError(f"not enough per_frame_attrs")
 
         if not merge:
-            if name in self.alltrjs:
-                logging.info(f"warning, overwriting trj with name {name}")
 
-            if name is None and trj.name not in self.alltrjs:
+            if name in self.alltrjs:
+                name=f"{name}_{len(self.alltrjs)}"
+            elif name is None and trj.name not in self.alltrjs:
                 name = trj.name
             elif name is None:
-                name = len(self.alltrjs)
+                name = f"{len(self.alltrjs)}"
+
             self.alltrjs[name] = trj
             self.nframes += trj.nframes
             self.ntrjs += 1
@@ -218,12 +221,17 @@ class Trajectories:
         # order trj by element
         order, label = species_to_order_label(trj.species)
 
-        stored_label, last_label = obtain_store_label(
-            last_label=None,
-            label=label,
-            alldata=self.alltrjs,
-            preserve_order=preserve_order,
-        )
+        if name is None:
+            stored_label, last_label = obtain_store_label(
+                last_label=None,
+                label=label,
+                alldata=self.alltrjs,
+                preserve_order=preserve_order,
+            )
+        else:
+            stored_label = name+"_"+label
+            label = name+"_"+label
+
 
         if stored_label not in self.alltrjs:
             newtrj = Trajectory()
