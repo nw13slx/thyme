@@ -114,23 +114,32 @@ def lowe(trj, chosen_specie=None, chosen_count=0):
     else:
         return sorted_id[0]
 
+def thresholding(trj, cap=40):
+    """
+    remove top 3 energy, and then remove duplicated
+    """
+
+    min_e = np.min(trj.total_energy)
+
+    return np.where(trj.total_energy < (min_e+cap))[0]
 
 def rm_duplicate(trj):
     """
     remove top 3 energy, and then remove duplicated
     """
 
-    sorted_id = np.argsort(trj.total_energy)[:-3]
+    sorted_e = np.argsort(trj.total_energy)[:-3]
     keep_id = []
-    last_id = sorted_id[0]
-    for i, idx in enumerate(sorted_id[1:]):
+    last_id = sorted_e[0]
+    for i, idx in enumerate(sorted_e[1:]):
         if trj.total_energy[idx] != trj.total_energy[last_id]:
             keep_id += [idx]
             last_id = idx
         else:
             logging.info(f"remove duplicate energy {trj.total_energy[last_id]}")
 
-    return keep_id
+    # preserve the original order
+    return np.sort(keep_id)
 
 
 def fit_energy_shift(trjs, mode="min"):
