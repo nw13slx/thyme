@@ -33,10 +33,12 @@ class Trajectories:
     def __repr__(self) -> str:
         return f"Trajectories with {len(self.alltrjs)} trj"
 
-    def __str__(self) -> str:
-        s = repr(self)
-        for name, trj in self.alltrjs:
-            s += "\nname: {str(trj)}"
+    def __str__(self):
+
+        s = f"{len(self.alltrjs)} trajectories with {len(self)} frames\n"
+        for name in self.alltrjs:
+            s += f"----{name}----\n"
+            s += f"{self.alltrjs[name]}\n"
         return s
 
     def __len__(self):
@@ -59,14 +61,6 @@ class Trajectories:
             self.trj_id[count : count + nframes] += id_trj
             self.in_trj_id[count : count + nframes] += np.arange(nframes)
             count += nframes
-
-    def __str__(self):
-
-        s = f"{len(self.alltrjs)} trajectories with {len(self)} frames\n"
-        for name in self.alltrjs:
-            s += f"----{name}----\n"
-            s += f"{self.alltrjs[name]}\n"
-        return s
 
     def __getitem__(self, key):
         return self.alltrjs[key]
@@ -175,7 +169,7 @@ class Trajectories:
             if not isinstance(trj_dict, dict):
                 trj_dict = trj_dict.item()
             trj = Trajectory.from_dict(trj_dict)
-            trjs.add_trj(trj, merge=merge, preserve_order=preserve_order)
+            trjs.add_trj(trj, name=name, merge=merge, preserve_order=preserve_order)
 
         return trjs
 
@@ -222,12 +216,13 @@ class Trajectories:
         order, label = species_to_order_label(trj.species)
 
         if name is None:
-            stored_label, last_label = obtain_store_label(
-                last_label=None,
-                label=label,
-                alldata=self.alltrjs,
-                preserve_order=preserve_order,
-            )
+            stored_label = None
+            for _label, oldtrj in self.alltrjs.items():
+                if metadata_compare(trj, oldtrj):
+                    stored_label = _label
+                    break
+            if stored_label is None:
+                stored_label = label
         else:
             stored_label = name+"_"+label
             label = name+"_"+label
@@ -240,9 +235,8 @@ class Trajectories:
         else:
             oldtrj = self.alltrjs[stored_label]
             if metadata_compare(trj, oldtrj):
-                logging.debug("! Metadata is exactly the same. Merge")
+                logging.debug(f"! Metadata is exactly the same. Merge to {stored_label}")
             else:
-                logging.debug("! Metadata is not the same. Not merge")
                 stored_label, last_label = obtain_store_label(
                     last_label="NA0",
                     label=label,
@@ -250,10 +244,12 @@ class Trajectories:
                     preserve_order=True,
                 )
                 self.alltrjs[stored_label] = Trajectory()
+                logging.debug(f"! Metadata is not the same. Not merge. Buil {stored_label}")
 
         self.alltrjs[stored_label].add_trj(trj, save_mode=False, order=order)
         self.nframes += trj.nframes
         self.ntrjs += 1
+        return stored_label
 
     def add_trjs(
         self,

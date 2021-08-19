@@ -9,8 +9,8 @@ plt.switch_backend("agg")
 
 
 def multiple_plots(trajectories, prefix=""):
-    for i, trj in enumerate(trajectories.alltrjs.values()):
-        single_plot(trj, prefix)
+    for name, trj in trajectories.alltrjs.items():
+        single_plot(trj, prefix+"_"+name)
 
 
 def single_plot(trj, prefix=""):
@@ -21,5 +21,5 @@ def single_plot(trj, prefix=""):
         base_line_hist(
             f[:, ids].reshape([-1]),
             "Forces (eV/$\\mathrm{\\AA}$)",
-            f"{prefix}{trj.name}_{s}_force_dist",
+            f"{prefix}_{s}_force_dist",
         )
