@@ -9,6 +9,7 @@ from ase.atoms import Atoms
 from ase.io.extxyz import key_val_str_to_dict, parse_properties
 from ase.io.extxyz import write_xyz as write_extxyz
 from ase.calculators.singlepoint import SinglePointCalculator
+from ase.calculators.calculator import all_properties, Calculator
 
 from thyme import Trajectories, Trajectory
 from thyme._key import *
@@ -189,8 +190,10 @@ def write(name, trj, append=False):
         remove(name)
     if hasattr(trj, "construct_id_list"):
         trj.construct_id_list(force_run=False)
+
     for i in range(trj.nframes):
         frame = trj.get_frame(i)
+
         definition = {"pbc": False}
         if CELL in frame:
             definition["cell"] = frame.pop(CELL)
@@ -198,15 +201,31 @@ def write(name, trj, append=False):
         structure = Atoms(
             symbols=frame.pop("species"), positions=frame.pop("position"), **definition
         )
-        definition = {"forces": frame.pop(FORCE)} if FORCE in frame else {}
-        if STRESS in frame:
-            stress = frame.pop(STRESS)
-            definition["stresses"] = stress
-        # TODO, check this
-        definition.update(frame)
-        calc = SinglePointCalculator(
-            structure, energy=frame[TOTAL_ENERGY], **definition
+
+        calc = CustomizedSinglePoint(
+            structure, **frame
         )
         structure.calc = calc
         write_extxyz(name, structure, append=True)
     logging.info(f"write {name}")
+
+class CustomizedSinglePoint(SinglePointCalculator):
+
+    def __init__(self, atoms, rename:dict={FORCE: "forces", STRESS: "stresses", TOTAL_ENERGY:"energy"}, **results):
+
+        Calculator.__init__(self)
+
+        self.results = {}
+
+        for k, v in results.items():
+
+            print("k, v", k, v, type(v))
+
+            if v is None:
+                continue
+
+            k = rename.get(k, k)
+            if k in all_properties:
+                self.results[k] = v
+            else:
+                self.results[k] = v
