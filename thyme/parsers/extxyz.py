@@ -12,7 +12,6 @@ from ase.calculators.singlepoint import SinglePointCalculator
 
 from thyme import Trajectories, Trajectory
 from thyme._key import *
-from thyme.parsers.monty import read_pattern, read_table_pattern
 from thyme.routines.folders import find_folders, find_folders_matching
 
 fl_num = r"([+-]?\d+.\d+[eE]?[+-]?\d*)"
@@ -56,6 +55,8 @@ def pack_folder(folder, data_filter=None, include_xyz=True):
 
 
 def from_file(filename, data_filter=None, **kwargs):
+
+    from thyme.parsers.monty import read_pattern
 
     string, index = posforce_regex(filename)
     logging.debug(f"use regex {string} to parse for posforce")
@@ -192,15 +193,17 @@ def write(name, trj, append=False):
         frame = trj.get_frame(i)
         definition = {"pbc": False}
         if CELL in frame:
-            definition["cell"] = frame[CELL]
+            definition["cell"] = frame.pop(CELL)
             definition["pbc"] = True
         structure = Atoms(
-            symbols=frame["species"], positions=frame["position"], **definition
+            symbols=frame.pop("species"), positions=frame.pop("position"), **definition
         )
-        definition = {"forces": frame[FORCE]} if FORCE in frame else {}
+        definition = {"forces": frame.pop(FORCE)} if FORCE in frame else {}
         if STRESS in frame:
-            stress = frame[STRESS]
+            stress = frame.pop(STRESS)
             definition["stresses"] = stress
+        # TODO, check this
+        definition.update(frame)
         calc = SinglePointCalculator(
             structure, energy=frame[TOTAL_ENERGY], **definition
         )
