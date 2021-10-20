@@ -4,6 +4,67 @@ import numpy as np
 from thyme.utils.atomic_symbols import species_to_idgroups, species_to_dict
 from thyme import Trajectory, Trajectories
 
+def skew_hist(obj, max_count, bin_width, max_apperance=2, skew_factor=6, max_e=None):
+
+    if len(obj) < max_count:
+        logging.info(f"trajectory frames {obj.nframes} < {max_count}")
+        return np.arange(obj.nframes)
+
+    e = obj.total_energy
+    if max_e is None:
+        max_e = np.max(e)
+
+    bins = np.arange(np.min(e), max_e + bin_width, bin_width)
+
+    hist, bins = np.histogram(obj.total_energy, bins=bins)
+    ids = np.where(hist > 0)[0]
+    hist = hist[ids]
+    bin_left = bins[ids]
+    bin_right = bins[ids+1]
+    n_bins = len(hist)
+    c_each_bin = np.ceil(max_count /(n_bins*(skew_factor+2)/2.)*(-np.arange(n_bins)/n_bins*skew_factor+skew_factor+1))
+    c_each_bin = np.array(c_each_bin, int)
+    keep_ids = []
+    skip_idx = []
+    for idx, h in enumerate(hist):
+
+        left = bin_left[idx]
+        right = bin_right[idx]
+        id1 = set(np.where(obj.total_energy > left)[0])
+        id2 = set(np.where(obj.total_energy < right)[0])
+        ids = np.array(list(id1.intersection(id2)))
+        n = len(ids)
+        if n < c_each_bin[idx] / max_apperance:
+            draw = np.arange(n * max_apperance) // max_apperance
+            keep_ids += [ids[draw]]
+            skip_idx += [idx]
+            print(left, right, n, len(draw))
+    print("skip_idx", skip_idx)
+
+    not_skip = list(set(np.arange(n_bins))-set(skip_idx))
+
+    hist = hist[not_skip]
+    bin_left = bin_left[not_skip]
+    bin_right = bin_right[not_skip]
+    n_bins = len(hist)
+
+    max_count -= len(np.hstack(keep_ids))
+    c_each_bin = np.ceil(max_count /(n_bins*(skew_factor+2)/2.)*(-np.arange(n_bins)/n_bins*skew_factor+skew_factor+1))
+    c_each_bin = np.array(c_each_bin, int)
+    for idx, h in enumerate(hist):
+
+        left = bin_left[idx]
+        right = bin_right[idx]
+        id1 = set(np.where(obj.total_energy > left)[0])
+        id2 = set(np.where(obj.total_energy < right)[0])
+        ids = np.array(list(id1.intersection(id2)))
+        n = len(ids)
+        draw = np.random.randint(n, size=c_each_bin[idx])
+        keep_ids += [ids[draw]]
+        logging.debug(f"draw ({left}, {right}): {n}, {len(draw)}")
+
+    keep_ids = np.hstack(keep_ids)
+    return keep_ids
 
 def even_hist(obj, max_count, bin_width, max_apperance=2, max_e=None):
 
@@ -38,6 +99,9 @@ def even_hist(obj, max_count, bin_width, max_apperance=2, max_e=None):
             keep_ids += [ids[draw]]
             skip_idx += [idx]
             print(left, right, n, len(draw))
+
+    if len(keep_ids) == 0:
+        return []
 
     c_each_bin = (max_count - len(np.hstack(keep_ids))) // (len(hist) - len(skip_idx))
     for idx, h in enumerate(hist):
