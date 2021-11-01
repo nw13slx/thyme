@@ -79,6 +79,7 @@ class Trajectories:
 
     def get_frame(self, idx, keys=None):
 
+
         n_attrs = len(self)
         if idx >= n_attrs:
             raise ValueError(f"frame index overflow {n_attrs}")
@@ -171,6 +172,8 @@ class Trajectories:
             trj = Trajectory.from_dict(trj_dict)
             trjs.add_trj(trj, name=name, merge=merge, preserve_order=preserve_order)
 
+        trjs.construct_id_list()
+
         return trjs
 
     def pop_trj(self, name):
@@ -201,7 +204,7 @@ class Trajectories:
         if not merge:
 
             if name in self.alltrjs:
-                name=f"{name}_{len(self.alltrjs)}"
+                name = f"{name}_{len(self.alltrjs)}"
             elif name is None and trj.name not in self.alltrjs:
                 name = trj.name
             elif name is None:
@@ -218,14 +221,15 @@ class Trajectories:
         if name is None:
             stored_label = None
             for _label, oldtrj in self.alltrjs.items():
-                if metadata_compare(trj, oldtrj):
+                old_order, old_label = species_to_order_label(oldtrj.species)
+                if metadata_compare(trj, oldtrj) and old_label == label:
                     stored_label = _label
                     break
             if stored_label is None:
                 stored_label = label
         else:
-            stored_label = name+"_"+label
-            label = name+"_"+label
+            stored_label = name + "_" + label
+            label = name + "_" + label
 
 
         if stored_label not in self.alltrjs:
@@ -235,7 +239,9 @@ class Trajectories:
         else:
             oldtrj = self.alltrjs[stored_label]
             if metadata_compare(trj, oldtrj):
-                logging.debug(f"! Metadata is exactly the same. Merge to {stored_label}")
+                logging.debug(
+                    f"! Metadata is exactly the same. Merge to {stored_label}"
+                )
             else:
                 stored_label, last_label = obtain_store_label(
                     last_label="NA0",
@@ -244,7 +250,9 @@ class Trajectories:
                     preserve_order=True,
                 )
                 self.alltrjs[stored_label] = Trajectory()
-                logging.debug(f"! Metadata is not the same. Not merge. Buil {stored_label}")
+                logging.debug(
+                    f"! Metadata is not the same. Not merge. Buil {stored_label}"
+                )
 
         self.alltrjs[stored_label].add_trj(trj, save_mode=False, order=order)
         self.nframes += trj.nframes

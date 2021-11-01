@@ -8,7 +8,6 @@ from thyme import Trajectory, Trajectories
 from thyme._key import *
 
 
-
 def to_strucs(trj):
     structures = []
     for i in range(trj.nframes):
@@ -39,8 +38,7 @@ def write(filename, trj):
 
 
 def from_file(filename, as_trajectory=True, **kwargs):
-    """
-    """
+    """ """
     mapping = dict(
         energy=TOTAL_ENERGY,
         forces=FORCE,
@@ -59,11 +57,7 @@ def from_file(filename, as_trajectory=True, **kwargs):
         for key in per_frame_attrs:
             new_dict[key] = new_dict[key].reshape((1,) + new_dict[key].shape)
         new_dict[PER_FRAME_ATTRS] = per_frame_attrs
-        trjs.add_trj(
-            Trajectory.from_dict(new_dict),
-            name=count,
-            **kwargs
-        )
+        trjs.add_trj(Trajectory.from_dict(new_dict), name=count, **kwargs)
     return trjs
 
 

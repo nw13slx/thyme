@@ -8,6 +8,7 @@ from os import remove
 from ase.atoms import Atoms
 from ase.io.extxyz import key_val_str_to_dict, parse_properties
 from ase.io.extxyz import write_xyz as write_extxyz
+from ase.io.extxyz import per_atom_properties, per_config_properties
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.calculator import all_properties, Calculator
 
@@ -41,7 +42,9 @@ def pack_folder_trj(folder, data_filter=None, include_xyz=True):
 
     join_trj = Trajectories()
     for filename in xyzs:
-        join_trj.add_trjs(from_file(filename, data_filter), merge=False, preserve_order=True)
+        join_trj.add_trjs(
+            from_file(filename, data_filter), merge=False, preserve_order=True
+        )
 
     return join_trj
 
@@ -191,6 +194,18 @@ def write(name, trj, append=False):
     if hasattr(trj, "construct_id_list"):
         trj.construct_id_list(force_run=False)
 
+    frame0 = trj.get_frame(0)
+    keys = set(list(frame0.keys())) - set(
+        [CELL, POSITION, SPECIES, FORCE, STRESS, TOTAL_ENERGY, NATOMS]
+    )
+    for key in keys:
+        if key not in all_properties:
+            all_properties.append(key)
+            if isinstance(frame0, np.ndarray) and frame0[key].shape[0] == frame0[NATOMS]:
+                per_atom_properties.append(key)
+            else:
+                per_config_properties.append(key)
+
     for i in range(trj.nframes):
         frame = trj.get_frame(i)
 
@@ -199,27 +214,28 @@ def write(name, trj, append=False):
             definition["cell"] = frame.pop(CELL)
             definition["pbc"] = True
         structure = Atoms(
-            symbols=frame.pop("species"), positions=frame.pop("position"), **definition
+            symbols=frame.pop(SPECIES), positions=frame.pop(POSITION), **definition
         )
 
-        calc = CustomizedSinglePoint(
-            structure, **frame
-        )
+        calc = CustomizedSinglePoint(structure, **frame)
         structure.calc = calc
         write_extxyz(name, structure, append=True)
     logging.info(f"write {name}")
 
-class CustomizedSinglePoint(SinglePointCalculator):
 
-    def __init__(self, atoms, rename:dict={FORCE: "forces", STRESS: "stresses", TOTAL_ENERGY:"energy"}, **results):
+class CustomizedSinglePoint(SinglePointCalculator):
+    def __init__(
+        self,
+        atoms,
+        rename: dict = {FORCE: "forces", STRESS: "stresses", TOTAL_ENERGY: "energy"},
+        **results,
+    ):
 
         Calculator.__init__(self)
 
         self.results = {}
 
         for k, v in results.items():
-
-            print("k, v", k, v, type(v))
 
             if v is None:
                 continue

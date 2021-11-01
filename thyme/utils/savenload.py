@@ -40,10 +40,12 @@ def save_file(
             yaml.dump(item, fout)
     elif format == "pickle":
         import pickle
+
         with open(filename, "wb") as fout:
             pickle.dump(item, fout)
     elif format == "npz":
         import numpy as np
+
         np.savez(filename, **item)
     else:
         raise NotImplementedError(

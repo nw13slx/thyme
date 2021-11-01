@@ -7,15 +7,17 @@ import matplotlib.pyplot as plt
 plt.switch_backend("agg")
 
 
-def multiple_plots(trajectories, label="total_energy", prefix="", xlabel="Energy (eV)", norm=False):
+def multiple_plots(
+    trajectories, label="total_energy", prefix="", xlabel="Energy (eV)", norm=False
+):
     for name, trj in trajectories.alltrjs.items():
-        single_plot(trj, label, prefix+"_"+name, xlabel)
+        single_plot(trj, label, prefix + "_" + name, xlabel)
 
 
 def single_plot(trj, label="total_energy", prefix="", xlabel="Energy (eV)", norm=False):
     item = getattr(trj, label, None)
     if item is not None:
         if norm:
-            base_line_hist(item/trj.natoms, xlabel, f"{prefix}_{label}_dist")
+            base_line_hist(item / trj.natoms, xlabel, f"{prefix}_{label}_dist")
         else:
             base_line_hist(item, xlabel, f"{prefix}_{label}_dist")

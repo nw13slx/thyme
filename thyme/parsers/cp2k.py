@@ -30,7 +30,7 @@ def get_childfolders(path):
     return find_folders_matching(["*.xyz", "*.inp", "*out*"], path)
 
 
-def pack_folder_trj(folder:str, data_filter):
+def pack_folder_trj(folder: str, data_filter):
     """
     For one plain folder (without looking into its children folder),
     search for all the simulation store in this folder
@@ -159,7 +159,7 @@ def pack_folder_trj(folder:str, data_filter):
     # return Trajectory()
 
 
-def parse_md(folder:str, inp:str, proj_name:str):
+def parse_md(folder: str, inp: str, proj_name: str):
     """
     Args:
 
@@ -404,9 +404,9 @@ def parse_std_inp_metadata(filename):
     ids = []
     if len(fix_range) > 0:
         print(fix_range)
-        ids = np.arange(int(fix_range[0][0][0])-1, int(fix_range[0][0][1]))
+        ids = np.arange(int(fix_range[0][0][0]) - 1, int(fix_range[0][0][1]))
     if len(fix_ids) > 0:
-        ids = [int(idx)-1 for idx in fix_ids[0][0][0].split()]
+        ids = [int(idx) - 1 for idx in fix_ids[0][0][0].split()]
 
     if len(ids) > 0:
         data["fix_atoms"] = True
@@ -576,7 +576,7 @@ def parse_cp2k_xyzs(posxyz, forcexyz, cell, metadata):
         return Trajectory()
 
     dictionary = {
-        POSITION:np.array(d["pos"], dtype=float).reshape([nframes, -1, 3]),
+        POSITION: np.array(d["pos"], dtype=float).reshape([nframes, -1, 3]),
         FORCE: np.array(d_f["pos"], dtype=float).reshape([nframes, -1, 3])
         * HARTREE_BOHR,
         TOTAL_ENERGY: np.array(d["total_energy"], dtype=float).reshape([-1]) * HARTREE,
@@ -600,7 +600,7 @@ def parse_cp2k_xyzs(posxyz, forcexyz, cell, metadata):
         for idx in dictionary["fix_atoms_id"]:
             # TO DO, COMPONENTS_TO_FIX cannot be handled yet.
             if idx < force.shape[0]:
-                if (force[idx, :, :]==0).all():
+                if (force[idx, :, :] == 0).all():
                     force[idx, :, :] += float("nan")
         dictionary[FORCE] = np.swapaxes(force, 1, 0)
 

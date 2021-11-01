@@ -137,7 +137,11 @@ class Trajectory(object):
         if not all(find_key):
             raise RuntimeError("key missing")
 
-        match_fields = [(repr(dictionary[key]) == getattr(self.key)) for key in self.fixed_attrs if key in dictionary]
+        match_fields = [
+            (repr(dictionary[key]) == getattr(self.key))
+            for key in self.fixed_attrs
+            if key in dictionary
+        ]
         if not all(match_fields):
             raise RuntimeError("fixed fields are not consistent missing")
 
@@ -443,7 +447,7 @@ class Trajectory(object):
             self.copy(trj)
         else:
             if self.natoms != trj.natoms:
-                raise ValueError(f"cannot merge two trj with different numbers")
+                raise ValueError(f"cannot merge two trj with different numbers {self.natoms}, {trj.natoms}")
             if save_mode:
                 if not all(trj.species == self.species):
                     _order, new_label = species_to_order_label(trj.species)

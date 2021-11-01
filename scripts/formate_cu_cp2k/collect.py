@@ -16,10 +16,11 @@ def main():
 
     folders = get_childfolders("./")
     trjs = parse_merged_folders_trjs(
-        folders, pack_folder_trj,
+        folders,
+        pack_folder_trj,
         data_filter=e_filter,
         ckpt_filename="all_data.pickle",
-        merge_level=0
+        merge_level=0,
     )
     logging.info("----FINAL TRJS----")
     logging.info(f"{trjs}")

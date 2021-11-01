@@ -40,10 +40,10 @@ def parse_merged_folders_trjs(
         if new_trj.nframes >= 1:
             if isinstance(new_trj, Trajectories):
                 for _name, _trj in new_trj.alltrjs.items():
-                    suffix = "" if merge_level>=0 else "_"+_name
-                    trjs.add_trj(_trj, name=tuple_name+suffix, merge=merge_level>=0)
+                    suffix = "" if merge_level >= 0 else "_" + _name
+                    trjs.add_trj(_trj, name=tuple_name + suffix, merge=merge_level >= 0)
             else:
-                trjs.add_trj(new_trj, name=tuple_name, merge=merge_level>=0)
+                trjs.add_trj(new_trj, name=tuple_name, merge=merge_level >= 0)
 
             count += 1
             if count % 10 == 0 and len(ckpt_filename) > 0:
@@ -96,8 +96,14 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, ckpt_filename=""):
 
     return trjs
 
+def valid_data(data):
+    if data["nframes"] >= 1:
+        logging.info(f"save {folder} as {casename} : {data['nframes']} frames")
+        return True
+    logging.info(f"! skip whole folder {casename}, {data['nframes']}")
+    return False
 
-def parse_folders(folders, pack_folder, data_filter, npz_filename):
+def parse_folders(folders, pack_folder, data_filter, npz_filename, valid = valid_data):
 
     folders = folders
     logging.info(f"all folders: {folders}")
@@ -116,14 +122,11 @@ def parse_folders(folders, pack_folder, data_filter, npz_filename):
         logging.info(casename)
 
         data = pack_folder(folder, data_filter)
-        if data["nframes"] >= 1:
-            logging.info(f"save {folder} as {casename} : {data['nframes']} frames")
+        if valid(data):
             alldata[casename] = data
             count += 1
             if count % 10 == 0:
                 np.savez(f"{npz_filename}.npz", **alldata)
-        else:
-            logging.info(f"! skip whole folder {casename}, {data['nframes']}")
 
     np.savez(f"{npz_filename}.npz", **alldata)
 

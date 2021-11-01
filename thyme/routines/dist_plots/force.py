@@ -10,7 +10,7 @@ plt.switch_backend("agg")
 
 def multiple_plots(trajectories, prefix=""):
     for name, trj in trajectories.alltrjs.items():
-        single_plot(trj, prefix+"_"+name)
+        single_plot(trj, prefix + "_" + name)
 
 
 def single_plot(trj, prefix=""):

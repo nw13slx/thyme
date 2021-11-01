@@ -23,7 +23,7 @@ ITEM: BOX BOUNDS pp pp pp
 ITEM: ATOMS id type x y z {type_str}"""
 
 
-def write(name, trj, color_key=""):
+def write(name, trj, color_key="", spe2num={}):
 
     if isfile(name):
         remove(name)
@@ -34,18 +34,18 @@ def write(name, trj, color_key=""):
     for key in trj.per_frame_attrs:
 
         if key == FORCE:
-            type_str += "fx fy fz"
+            type_str += " fx fy fz"
             keys += [FORCE]
         elif key == VELOCITY:
-            type_str += "vx vy vz"
+            type_str += " vx vy vz"
             keys += [VELOCITY]
         elif key == color_key:
-            type_str += "q"
+            type_str += " q"
             keys += [color_key]
 
-    spe2num = {}
-
     fout = open(name, "w+")
+
+    print("hello", trj.nframes)
 
     for i in range(trj.nframes):
         frame = trj.get_frame(i)
@@ -66,7 +66,9 @@ def write(name, trj, color_key=""):
         )
 
         species = np.unique(frame[SPECIES])
-        base = len(spe2num) + 1
+        base = len(spe2num)
+        if base == 0:
+            base = 1
         spe2num.update(
             {spe: i + base for i, spe in enumerate(species) if spe not in spe2num}
         )
@@ -75,8 +77,9 @@ def write(name, trj, color_key=""):
         for j in range(natom):
             string += f"\n{j+1} {spe2num[frame[SPECIES][j]]} "
             for key in keys:
-                string += " ".join([f"{value}" for value in frame[key][j]])
+                string += " "+" ".join([f"{value}" for value in frame[key][j]])
         print(string, file=fout)
 
     logging.info(f"write {name}")
     fout.close()
+    logging.info(f"spe2num {spe2num}")
