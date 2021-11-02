@@ -88,7 +88,9 @@ def write(name, trj, color_key="", spe2num={}):
 
 def from_file(filename):
 
-    data = dump(filename)
+    data = dump(filename, 0)
+    data.read_all(allow_overlap=True)
+
     col_id = data.names["id"]
     col_type = data.names["type"]
     x_id = data.names["x"]

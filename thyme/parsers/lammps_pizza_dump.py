@@ -252,7 +252,7 @@ class dump:
 
     # --------------------------------------------------------------------
 
-    def read_all(self):
+    def read_all(self, allow_overlap=False):
 
         # read all snapshots from each file
         # test for gzipped files
@@ -274,8 +274,9 @@ class dump:
 
         # sort entries by timestep, cull duplicates
 
-        self.snaps.sort(key=self.compare_time)
-        self.cull()
+        if not allow_overlap:
+            self.snaps.sort(key=self.compare_time)
+            self.cull()
         self.nsnaps = len(self.snaps)
         print("read %d snapshots" % self.nsnaps, file=self.fout)
 
@@ -307,7 +308,7 @@ class dump:
     # --------------------------------------------------------------------
     # read next snapshot from list of files
 
-    def next(self):
+    def next(self, allow_overlap=False):
 
         if not self.increment:
             raise RuntimeError("cannot read incrementally")
@@ -320,6 +321,7 @@ class dump:
             f = open(self.flist[self.nextfile], 'rb')
             f.seek(self.eof)
             snap = self.read_snapshot(f)
+            print("snap", snap)
             if not snap:
                 self.nextfile += 1
                 if self.nextfile == len(self.flist):
@@ -329,6 +331,8 @@ class dump:
                 continue
             self.eof = f.tell()
             f.close()
+            if allow_overlap:
+                break
             try:
                 self.findtime(snap.time)
                 continue
@@ -453,7 +457,7 @@ class dump:
                 atoms = None
             snap.atoms = atoms
             return snap
-        except:
+        except Exception as e:
             return 0
 
     # --------------------------------------------------------------------
