@@ -96,7 +96,7 @@ def multiple_plots(trajectories, pred_label="pred", prefix=""):
     alldata = {}
     for trj in trajectories.alltrjs.values():
         data = single_plot(
-            trj.forces, getattr(trj, pred_label), f"{prefix}{trj.name}", trj.species
+            trj.force, getattr(trj, pred_label), f"{prefix}{trj.name}", trj.species
         )
         for element in data:
             mae, rmse, count = data[element]

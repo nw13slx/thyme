@@ -103,6 +103,7 @@ def from_file(filename, data_filter=None, **kwargs):
     cell = np.array(d["cells"], dtype=float).reshape([-1, 3, 3])
 
     posforce = np.array(d["posforce"], dtype=float).reshape([-1, 6])
+
     position = posforce[:, index["pos"] : index["pos"] + 3]
     force = posforce[:, index["forces"] : index["forces"] + 3]
     del posforce
@@ -162,7 +163,7 @@ def posforce_regex(filename):
     for k, v in properties.items():
         length = v[1]
         if len(string) > 0:
-            string += r"\s+"
+            string += r"\s\s+"
         if k in ["pos", "forces"]:
             string += fl_num + r"\s+" + fl_num + r"\s+" + fl_num
             index[k] = item_count
