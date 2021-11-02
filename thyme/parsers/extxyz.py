@@ -116,17 +116,17 @@ def from_file(filename, data_filter=None, **kwargs):
     counter = 0
     trjs = Trajectories()
     for i, natom in enumerate(natoms):
-        counter += natom
         trj = Trajectory.from_dict(
             {
                 POSITION: position[counter : counter + natom].reshape([1, natom, 3]),
                 FORCE: force[counter : counter + natom].reshape([1, natom, 3]),
                 TOTAL_ENERGY: total_energy[[i]],
                 CELL: cell[[i]],
-                SPECIES: species[counter : counter + natom].reshape([1, natom]),
-                PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL, SPECIES],
+                SPECIES: species[counter : counter + natom].reshape([natom]),
+                PER_FRAME_ATTRS: [POSITION, FORCE, TOTAL_ENERGY, CELL],
             }
         )
+        counter += natom
         if data_filter is not None:
             try:
                 accept_id = data_filter(trj)
