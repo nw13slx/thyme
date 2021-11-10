@@ -202,7 +202,10 @@ def write(name, trj, append=False):
     for key in keys:
         if key not in all_properties:
             all_properties.append(key)
-            if isinstance(frame0, np.ndarray) and frame0[key].shape[0] == frame0[NATOMS]:
+            if (
+                isinstance(frame0, np.ndarray)
+                and frame0[key].shape[0] == frame0[NATOMS]
+            ):
                 per_atom_properties.append(key)
             else:
                 per_config_properties.append(key)

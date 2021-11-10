@@ -432,7 +432,52 @@ class Trajectory(object):
             enforced_format=format,
         )
 
-    def add_trj(self, trj, save_mode=True, order=None):
+    @classmethod
+    def stack(cls, trjs, safe_mode=True, order=None):
+        """
+        add all frames from another trajectory instance
+        """
+
+        nframes = np.sum([trj.nframes for trj in trjs])
+        if nframes <= 0:
+            return Trajectory()
+        if len(trjs) == 1:
+            trj = Trajectory()
+            trj.copy(trjs[0])
+            return trj
+
+        if order is not None:
+            for i, trj in enumerate(trjs):
+                trj.reorder_atoms(order[i])
+
+        natoms = set([trj.natoms for trj in trjs])
+        if len(natoms) != 1:
+            raise ValueError(f"cannot merge trjs with different numbers {natoms}")
+
+        if safe_mode:
+            labels = []
+            for trj in trjs:
+                _order, new_label = species_to_order_label(trj.species)
+                labels += [new_label]
+            labels = set(labels)
+            if len(labels) != 1:
+                raise ValueError(f"cannot merge trjs with different species {labels}")
+
+        trj0 = trjs[0]
+        d = trj0.to_dict()
+        for k in trj0.per_frame_attrs:
+            items = [getattr(trj, k) for trj in trjs]
+            try:
+                mat = np.stack(items, axis=0)
+            except Exception as e:
+                raise RuntimeError("fail", k, set([item.shape for item in items]), e)
+            d[k] = mat
+        d["nframes"] = nframes
+        d["natoms"] = list(natoms)[0]
+        trj = Trajectory.from_dict(d)
+        return trj
+
+    def add_trj(self, trj, safe_mode=True, order=None):
         """
         add all frames from another trajectory instance
         """
@@ -447,8 +492,10 @@ class Trajectory(object):
             self.copy(trj)
         else:
             if self.natoms != trj.natoms:
-                raise ValueError(f"cannot merge two trj with different numbers {self.natoms}, {trj.natoms}")
-            if save_mode:
+                raise ValueError(
+                    f"cannot merge two trj with different numbers {self.natoms}, {trj.natoms}"
+                )
+            if safe_mode:
                 if not all(trj.species == self.species):
                     _order, new_label = species_to_order_label(trj.species)
                     _, old_label = species_to_order_label(self.species)

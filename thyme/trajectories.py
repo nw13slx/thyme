@@ -79,7 +79,6 @@ class Trajectories:
 
     def get_frame(self, idx, keys=None):
 
-
         n_attrs = len(self)
         if idx >= n_attrs:
             raise ValueError(f"frame index overflow {n_attrs}")
@@ -230,7 +229,6 @@ class Trajectories:
         else:
             stored_label = name + "_" + label
             label = name + "_" + label
-
 
         if stored_label not in self.alltrjs:
             newtrj = Trajectory()

@@ -79,12 +79,13 @@ def write(name, trj, color_key="", spe2num={}):
         for j in range(natom):
             string += f"\n{j+1} {spe2num[frame[SPECIES][j]]} "
             for key in keys:
-                string += " "+" ".join([f"{value}" for value in frame[key][j]])
+                string += " " + " ".join([f"{value}" for value in frame[key][j]])
         print(string, file=fout)
 
     logging.info(f"write {name}")
     fout.close()
     logging.info(f"spe2num {spe2num}")
+
 
 def from_file(filename):
 
@@ -100,36 +101,56 @@ def from_file(filename):
         fx_id = data.names["fx"]
         fy_id = data.names["fy"]
         fz_id = data.names["fz"]
+    remaining_names = [
+        (i, name)
+        for i, name in enumerate(data.names)
+        if name not in ["id", "type", "x", "y", "z", "fx", "fy", "fz"]
+    ]
 
-    trj = Trajectory()
+    list_trj = []
     for i in range(data.nsnaps):
-        if i%1000 == 0:
+        if i % 1000 == 0:
             logging.info(f"{i} / {data.nsnaps}")
         snap = data.snaps[i]
         cols = np.vstack(snap.atoms)
         ids = np.argsort(cols[:, col_id])
         species = cols[:, col_type][ids]
-        pos = np.hstack((cols[:, x_id].reshape([-1, 1]),
-                         cols[:, y_id].reshape([-1, 1]),
-                         cols[:, z_id].reshape([-1, 1])))
-        lx = snap.xhi-snap.xlo
-        ly = snap.yhi-snap.ylo
-        lz = snap.zhi-snap.zlo
-        d = { CELL: np.diag([lx, ly, lz]).reshape([1, 3, 3]),
-                POSITION: pos[ids].reshape([1, -1, 3]),
-                SPECIES: species,
-                PER_FRAME_ATTRS: [POSITION, CELL],
-                FIXED_ATTRS: [SPECIES, NATOMS],
-                }
+        pos = np.hstack(
+            (
+                cols[:, x_id].reshape([-1, 1]),
+                cols[:, y_id].reshape([-1, 1]),
+                cols[:, z_id].reshape([-1, 1]),
+            )
+        )
+        lx = snap.xhi - snap.xlo
+        ly = snap.yhi - snap.ylo
+        lz = snap.zhi - snap.zlo
+        d = {
+            CELL: np.diag([lx, ly, lz]).reshape([1, 3, 3]),
+            POSITION: pos[ids].reshape([1, -1, 3]),
+            SPECIES: species,
+            PER_FRAME_ATTRS: [POSITION, CELL],
+            FIXED_ATTRS: [SPECIES, NATOMS],
+        }
         if "fx" in data.names:
-            force = np.hstack((cols[:, fx_id].reshape([-1, 1]),
-                               cols[:, fy_id].reshape([-1, 1]),
-                               cols[:, fz_id].reshape([-1, 1])))[ids]
+            force = np.hstack(
+                (
+                    cols[:, fx_id].reshape([-1, 1]),
+                    cols[:, fy_id].reshape([-1, 1]),
+                    cols[:, fz_id].reshape([-1, 1]),
+                )
+            )[ids]
             d.update({FORCE: force.reshape([1, -1, 3])})
             d[PER_FRAME_ATTRS] += [FORCE]
+
+        d.update({name: cols[:, i].reshape([1, -1]) for i, name in remaining_names})
+        d[PER_FRAME_ATTRS] += [name for i, name in remaining_names]
+
         _trj = Trajectory.from_dict(d)
-        trj.add_trj(_trj)
+        list_trj += [_trj]
+    trj = Trajectory.stack(list_trj)
     return trj
+
 
 def read_log(filename):
     l = lammps_log(filename, 0)

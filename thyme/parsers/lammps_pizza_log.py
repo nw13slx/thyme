@@ -80,10 +80,10 @@ class log:
 
     def __init__(self, *list, verbose=False):
 
-        if (verbose):
+        if verbose:
             self.fout = stdout
         else:
-            self.fout = open(devnull, 'w')
+            self.fout = open(devnull, "w")
 
         self.nvec = 0
         self.names = []
@@ -138,7 +138,7 @@ class log:
 
         if self.nvec == 0:
             try:
-                open(self.flist[0], 'r')
+                open(self.flist[0], "r")
             except:
                 return -1
             self.read_header(self.flist[0])
@@ -197,12 +197,11 @@ class log:
                     if count == 1:
                         index_map.append(index)
                     else:
-                        raise RuntimeError(
-                            f"unique log vector {key} not found")
+                        raise RuntimeError(f"unique log vector {key} not found")
         else:
             index_map = range(self.nvec)
 
-        if (len(index_map)>0):
+        if len(index_map) > 0:
             index_map = np.array(index_map)
             with open(filename, "w") as f:
                 data = np.array(self.data)
@@ -224,7 +223,7 @@ class log:
     def cull(self):
         i = 1
         while i < len(self.data):
-            if self.data[i][0] == self.data[i-1][0]:
+            if self.data[i][0] == self.data[i - 1][0]:
                 del self.data[i]
             else:
                 i += 1
@@ -236,7 +235,7 @@ class log:
         str_one = "Step "
 
         if file[-3:] == ".gz":
-            txt = popen("%s -c %s" % (PIZZA_GUNZIP, file), 'r').read()
+            txt = popen("%s -c %s" % (PIZZA_GUNZIP, file), "r").read()
         else:
             txt = open(file).read()
 
@@ -252,7 +251,7 @@ class log:
         if self.style == 1:
             s1 = txt.find(self.firststr)
             s2 = txt.find("\n--", s1)
-            if (s2 == -1):
+            if s2 == -1:
                 s2 = txt.find("\nLoop time of", s1)
             pattern = "\s(\S*)\s*="
             keywords = re.findall(pattern, txt[s1:s2])
@@ -283,9 +282,9 @@ class log:
 
         file = list[0]
         if file[-3:] == ".gz":
-            f = popen("%s -c %s" % (PIZZA_GUNZIP, file), 'rb')
+            f = popen("%s -c %s" % (PIZZA_GUNZIP, file), "rb")
         else:
-            f = open(file, 'rb')
+            f = open(file, "rb")
 
         if len(list) == 2:
             f.seek(list[1])
@@ -305,20 +304,20 @@ class log:
             # set last = 1 if this is last chunk in file, leave 0 otherwise
             # set start = position in file to start looking for next chunk
             # rewind eof if final entry is incomplete
-            arr1 = bytes(self.firststr, 'ascii')
+            arr1 = bytes(self.firststr, "ascii")
 
             s1 = txt.find(arr1, start)
-            s2 = txt.find(b"Loop time of", start+1)
+            s2 = txt.find(b"Loop time of", start + 1)
 
-            if s1 >= 0 and s2 >= 0 and s1 < s2:    # found s1,s2 with s1 before s2
+            if s1 >= 0 and s2 >= 0 and s1 < s2:  # found s1,s2 with s1 before s2
                 if self.style == 2:
                     s1 = txt.find(b"\n", s1) + 1
             elif s1 >= 0 and s2 >= 0 and s2 < s1:  # found s1,s2 with s2 before s1
                 s1 = 0
-            elif s1 == -1 and s2 >= 0:             # found s2, but no s1
+            elif s1 == -1 and s2 >= 0:  # found s2, but no s1
                 last = 1
                 s1 = 0
-            elif s1 >= 0 and s2 == -1:             # found s1, but no s2
+            elif s1 >= 0 and s2 == -1:  # found s1, but no s2
                 last = 1
                 if self.style == 1:
                     s2 = txt.rfind("\n--", s1) + 1
@@ -326,15 +325,15 @@ class log:
                     s1 = txt.find("\n", s1) + 1
                     s2 = txt.rfind("\n", s1) + 1
                 eof -= len(txt) - s2
-            elif s1 == -1 and s2 == -1:            # found neither
-                    # could be end-of-file section
-                    # or entire read was one chunk
+            elif s1 == -1 and s2 == -1:  # found neither
+                # could be end-of-file section
+                # or entire read was one chunk
 
-                if txt.find(b"Loop time of", start) == start:   # end of file, so exit
+                if txt.find(b"Loop time of", start) == start:  # end of file, so exit
                     # reset eof to "Loop"
                     eof -= len(txt) - start
                     break
-                last = 1                                      # entire read is a chunk
+                last = 1  # entire read is a chunk
                 s1 = 0
                 if self.style == 1:
                     s2 = txt.rfind("\n--", s1) + 1
@@ -344,7 +343,7 @@ class log:
             if s1 == s2:
                 break
 
-            chunk = txt[s1:s2-1]
+            chunk = txt[s1 : s2 - 1]
             start = s2
 
             # split chunk into entries
@@ -364,10 +363,12 @@ class log:
                 lines = chunk.split(b"\n")
                 for line in lines:
                     words = line.split()
-                    self.data.append([float(w) for w in words]) #list(map(float, words)))
+                    self.data.append(
+                        [float(w) for w in words]
+                    )  # list(map(float, words)))
 
             # print last timestep of chunk
 
-            print(int(self.data[len(self.data)-1][0]), flush=True, file=self.fout)
+            print(int(self.data[len(self.data) - 1][0]), flush=True, file=self.fout)
 
         return eof

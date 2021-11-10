@@ -20,7 +20,7 @@ def base_parity(
 
     fig.tight_layout()
     fig.savefig(f"{prefix}{postfix}.png", dpi=300)
-    plt.close()
+    plt.close(fig)
     del fig
     del axs
 

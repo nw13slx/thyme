@@ -96,6 +96,7 @@ def parse_folders_trjs(folders, pack_folder_trj, data_filter, ckpt_filename=""):
 
     return trjs
 
+
 def valid_data(data):
     if data["nframes"] >= 1:
         logging.info(f"save {folder} as {casename} : {data['nframes']} frames")
@@ -103,7 +104,8 @@ def valid_data(data):
     logging.info(f"! skip whole folder {casename}, {data['nframes']}")
     return False
 
-def parse_folders(folders, pack_folder, data_filter, npz_filename, valid = valid_data):
+
+def parse_folders(folders, pack_folder, data_filter, npz_filename, valid=valid_data):
 
     folders = folders
     logging.info(f"all folders: {folders}")
